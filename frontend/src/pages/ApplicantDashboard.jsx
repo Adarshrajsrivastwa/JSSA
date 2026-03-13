@@ -51,6 +51,8 @@ export default function ApplicantDashboard() {
         const statsResponse = await dashboardAPI.getStats();
         if (statsResponse.success && statsResponse.data) {
           setDashboardData(statsResponse.data);
+        } else if (statsResponse.error) {
+          setError(statsResponse.error);
         }
 
         // Fetch recent applications
@@ -67,6 +69,9 @@ export default function ApplicantDashboard() {
               : "General",
           }));
           setRecentApplications(transformed);
+        } else if (appsResponse.error && !statsResponse.error) {
+          // Only set error if stats didn't already set one
+          setError(appsResponse.error);
         }
       } catch (err) {
         setError(err.message || "Failed to load dashboard data");

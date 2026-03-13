@@ -2968,16 +2968,43 @@ function HomePage({ onNavigate }) {
   useEffect(() => {
     const fetch_ = async () => {
       try {
-        const res = await scrollerAPI.getAll("true");
-        if (res.success && res.data) {
-          const imgs = res.data.scrollerImages || [];
-          if (imgs.length > 0) {
-            setSlides(imgs.map((i) => i.imageUrl));
-            setScrollerImages(imgs);
+        // Fetch all scroller images (not just active ones) - like gallery does
+        const res = await scrollerAPI.getAll(null);
+        console.log("Scroller API Response:", res);
+        
+        if (res && res.success && res.data) {
+          // Get all images from response
+          const allImages = res.data.scrollerImages || [];
+          console.log("All Scroller Images:", allImages);
+          
+          // Filter to get images with valid URLs (show all uploaded images)
+          const validImages = allImages.filter((img) => img.imageUrl && img.imageUrl.trim() !== "");
+          console.log("Valid Scroller Images:", validImages.length);
+          
+          if (validImages.length > 0) {
+            // Sort by order field, then by creation date (newest first)
+            const sortedImages = validImages.sort((a, b) => {
+              if (a.order !== b.order) {
+                return (a.order || 0) - (b.order || 0);
+              }
+              return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+            });
+            
+            const imageUrls = sortedImages.map((i) => i.imageUrl);
+            setSlides(imageUrls);
+            setScrollerImages(sortedImages);
             setSlide(0);
-          } else setSlides(fallbackSlides);
-        } else setSlides(fallbackSlides);
-      } catch {
+            console.log("Scroller images loaded:", imageUrls.length);
+          } else {
+            console.warn("No valid image URLs found in scroller images, using fallback");
+            setSlides(fallbackSlides);
+          }
+        } else {
+          console.warn("Scroller API response invalid:", res);
+          setSlides(fallbackSlides);
+        }
+      } catch (error) {
+        console.error("Error fetching scroller images:", error);
         setSlides(fallbackSlides);
       }
     };
@@ -3149,91 +3176,120 @@ function HomePage({ onNavigate }) {
       <div className="slider-stats-wrap">
         {/* Slider */}
         <div className="slider-area">
-          {slides.map((src, i) => {
-            const si = scrollerImages[i];
-            const imgEl = (
-              <img
-                key={i}
-                src={src}
-                alt={si?.title || `slide ${i + 1}`}
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  opacity: i === slide ? 1 : 0,
-                  transition: "opacity 0.8s ease",
-                }}
-              />
-            );
-            if (si?.link)
-              return (
-                <a
-                  key={i}
-                  href={si.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    display: i === slide ? "block" : "none",
-                  }}
-                >
-                  {imgEl}
-                </a>
-              );
-            return (
-              <div
-                key={i}
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: i === slide ? "block" : "none",
-                }}
-              >
-                {imgEl}
-              </div>
-            );
-          })}
-          <button
-            onClick={() =>
-              setSlide((s) => (s - 1 + slides.length) % slides.length)
-            }
-            style={{
-              position: "absolute",
-              left: 6,
-              top: "50%",
-              transform: "translateY(-50%)",
-              background: "rgba(255,255,255,0.7)",
-              border: "none",
-              borderRadius: "50%",
-              width: 34,
-              height: 34,
-              fontSize: 22,
-              cursor: "pointer",
-            }}
-          >
-            ‹
-          </button>
-          <button
-            onClick={() => setSlide((s) => (s + 1) % slides.length)}
-            style={{
-              position: "absolute",
-              right: 6,
-              top: "50%",
-              transform: "translateY(-50%)",
-              background: "rgba(255,255,255,0.7)",
-              border: "none",
-              borderRadius: "50%",
-              width: 34,
-              height: 34,
-              fontSize: 22,
-              cursor: "pointer",
-            }}
-          >
-            ›
-          </button>
+          {slides.length > 0 ? (
+            <>
+              {slides.map((src, i) => {
+                const si = scrollerImages[i];
+                const imgEl = (
+                  <img
+                    key={i}
+                    src={src}
+                    alt={si?.title || `slide ${i + 1}`}
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      opacity: i === slide ? 1 : 0,
+                      transition: "opacity 0.8s ease",
+                    }}
+                    onError={(e) => {
+                      console.error("Failed to load scroller image:", src);
+                      e.target.style.display = "none";
+                    }}
+                  />
+                );
+                if (si?.link)
+                  return (
+                    <a
+                      key={i}
+                      href={si.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        display: i === slide ? "block" : "none",
+                      }}
+                    >
+                      {imgEl}
+                    </a>
+                  );
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      display: i === slide ? "block" : "none",
+                    }}
+                  >
+                    {imgEl}
+                  </div>
+                );
+              })}
+              {slides.length > 1 && (
+                <>
+                  <button
+                    onClick={() =>
+                      setSlide((s) => (s - 1 + slides.length) % slides.length)
+                    }
+                    style={{
+                      position: "absolute",
+                      left: 6,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "rgba(255,255,255,0.7)",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: 34,
+                      height: 34,
+                      fontSize: 22,
+                      cursor: "pointer",
+                      zIndex: 10,
+                    }}
+                  >
+                    ‹
+                  </button>
+                  <button
+                    onClick={() => setSlide((s) => (s + 1) % slides.length)}
+                    style={{
+                      position: "absolute",
+                      right: 6,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "rgba(255,255,255,0.7)",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: 34,
+                      height: 34,
+                      fontSize: 22,
+                      cursor: "pointer",
+                      zIndex: 10,
+                    }}
+                  >
+                    ›
+                  </button>
+                </>
+              )}
+            </>
+          ) : (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100%",
+                minHeight: "400px",
+                background: "#f5f5f5",
+                color: "#666",
+                fontSize: "16px",
+              }}
+            >
+              Loading scroller images...
+            </div>
+          )}
           <div
             style={{
               position: "absolute",
@@ -4528,7 +4584,7 @@ export default function JSSAbhiyan() {
 
         /* ── Slider + Stats — Desktop ── */
         .slider-stats-wrap    { display:flex; min-height:420px; }
-        .slider-area          { flex:0 0 75%; position:relative; overflow:hidden; max-height:680px; }
+        .slider-area          { flex:0 0 75%; position:relative; overflow:hidden; min-height:400px; max-height:680px; }
         .stats-area           { flex:0 0 25%; display:grid; grid-template-columns:1fr 1fr; border-left:1px solid #eee; background:#fff; }
         .stat-cell            { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px 4px; border-bottom:1px solid #eee; border-right:1px solid #eee; }
         .stat-cell:nth-child(2), .stat-cell:nth-child(4) { border-right:none; }

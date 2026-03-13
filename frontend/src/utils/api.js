@@ -1,7 +1,12 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "";
+// Use environment variable - must be set in .env file
+const API_BASE_URL = 
+  import.meta.env.VITE_API_URL || 
+  import.meta.env.VITE_BACKEND_URL || 
+  "";
 
 if (!API_BASE_URL) {
-  console.error("VITE_API_URL or VITE_BACKEND_URL must be set in environment variables");
+  console.error("VITE_API_URL or VITE_BACKEND_URL must be set in .env file");
+  console.error("Example: VITE_API_URL=http://localhost:3000/api");
 }
 
 /**
@@ -23,7 +28,11 @@ function getToken() {
  */
 async function apiRequest(endpoint, options = {}) {
   if (!API_BASE_URL) {
-    throw new Error("API base URL is not configured. Please set VITE_API_URL or VITE_BACKEND_URL in your .env file");
+    return {
+      success: false,
+      data: null,
+      error: "API base URL is not configured. Please set VITE_API_URL or VITE_BACKEND_URL in your .env file"
+    };
   }
   
   const token = getToken();
@@ -57,19 +66,30 @@ async function apiRequest(endpoint, options = {}) {
 
     return data;
   } catch (error) {
-    console.error("API Error:", error);
+    // Only log non-network errors (network errors are expected in some cases)
+    if (error.message !== "Failed to fetch" && error.name !== "TypeError") {
+      console.error("API Error:", error);
+    }
     
     // Provide more helpful error messages
     if (error.message === "Failed to fetch" || error.name === "TypeError") {
-      throw new Error(
-        "Cannot connect to backend server. Please ensure:\n" +
-        "1. Backend server is running (npm run dev:backend)\n" +
-        "2. Backend is accessible at " + API_BASE_URL + "\n" +
-        "3. Check CORS settings in backend"
-      );
+      // Return error structure instead of throwing for better error handling
+      return {
+        success: false,
+        data: null,
+        error: `Cannot connect to backend server. Please ensure:
+1. Backend server is running (npm run dev:backend)
+2. Backend is accessible at ${API_BASE_URL}
+3. Check CORS settings in backend`
+      };
     }
     
-    throw error;
+    // For other errors, return error structure instead of throwing
+    return {
+      success: false,
+      data: null,
+      error: error.message || "Unknown error"
+    };
   }
 }
 

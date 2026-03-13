@@ -214,8 +214,22 @@ const JobPostingForm = ({
           locationHi: getHiValue(postingData.location) || (postingData.locationArrHi && postingData.locationArrHi.length > 0 ? postingData.locationArrHi.join(", ") : ""),
           selectionProcess: getValue(postingData.selectionProcess),
           selectionProcessHi: getHiValue(postingData.selectionProcess),
-          ageLimitMin: postingData.ageLimit?.split("–")[0]?.trim() || "",
-          ageLimitMax: postingData.ageLimit?.split("–")[1]?.trim() || "",
+          ageLimitMin: (() => {
+            const ageLimitStr = getValue(postingData.ageLimit) || "";
+            if (typeof ageLimitStr === "string") {
+              const parts = ageLimitStr.split("–");
+              return parts[0]?.trim() || "";
+            }
+            return "";
+          })(),
+          ageLimitMax: (() => {
+            const ageLimitStr = getValue(postingData.ageLimit) || "";
+            if (typeof ageLimitStr === "string") {
+              const parts = ageLimitStr.split("–");
+              return parts[1]?.trim() || "";
+            }
+            return "";
+          })(),
           ageAsOn: postingData.ageAsOn || "",
           applicationOpeningDate: postingData.applicationOpeningDate || "",
           firstMeritListDate: postingData.firstMeritListDate || "",

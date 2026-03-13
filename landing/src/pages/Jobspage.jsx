@@ -1731,6 +1731,7 @@
 //   );
 // }
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { jobPostingsAPI } from "../utils/api.js";
 
 const GREEN = "#3AB000";
@@ -2962,6 +2963,7 @@ const jobsCSS = `
 
 // ── MAIN ──────────────────────────────────────────────────────
 export default function JobsPage() {
+  const navigate = useNavigate();
   const [view, setView] = useState("list");
   const [selectedJob, setSelectedJob] = useState(null);
   const [latestJobs, setLatestJobs] = useState([]);
@@ -3004,8 +3006,7 @@ export default function JobsPage() {
   }, []);
 
   const openDetail = (job) => {
-    setSelectedJob(job);
-    setView("detail");
+    navigate(`/job-postings/view/${job.id}`);
   };
   const openApply = () => setView("apply");
   const backToList = () => {

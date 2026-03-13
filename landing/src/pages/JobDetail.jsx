@@ -85,6 +85,37 @@ export default function JobDetail() {
     }
   };
 
+  // Helper function to get PDF URL from job posting
+  const getPdfUrl = () => {
+    if (!job) return null;
+    // Check various possible PDF field names
+    return job.pdf || job.postingPdf || job.document || job.pdfUrl || job.pdfFile || null;
+  };
+
+  // Handle PDF download
+  const handlePdfDownload = (pdfUrl) => {
+    if (!pdfUrl) return;
+    
+    // If it's a full URL, open directly
+    if (pdfUrl.startsWith('http://') || pdfUrl.startsWith('https://')) {
+      window.open(pdfUrl, '_blank');
+    } else {
+      // If it's a relative path, construct the full URL using environment variable
+      const apiBaseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '';
+      if (!apiBaseUrl) {
+        console.error("VITE_API_URL or VITE_BACKEND_URL must be set in .env file");
+        alert("PDF download failed: API URL not configured");
+        return;
+      }
+      // Remove /api suffix if present, as we'll add the path directly
+      const baseUrl = apiBaseUrl.replace(/\/api$/, '');
+      const fullUrl = pdfUrl.startsWith('/') 
+        ? `${baseUrl}${pdfUrl}` 
+        : `${baseUrl}/${pdfUrl}`;
+      window.open(fullUrl, '_blank');
+    }
+  };
+
   useEffect(() => {
     const fetchJob = async () => {
       try {
@@ -184,11 +215,15 @@ export default function JobDetail() {
       const photoBase64 = await convertFileToBase64(photo);
       const signatureBase64 = await convertFileToBase64(signature);
 
-      // Get API URL from environment or use default
+      // Get API URL from environment - must be set in .env file
       const apiUrl = 
         import.meta.env.VITE_API_URL || 
         import.meta.env.VITE_BACKEND_URL || 
-        (import.meta.env.DEV ? "/api" : "https://api.jssabhiyan.com/api");
+        "";
+      
+      if (!apiUrl) {
+        throw new Error("VITE_API_URL or VITE_BACKEND_URL must be set in .env file");
+      }
 
       // Create application first
       const applyResponse = await fetch(
@@ -2447,6 +2482,36 @@ export default function JobDetail() {
                   <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>
                     {job.post.hi}
                   </div>
+                  {getPdfUrl() && (
+                    <button
+                      onClick={() => handlePdfDownload(getPdfUrl())}
+                      style={{
+                        marginTop: 12,
+                        padding: "8px 16px",
+                        background: GREEN,
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: 6,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        transition: "all 0.3s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.background = "#2d8a00";
+                        e.target.style.transform = "translateY(-2px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.background = GREEN;
+                        e.target.style.transform = "translateY(0)";
+                      }}
+                    >
+                      📥 PDF डाउनलोड करें / Download PDF
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -2816,6 +2881,36 @@ export default function JobDetail() {
                   <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>
                     {job.post.en}
                   </div>
+                  {getPdfUrl() && (
+                    <button
+                      onClick={() => handlePdfDownload(getPdfUrl())}
+                      style={{
+                        marginTop: 12,
+                        padding: "8px 16px",
+                        background: GREEN,
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: 6,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        transition: "all 0.3s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.background = "#2d8a00";
+                        e.target.style.transform = "translateY(-2px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.background = GREEN;
+                        e.target.style.transform = "translateY(0)";
+                      }}
+                    >
+                      📥 Download PDF / PDF डाउनलोड करें
+                    </button>
+                  )}
                 </div>
               )}
 

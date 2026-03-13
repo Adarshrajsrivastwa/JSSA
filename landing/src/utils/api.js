@@ -1,11 +1,12 @@
-// Use environment variable or default to production API
+// Use environment variable - must be set in .env file
 const API_BASE_URL = 
   import.meta.env.VITE_API_URL || 
   import.meta.env.VITE_BACKEND_URL || 
-  (import.meta.env.DEV ? "/api" : "https://api.jssabhiyan.com/api");
+  "";
 
 if (!API_BASE_URL) {
-  console.error("VITE_API_URL or VITE_BACKEND_URL must be set in environment variables");
+  console.error("VITE_API_URL or VITE_BACKEND_URL must be set in .env file");
+  console.error("Example: VITE_API_URL=http://localhost:3000/api");
 }
 
 /**

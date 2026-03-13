@@ -435,6 +435,10 @@ export default function JSSAbhiyanLogin() {
           token: token,
         });
         navigate("/dashboard", { replace: true });
+      } else if (response.error) {
+        setError(response.error);
+      } else {
+        setError("Login failed. Please check your credentials.");
       }
     } catch (err) {
       setError(err.message || "Login failed. Please check your credentials.");
