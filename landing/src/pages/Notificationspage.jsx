@@ -1,5 +1,168 @@
+// import { useState, useEffect } from "react";
+// import { notificationsAPI } from "../utils/api.js";
+
+// export default function NotificationsPage() {
+//   const [notifications, setNotifications] = useState([]);
+//   const [loading, setLoading] = useState(true);
+
+//   useEffect(() => {
+//     const fetchNotifications = async () => {
+//       try {
+//         setLoading(true);
+//         const response = await notificationsAPI.getAll("true"); // Only fetch active notifications
+//         if (response.success && response.data) {
+//           setNotifications(response.data.notifications || []);
+//         }
+//       } catch (error) {
+//         console.error("Failed to fetch notifications:", error);
+//         setNotifications([]);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     fetchNotifications();
+//   }, []);
+
+//   const formatDate = (dateString) => {
+//     if (!dateString) return "";
+//     const date = new Date(dateString);
+//     return date.toLocaleDateString("en-IN", {
+//       day: "2-digit",
+//       month: "long",
+//       year: "numeric",
+//     });
+//   };
+
+//   return (
+//     <div
+//       style={{
+//         minHeight: "100vh",
+//         background: "#f5f5f5",
+//         padding: "32px 20px",
+//         fontFamily: "'Segoe UI', 'Noto Sans', sans-serif",
+//       }}
+//     >
+//       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+//         <h1
+//           style={{
+//             fontSize: 28,
+//             fontWeight: 700,
+//             color: "#1a2a4a",
+//             marginBottom: 24,
+//             textAlign: "center",
+//           }}
+//         >
+//           Notifications
+//         </h1>
+
+//         {loading ? (
+//           <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
+//             Loading notifications...
+//           </div>
+//         ) : notifications.length === 0 ? (
+//           <div
+//             style={{
+//               textAlign: "center",
+//               padding: "60px 20px",
+//               background: "#fff",
+//               borderRadius: 8,
+//               boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+//             }}
+//           >
+//             <p style={{ fontSize: 16, color: "#666" }}>No notifications available at the moment.</p>
+//           </div>
+//         ) : (
+//           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+//             {notifications.map((notification) => (
+//               <div
+//                 key={notification._id}
+//                 style={{
+//                   background: "#fff",
+//                   borderRadius: 8,
+//                   padding: "20px",
+//                   boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+//                   borderLeft: "4px solid #3AB000",
+//                 }}
+//               >
+//                 <h3
+//                   style={{
+//                     fontSize: 18,
+//                     fontWeight: 700,
+//                     color: "#1a2a4a",
+//                     marginBottom: 8,
+//                   }}
+//                 >
+//                   {notification.title}
+//                 </h3>
+//                 {notification.url && (
+//                   <div style={{ marginBottom: 8 }}>
+//                     <a
+//                       href={notification.url}
+//                       target="_blank"
+//                       rel="noopener noreferrer"
+//                       style={{
+//                         fontSize: 14,
+//                         color: "#1e40af",
+//                         textDecoration: "underline",
+//                         display: "inline-flex",
+//                         alignItems: "center",
+//                         gap: 6,
+//                       }}
+//                     >
+//                       🔗 {notification.url}
+//                     </a>
+//                   </div>
+//                 )}
+//                 <div
+//                   style={{
+//                     display: "flex",
+//                     alignItems: "center",
+//                     gap: 12,
+//                     marginTop: 12,
+//                     paddingTop: 12,
+//                     borderTop: "1px solid #eee",
+//                   }}
+//                 >
+//                   {notification.notificationDate && (
+//                     <span
+//                       style={{
+//                         fontSize: 13,
+//                         color: "#666",
+//                         display: "flex",
+//                         alignItems: "center",
+//                         gap: 6,
+//                       }}
+//                     >
+//                       📅 {formatDate(notification.notificationDate)}
+//                     </span>
+//                   )}
+//                   {notification.notificationTime && (
+//                     <span
+//                       style={{
+//                         fontSize: 13,
+//                         color: "#666",
+//                         display: "flex",
+//                         alignItems: "center",
+//                         gap: 6,
+//                       }}
+//                     >
+//                       🕐 {notification.notificationTime}
+//                     </span>
+//                   )}
+//                 </div>
+//               </div>
+//             ))}
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// }
 import { useState, useEffect } from "react";
 import { notificationsAPI } from "../utils/api.js";
+
+const GREEN = "#3AB000";
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
@@ -9,7 +172,7 @@ export default function NotificationsPage() {
     const fetchNotifications = async () => {
       try {
         setLoading(true);
-        const response = await notificationsAPI.getAll("true"); // Only fetch active notifications
+        const response = await notificationsAPI.getAll("true");
         if (response.success && response.data) {
           setNotifications(response.data.notifications || []);
         }
@@ -20,142 +183,189 @@ export default function NotificationsPage() {
         setLoading(false);
       }
     };
-
     fetchNotifications();
   }, []);
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
+  // Check if notification is "new" — within last 30 days
+  const isNew = (dateString) => {
+    if (!dateString) return false;
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
+    const diffDays = (Date.now() - date.getTime()) / (1000 * 60 * 60 * 24);
+    return diffDays <= 30;
   };
 
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: "#f5f5f5",
-        padding: "32px 20px",
+        background: "#fff",
+        padding: "32px 40px",
         fontFamily: "'Segoe UI', 'Noto Sans', sans-serif",
       }}
+      className="notif-wrap"
     >
-      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-        <h1
+      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+        {/* Heading */}
+        <h2
           style={{
-            fontSize: 28,
             fontWeight: 700,
+            fontSize: 20,
             color: "#1a2a4a",
-            marginBottom: 24,
-            textAlign: "center",
+            marginBottom: 6,
           }}
+          className="notif-heading"
         >
-          Notifications
-        </h1>
+          Notifications / सूचनाएं
+        </h2>
+        <div style={{ borderBottom: `2px solid ${GREEN}`, marginBottom: 0 }} />
 
+        {/* Body */}
         {loading ? (
-          <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
+          <div
+            style={{
+              padding: "40px",
+              textAlign: "center",
+              color: "#666",
+              fontSize: 15,
+            }}
+          >
             Loading notifications...
           </div>
         ) : notifications.length === 0 ? (
           <div
             style={{
+              padding: "40px",
               textAlign: "center",
-              padding: "60px 20px",
-              background: "#fff",
-              borderRadius: 8,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              color: "#666",
+              fontSize: 15,
             }}
           >
-            <p style={{ fontSize: 16, color: "#666" }}>No notifications available at the moment.</p>
+            No notifications available at the moment.
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {notifications.map((notification) => (
+          notifications.map((n) => (
+            <div key={n._id}>
               <div
-                key={notification._id}
-                style={{
-                  background: "#fff",
-                  borderRadius: 8,
-                  padding: "20px",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                  borderLeft: "4px solid #3AB000",
-                }}
+                className="notif-item"
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "#f0fae8")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }
               >
-                <h3
+                {/* >> arrow */}
+                <span
                   style={{
-                    fontSize: 18,
                     fontWeight: 700,
+                    flexShrink: 0,
+                    marginTop: 2,
                     color: "#1a2a4a",
-                    marginBottom: 8,
                   }}
                 >
-                  {notification.title}
-                </h3>
-                {notification.url && (
-                  <div style={{ marginBottom: 8 }}>
+                  &gt;&gt;
+                </span>
+
+                {/* Content */}
+                <span style={{ lineHeight: 1.7, color: "#1a2a4a" }}>
+                  {/* Title — linked if URL present */}
+                  {n.url ? (
                     <a
-                      href={notification.url}
+                      href={n.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
-                        fontSize: 14,
-                        color: "#1e40af",
-                        textDecoration: "underline",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
+                        color: "#1a2a4a",
+                        textDecoration: "none",
+                        fontWeight: 500,
                       }}
+                      onMouseEnter={(e) =>
+                        (e.target.style.textDecoration = "underline")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.target.style.textDecoration = "none")
+                      }
                     >
-                      🔗 {notification.url}
+                      {n.title}
                     </a>
-                  </div>
-                )}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    marginTop: 12,
-                    paddingTop: 12,
-                    borderTop: "1px solid #eee",
-                  }}
-                >
-                  {notification.notificationDate && (
+                  ) : (
+                    <span>{n.title}</span>
+                  )}
+
+                  {/* NEW badge */}
+                  {isNew(n.notificationDate) && (
                     <span
                       style={{
-                        fontSize: 13,
-                        color: "#666",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
+                        display: "inline-block",
+                        background: "#e53e3e",
+                        color: "#fff",
+                        fontSize: 10,
+                        fontWeight: 900,
+                        padding: "1px 6px",
+                        borderRadius: 3,
+                        marginLeft: 6,
+                        verticalAlign: "middle",
+                        letterSpacing: "0.05em",
                       }}
                     >
-                      📅 {formatDate(notification.notificationDate)}
+                      NEW
                     </span>
                   )}
-                  {notification.notificationTime && (
+
+                  {/* Date + Time inline */}
+                  {(n.notificationDate || n.notificationTime) && (
                     <span
                       style={{
-                        fontSize: 13,
-                        color: "#666",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
+                        marginLeft: 10,
+                        fontSize: 12,
+                        color: "#888",
+                        fontWeight: 400,
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      🕐 {notification.notificationTime}
+                      {n.notificationDate &&
+                        new Date(n.notificationDate).toLocaleDateString(
+                          "en-IN",
+                          {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          },
+                        )}
+                      {n.notificationDate && n.notificationTime && " · "}
+                      {n.notificationTime}
                     </span>
                   )}
-                </div>
+                </span>
               </div>
-            ))}
-          </div>
+
+              {/* Dashed divider */}
+              <div
+                style={{ borderBottom: "1px dashed #aaa", margin: "0 8px" }}
+              />
+            </div>
+          ))
         )}
       </div>
+
+      <style>{`
+        .notif-wrap { padding: 32px 40px; }
+        .notif-heading { font-size: 20px; }
+        .notif-item {
+          padding: 14px 20px;
+          font-size: 15px;
+          cursor: default;
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          transition: background 0.15s;
+        }
+        @media (max-width: 768px) {
+          .notif-wrap { padding: 16px 12px; }
+          .notif-heading { font-size: 16px; }
+          .notif-item { padding: 12px 10px; font-size: 13px; }
+        }
+      `}</style>
     </div>
   );
 }

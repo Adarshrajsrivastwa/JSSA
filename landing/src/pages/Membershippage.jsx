@@ -618,25 +618,6 @@ const districtsByState = {
   ],
 };
 
-const inputStyle = {
-  width: "100%",
-  padding: "10px 12px",
-  border: "1px solid #ccc",
-  borderRadius: 4,
-  fontSize: 14,
-  background: "#fff",
-  outline: "none",
-  boxSizing: "border-box",
-  color: "#000",
-};
-const labelStyle = {
-  display: "block",
-  fontSize: 14,
-  fontWeight: 600,
-  color: "#111",
-  marginBottom: 6,
-};
-
 export default function MembershipPage() {
   const [form, setForm] = useState({
     name: "",
@@ -660,13 +641,40 @@ export default function MembershipPage() {
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
-    if (type === "file") setForm((p) => ({ ...p, [name]: files[0] }));
-    else if (type === "checkbox") setForm((p) => ({ ...p, [name]: checked }));
-    else setForm((p) => ({ ...p, [name]: value }));
+    if (type === "file") {
+      setForm((p) => ({ ...p, [name]: files[0] }));
+      return;
+    }
+    if (type === "checkbox") {
+      setForm((p) => ({ ...p, [name]: checked }));
+      return;
+    }
     if (name === "state") {
       setSelectedState(value);
-      setForm((p) => ({ ...p, district: "" }));
+      setForm((p) => ({ ...p, state: value, district: "" }));
+      return;
     }
+    setForm((p) => ({ ...p, [name]: value }));
+  };
+
+  const inp = {
+    width: "100%",
+    padding: "10px 12px",
+    border: "1px solid #ccc",
+    borderRadius: 4,
+    fontSize: 14,
+    background: "#fff",
+    outline: "none",
+    boxSizing: "border-box",
+    color: "#000",
+    fontFamily: "inherit",
+  };
+  const lbl = {
+    display: "block",
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#111",
+    marginBottom: 6,
   };
 
   return (
@@ -678,6 +686,71 @@ export default function MembershipPage() {
         color: "#000",
       }}
     >
+      <style>{`
+        * { box-sizing: border-box; }
+
+        .mem-text-wrap    { padding: 32px 40px; background: #fff; }
+        .mem-main-heading { font-weight: 900; font-size: 26px; color: #1a2a4a; margin-bottom: 20px; }
+        .mem-body-text    { font-size: 15px; line-height: 1.9; color: #000; }
+
+        .mem-form-wrap    { padding: 0 40px 40px; }
+        .mem-form-heading { font-weight: 900; font-size: 17px; color: #000; margin-bottom: 24px; line-height: 1.5; }
+        .mem-form-box     { background: #f0f0f0; border-radius: 6px; padding: 28px 24px; }
+        .mem-form-inner   { display: flex; flex-direction: column; gap: 20px; }
+
+        .mem-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .mem-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+
+        .mem-label { display: block; font-size: 14px; font-weight: 600; color: #111; margin-bottom: 6px; }
+        .mem-input {
+          width: 100%; padding: 10px 12px;
+          border: 1px solid #ccc; border-radius: 4px;
+          font-size: 14px; background: #fff; outline: none;
+          box-sizing: border-box; color: #000; font-family: inherit;
+        }
+        .mem-input:focus { border-color: ${GREEN}; }
+        .mem-file  { width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background: #fff; outline: none; box-sizing: border-box; color: #000; font-family: inherit; }
+        .mem-hint  { font-size: 12px; color: #555; margin-top: 4px; }
+
+        .mem-cb-wrap  { display: flex; flex-direction: column; gap: 10px; }
+        .mem-cb-label { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; color: #000; cursor: pointer; line-height: 1.6; }
+        .mem-cb       { width: 16px; height: 16px; cursor: pointer; accent-color: ${GREEN}; flex-shrink: 0; }
+
+        .mem-submit-btn {
+          background: ${GREEN}; color: #fff; font-weight: 900;
+          font-size: 15px; padding: 12px 48px; border-radius: 4px;
+          border: none; cursor: pointer; letter-spacing: 0.08em;
+        }
+        .mem-submit-row { text-align: center; margin-top: 6px; }
+
+        /* ── MOBILE: same columns, just smaller ── */
+        @media (max-width: 768px) {
+          .mem-text-wrap    { padding: 14px 10px; }
+          .mem-main-heading { font-size: 13px !important; margin-bottom: 10px !important; }
+          .mem-body-text    { font-size: 8px !important; line-height: 1.6 !important; }
+
+          .mem-form-wrap    { padding: 0 10px 20px; }
+          .mem-form-heading { font-size: 8px !important; margin-bottom: 10px !important; }
+          .mem-form-box     { padding: 12px 10px !important; border-radius: 3px !important; }
+          .mem-form-inner   { gap: 10px !important; }
+
+          /* Keep same columns — just smaller gap */
+          .mem-grid-2 { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+          .mem-grid-3 { grid-template-columns: 1fr 1fr 1fr !important; gap: 6px !important; }
+
+          .mem-label { font-size: 7px !important; margin-bottom: 2px !important; }
+          .mem-input { padding: 4px 5px !important; font-size: 7px !important; border-radius: 2px !important; }
+          .mem-file  { padding: 3px 4px !important; font-size: 6px !important; border-radius: 2px !important; }
+          .mem-hint  { font-size: 6px !important; margin-top: 2px !important; }
+
+          .mem-cb-wrap  { gap: 6px !important; }
+          .mem-cb-label { font-size: 7px !important; gap: 4px !important; line-height: 1.4 !important; }
+          .mem-cb       { width: 10px !important; height: 10px !important; }
+
+          .mem-submit-btn { font-size: 8px !important; padding: 6px 20px !important; border-radius: 3px !important; }
+        }
+      `}</style>
+
       {/* ── MEMBERSHIP & BENEFITS TEXT ── */}
       <div className="mem-text-wrap">
         <h2 className="mem-main-heading">
@@ -692,70 +765,59 @@ export default function MembershipPage() {
             gap: 16,
           }}
         >
-          <p className="mem-body-text">
-            <span style={{ fontWeight: 700 }}>Membership :</span> Any citizen of
-            the country whose minimum age is 18 years can get membership under
-            Jan Swasthya Sahayata Abhiyan. Documents required: Aadhar card, PAN
-            card and photocopy of ration card and membership fee are necessary.
-          </p>
-          <p className="mem-body-text">
-            <span style={{ fontWeight: 700 }}>सदस्यता :</span> देश के कोई भी
-            नागरिक जिसकी न्यूनतम आयु 18 वर्ष है, वो जन स्वास्थ्य सहायता अभियान
-            के अंतर्गत सदस्यता प्राप्त कर सकते हैं। सदस्यता लेने के लिए जरूरी
-            दस्तावेज: आधारकार्ड, पैन कार्ड तथा राशन कार्ड की छायाप्रति एवं
-            सदस्यता शुल्क जरूरी है।
-          </p>
-          <p className="mem-body-text">
-            <span style={{ fontWeight: 700 }}>Benefits :</span> Jan Swasthya
-            Sahayata card is provided by the organization to each member.
-            Through this card, you will get better treatment by special doctor,
-            medicines and medical examination in health camps organized by the
-            organization and as per need, financial assistance and health
-            related assistance will be provided.
-          </p>
-          <p className="mem-body-text">
-            <span style={{ fontWeight: 700 }}>सुविधा :</span> जन स्वास्थ्य
-            सहायता अभियान के अंतर्गत जुड़े प्रत्येक सदस्य को संस्था द्वारा एक जन
-            स्वास्थ्य सहायता कार्ड प्रदान किया जाता है और इस कार्ड के माध्यम से
-            आपको संस्था द्वारा आयोजित स्वास्थ्य शिविर में विशेष चिकित्सक द्वारा
-            बेहतर इलाज, दवाईयां एवं चिकित्सा जांच करायी जायेगी तथा आवश्यकतानुसार
-            आर्थिक सहायता एवं स्वास्थ्य संबंधी सहायता प्रदान की जायेगी।
-          </p>
+          {[
+            {
+              bold: "Membership :",
+              text: " Any citizen of the country whose minimum age is 18 years can get membership under Jan Swasthya Sahayata Abhiyan. Documents required: Aadhar card, PAN card and photocopy of ration card and membership fee are necessary.",
+            },
+            {
+              bold: "सदस्यता :",
+              text: " देश के कोई भी नागरिक जिसकी न्यूनतम आयु 18 वर्ष है, वो जन स्वास्थ्य सहायता अभियान के अंतर्गत सदस्यता प्राप्त कर सकते हैं। सदस्यता लेने के लिए जरूरी दस्तावेज: आधारकार्ड, पैन कार्ड तथा राशन कार्ड की छायाप्रति एवं सदस्यता शुल्क जरूरी है।",
+            },
+            {
+              bold: "Benefits :",
+              text: " Jan Swasthya Sahayata card is provided by the organization to each member. Through this card, you will get better treatment by special doctor, medicines and medical examination in health camps organized by the organization and as per need, financial assistance and health related assistance will be provided.",
+            },
+            {
+              bold: "सुविधा :",
+              text: " जन स्वास्थ्य सहायता अभियान के अंतर्गत जुड़े प्रत्येक सदस्य को संस्था द्वारा एक जन स्वास्थ्य सहायता कार्ड प्रदान किया जाता है और इस कार्ड के माध्यम से आपको संस्था द्वारा आयोजित स्वास्थ्य शिविर में विशेष चिकित्सक द्वारा बेहतर इलाज, दवाईयां एवं चिकित्सा जांच करायी जायेगी तथा आवश्यकतानुसार आर्थिक सहायता एवं स्वास्थ्य संबंधी सहायता प्रदान की जायेगी।",
+            },
+          ].map((item, i) => (
+            <p key={i} className="mem-body-text">
+              <span style={{ fontWeight: 700 }}>{item.bold}</span>
+              {item.text}
+            </p>
+          ))}
         </div>
       </div>
 
       {/* ── REGISTRATION FORM ── */}
       <div className="mem-form-wrap">
-        <div
-          style={{
-            background: "#f0f0f0",
-            borderRadius: 6,
-            padding: "28px 24px",
-          }}
-        >
+        <div className="mem-form-box">
           <h2 className="mem-form-heading">
             ONLINE MEMBERSHIP REGISTRATION FORM / ऑनलाइन सदस्यता पंजीकरण फॉर्म :
           </h2>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <div className="mem-form-inner">
             {/* Name + Father Name */}
             <div className="mem-grid-2">
               <div>
-                <label style={labelStyle}>Your Name / आपका नाम *</label>
+                <label className="mem-label">Your Name / आपका नाम *</label>
                 <input
+                  className="mem-input"
                   name="name"
                   value={form.name}
                   onChange={handleChange}
-                  style={inputStyle}
                 />
               </div>
               <div>
-                <label style={labelStyle}>Father's Name / पिता का नाम *</label>
+                <label className="mem-label">
+                  Father's Name / पिता का नाम *
+                </label>
                 <input
+                  className="mem-input"
                   name="fatherName"
                   value={form.fatherName}
                   onChange={handleChange}
-                  style={inputStyle}
                 />
               </div>
             </div>
@@ -763,22 +825,24 @@ export default function MembershipPage() {
             {/* Mobile + Email */}
             <div className="mem-grid-2">
               <div>
-                <label style={labelStyle}>Mobile Number / मोबाइल नंबर *</label>
+                <label className="mem-label">
+                  Mobile Number / मोबाइल नंबर *
+                </label>
                 <input
+                  className="mem-input"
                   name="mobile"
                   value={form.mobile}
                   onChange={handleChange}
-                  style={inputStyle}
                 />
               </div>
               <div>
-                <label style={labelStyle}>Email Id / ईमेल आईडी *</label>
+                <label className="mem-label">Email Id / ईमेल आईडी *</label>
                 <input
+                  className="mem-input"
                   name="email"
                   type="email"
                   value={form.email}
                   onChange={handleChange}
-                  style={inputStyle}
                 />
               </div>
             </div>
@@ -786,27 +850,25 @@ export default function MembershipPage() {
             {/* Photo + Aadhar */}
             <div className="mem-grid-2">
               <div>
-                <label style={labelStyle}>
+                <label className="mem-label">
                   Attach Photograph / फोटोग्राफ संलग्न करें *
                 </label>
                 <input
+                  className="mem-file"
                   name="photo"
                   type="file"
                   accept="image/*"
                   onChange={handleChange}
-                  style={{ ...inputStyle, padding: "6px 8px" }}
                 />
-                <p style={{ fontSize: 12, color: "#555", marginTop: 4 }}>
-                  Max file size: 1 MB
-                </p>
+                <p className="mem-hint">Max file size: 1 MB</p>
               </div>
               <div>
-                <label style={labelStyle}>Aadhar No / आधार नंबर *</label>
+                <label className="mem-label">Aadhar No / आधार नंबर *</label>
                 <input
+                  className="mem-input"
                   name="aadhar"
                   value={form.aadhar}
                   onChange={handleChange}
-                  style={inputStyle}
                 />
               </div>
             </div>
@@ -814,47 +876,49 @@ export default function MembershipPage() {
             {/* PAN + DOB */}
             <div className="mem-grid-2">
               <div>
-                <label style={labelStyle}>PAN Card No / पैन कार्ड नं *</label>
+                <label className="mem-label">
+                  PAN Card No / पैन कार्ड नं *
+                </label>
                 <input
+                  className="mem-input"
                   name="pan"
                   value={form.pan}
                   onChange={handleChange}
-                  style={inputStyle}
                 />
               </div>
               <div>
-                <label style={labelStyle}>Date Of Birth / जन्मतिथि *</label>
+                <label className="mem-label">Date Of Birth / जन्मतिथि *</label>
                 <input
+                  className="mem-input"
                   name="dob"
                   type="date"
                   value={form.dob}
                   onChange={handleChange}
-                  style={inputStyle}
                 />
               </div>
             </div>
 
-            {/* Permanent Address */}
+            {/* Address */}
             <div>
-              <label style={labelStyle}>Permanent Address / स्थाई पता</label>
+              <label className="mem-label">Permanent Address / स्थाई पता</label>
               <input
+                className="mem-input"
                 name="address"
                 value={form.address}
                 onChange={handleChange}
                 placeholder="House No, Street Name, Area and Landmark"
-                style={inputStyle}
               />
             </div>
 
             {/* State + District + ZIP */}
             <div className="mem-grid-3">
               <div>
-                <label style={labelStyle}>State / राज्य</label>
+                <label className="mem-label">State / राज्य</label>
                 <select
+                  className="mem-input"
                   name="state"
                   value={form.state}
                   onChange={handleChange}
-                  style={inputStyle}
                 >
                   <option value="">Select</option>
                   {indianStates.map((s) => (
@@ -865,12 +929,12 @@ export default function MembershipPage() {
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>District / जिला</label>
+                <label className="mem-label">District / जिला</label>
                 <select
+                  className="mem-input"
                   name="district"
                   value={form.district}
                   onChange={handleChange}
-                  style={inputStyle}
                 >
                   <option value="">--Please Select--</option>
                   {(districtsByState[selectedState] || []).map((d) => (
@@ -881,80 +945,66 @@ export default function MembershipPage() {
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>Zip / Postal Code</label>
+                <label className="mem-label">Zip / Postal Code</label>
                 <input
+                  className="mem-input"
                   name="zip"
                   value={form.zip}
                   onChange={handleChange}
-                  style={inputStyle}
                 />
               </div>
             </div>
 
             {/* Police Station */}
             <div>
-              <label style={labelStyle}>
+              <label className="mem-label">
                 Local Police Station / स्थानीय पुलिस स्टेशन *
               </label>
               <input
+                className="mem-input"
                 name="policeStation"
                 value={form.policeStation}
                 onChange={handleChange}
-                style={inputStyle}
               />
             </div>
 
-            {/* Membership Fee + Signature */}
+            {/* Fee + Signature */}
             <div className="mem-grid-2">
               <div>
-                <label style={labelStyle}>
+                <label className="mem-label">
                   Membership Fees / सदस्यता शुल्क * :
                 </label>
                 <input
                   readOnly
-                  value="₹ 150/- only"
-                  style={{
-                    ...inputStyle,
-                    background: "#fff",
-                    color: "#333",
-                    fontWeight: 600,
-                    width: "auto",
-                    cursor: "default",
-                  }}
+                  value="Rs. 150/- only"
+                  className="mem-input"
+                  style={{ fontWeight: 600, cursor: "default" }}
                 />
               </div>
               <div>
-                <label style={labelStyle}>
+                <label className="mem-label">
                   Attach Signature / हस्ताक्षर संलग्न करें *
                 </label>
                 <input
+                  className="mem-file"
                   name="signature"
                   type="file"
                   accept="image/*"
                   onChange={handleChange}
-                  style={{ ...inputStyle, padding: "6px 8px" }}
                 />
-                <p style={{ fontSize: 12, color: "#555", marginTop: 4 }}>
-                  Max file size: 1 MB
-                </p>
+                <p className="mem-hint">Max file size: 1 MB</p>
               </div>
             </div>
 
             {/* Checkboxes */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <label className="mem-checkbox-label">
+            <div className="mem-cb-wrap">
+              <label className="mem-cb-label">
                 <input
                   type="checkbox"
+                  className="mem-cb"
                   name="agree1"
                   checked={form.agree1}
                   onChange={handleChange}
-                  style={{
-                    width: 16,
-                    height: 16,
-                    cursor: "pointer",
-                    accentColor: GREEN,
-                    flexShrink: 0,
-                  }}
                 />
                 I have read and agree to the Terms and Conditions.{" "}
                 <a
@@ -969,19 +1019,13 @@ export default function MembershipPage() {
                   Click here to read
                 </a>
               </label>
-              <label className="mem-checkbox-label">
+              <label className="mem-cb-label">
                 <input
                   type="checkbox"
+                  className="mem-cb"
                   name="agree2"
                   checked={form.agree2}
                   onChange={handleChange}
-                  style={{
-                    width: 16,
-                    height: 16,
-                    cursor: "pointer",
-                    accentColor: GREEN,
-                    flexShrink: 0,
-                  }}
                 />
                 I declare that all the information given in this form is correct
                 to the best of my knowledge and belief.
@@ -989,10 +1033,10 @@ export default function MembershipPage() {
             </div>
 
             {/* Submit */}
-            <div style={{ textAlign: "center", marginTop: 6 }}>
+            <div className="mem-submit-row">
               <button
-                onClick={() => alert("Form submitted!")}
                 className="mem-submit-btn"
+                onClick={() => alert("Form submitted!")}
               >
                 SUBMIT
               </button>
@@ -1000,62 +1044,6 @@ export default function MembershipPage() {
           </div>
         </div>
       </div>
-
-      <style>{`
-        * { box-sizing: border-box; }
-
-        /* ── Text section ── */
-        .mem-text-wrap   { padding: 32px 40px; background: #fff; }
-        .mem-main-heading { font-weight: 900; font-size: 26px; color: #1a2a4a; margin-bottom: 20px; }
-        .mem-body-text   { font-size: 15px; line-height: 1.9; color: #000; }
-
-        /* ── Form section ── */
-        .mem-form-wrap   { padding: 0 40px 40px; }
-        .mem-form-heading { font-weight: 900; font-size: 17px; color: #000; margin-bottom: 24px; line-height: 1.5; }
-
-        /* ── Grids ── */
-        .mem-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        .mem-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
-
-        /* ── Checkboxes ── */
-        .mem-checkbox-label {
-          display: flex; align-items: flex-start; gap: 8px;
-          font-size: 14px; color: #000; cursor: pointer; line-height: 1.6;
-        }
-
-        /* ── Submit button ── */
-        .mem-submit-btn {
-          background: ${GREEN}; color: #fff; font-weight: 900;
-          font-size: 15px; padding: 12px 48px; border-radius: 4px;
-          border: none; cursor: pointer; letter-spacing: 0.08em;
-        }
-
-        /* ══════════════════════════
-           MOBILE  ≤ 768px
-        ══════════════════════════ */
-        @media (max-width: 768px) {
-          /* Text section */
-          .mem-text-wrap    { padding: 18px 14px; }
-          .mem-main-heading { font-size: 18px; margin-bottom: 14px; }
-          .mem-body-text    { font-size: 13px; line-height: 1.8; }
-
-          /* Form section */
-          .mem-form-wrap    { padding: 0 12px 32px; }
-          .mem-form-heading { font-size: 14px; margin-bottom: 18px; }
-
-          /* 2-col → 1-col */
-          .mem-grid-2 { grid-template-columns: 1fr; gap: 16px; }
-
-          /* 3-col → 1-col */
-          .mem-grid-3 { grid-template-columns: 1fr; gap: 16px; }
-
-          /* Checkboxes */
-          .mem-checkbox-label { font-size: 13px; }
-
-          /* Submit button */
-          .mem-submit-btn { font-size: 14px; padding: 11px 36px; }
-        }
-      `}</style>
     </div>
   );
 }

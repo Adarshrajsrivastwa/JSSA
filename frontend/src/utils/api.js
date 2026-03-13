@@ -114,6 +114,27 @@ export const authAPI = {
   getProfile: async () => {
     return apiRequest("/auth/me", { method: "GET" });
   },
+
+  forgotPassword: async (email) => {
+    return apiRequest("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  verifyOTP: async (email, otp) => {
+    return apiRequest("/auth/verify-otp", {
+      method: "POST",
+      body: JSON.stringify({ email, otp }),
+    });
+  },
+
+  resetPassword: async (email, otp, newPassword) => {
+    return apiRequest("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ email, otp, newPassword }),
+    });
+  },
 };
 
 /**

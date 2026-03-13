@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, User, Lock } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { roleHomePath } from "../auth/auth";
@@ -574,13 +574,13 @@ export default function JSSAbhiyanLogin() {
             </div>
 
             <div className="text-right">
-              <a
-                href="#"
+              <Link
+                to="/forgot-password"
                 className="text-sm font-semibold"
                 style={{ color: GREEN, textDecoration: "none" }}
               >
                 Forgot Password?
-              </a>
+              </Link>
             </div>
 
             {error && (
@@ -604,21 +604,6 @@ export default function JSSAbhiyanLogin() {
             >
               {loading ? "Logging in..." : "Log in"}
             </button>
-
-            <p className="text-center text-sm text-gray-500">
-              Don't have an account?{" "}
-              <a
-                href="/student-register"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate("/student-register");
-                }}
-                className="font-bold hover:underline"
-                style={{ color: GREEN, textDecoration: "none" }}
-              >
-                Register as Student
-              </a>
-            </p>
           </div>
         </div>
 

@@ -93,7 +93,7 @@ const studentSchema = new mongoose.Schema(
 );
 
 // Indexes
-studentSchema.index({ userId: 1 });
+// userId index removed - already has unique: true which creates an index
 studentSchema.index({ fullName: "text", enrollmentNumber: "text" });
 studentSchema.index({ status: 1 });
 

@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
       sparse: true, // Allows multiple null values
-      index: true,
+      // index: true removed - using explicit index below to avoid duplicate
       validate: {
         validator: function (v) {
           // Email is optional, but if provided, must be valid
@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
       sparse: true, // Allows multiple null values
-      index: true,
+      // index: true removed - using explicit index below to avoid duplicate
       validate: {
         validator: function (v) {
           // Phone is optional, but if provided, must be 10 digits
@@ -39,6 +39,14 @@ const userSchema = new mongoose.Schema(
       enum: ["admin", "applicant"],
       default: "applicant",
       required: true,
+    },
+    otp: {
+      type: String,
+      default: null,
+    },
+    otpExpiry: {
+      type: Date,
+      default: null,
     },
   },
   {

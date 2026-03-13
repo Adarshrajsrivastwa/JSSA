@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
-import { ImageIcon, Upload, X, Edit, Trash2, Save, Link as LinkIcon } from "lucide-react";
+import { ImageIcon, Upload, X, Edit, Trash2, Save, Link as LinkIcon, RefreshCw, Filter } from "lucide-react";
 import { scrollerAPI } from "../../utils/api";
 import { useAuth } from "../../auth/AuthProvider";
 import ReactCrop from "react-image-crop";
@@ -13,6 +13,10 @@ const Scroller = () => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [filterActive, setFilterActive] = useState(null); // null = all, true = active only, false = inactive only
+  const [deletingId, setDeletingId] = useState(null);
+  const [updatingId, setUpdatingId] = useState(null);
 
   // Crop state
   const [selectedFile, setSelectedFile] = useState(null);
@@ -26,22 +30,18 @@ const Scroller = () => {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ title: "", description: "", order: 0, link: "" });
 
-  useEffect(() => {
-    if (role !== "admin") {
-      setError("Access denied. Only admins can manage scroller.");
-      setLoading(false);
-      return;
-    }
-    fetchImages();
-  }, [role]);
-
-  const fetchImages = async () => {
+  const fetchImages = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await scrollerAPI.getAll();
+      const response = await scrollerAPI.getAll(filterActive !== null ? filterActive.toString() : null);
+      
       if (response.success && response.data) {
-        setImages(response.data.images || []);
+        setImages(response.data.scrollerImages || []);
+      } else if (response.error) {
+        setError(response.error);
+      } else {
+        setError("Failed to load scroller images");
       }
     } catch (err) {
       console.error("Fetch scroller error:", err);
@@ -49,7 +49,16 @@ const Scroller = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterActive]);
+
+  useEffect(() => {
+    if (role !== "admin") {
+      setError("Access denied. Only admins can manage scroller.");
+      setLoading(false);
+      return;
+    }
+    fetchImages();
+  }, [role, fetchImages]);
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
@@ -121,13 +130,19 @@ const Scroller = () => {
       const response = await scrollerAPI.upload(formData);
 
       if (response.success) {
+        setSuccessMessage("Image uploaded successfully!");
         setSuccess(true);
-        setTimeout(() => setSuccess(false), 3000);
+        setTimeout(() => {
+          setSuccess(false);
+          setSuccessMessage("");
+        }, 3000);
         setShowCropModal(false);
         setSelectedFile(null);
         setPreviewUrl(null);
         setCompletedCrop(null);
         fetchImages();
+      } else {
+        setError(response.error || "Failed to upload image");
       }
     } catch (err) {
       console.error("Upload error:", err);
@@ -143,13 +158,26 @@ const Scroller = () => {
     }
 
     try {
-      await scrollerAPI.delete(id);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-      fetchImages();
+      setDeletingId(id);
+      setError(null);
+      const response = await scrollerAPI.delete(id);
+      
+      if (response.success) {
+        setSuccessMessage("Image deleted successfully!");
+        setSuccess(true);
+        setTimeout(() => {
+          setSuccess(false);
+          setSuccessMessage("");
+        }, 3000);
+        fetchImages();
+      } else {
+        setError(response.error || "Failed to delete image");
+      }
     } catch (err) {
       console.error("Delete error:", err);
       setError(err.message || "Failed to delete image");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -165,24 +193,52 @@ const Scroller = () => {
 
   const handleSaveEdit = async () => {
     try {
-      await scrollerAPI.update(editingId, editForm);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-      setEditingId(null);
-      fetchImages();
+      setUpdatingId(editingId);
+      setError(null);
+      const response = await scrollerAPI.update(editingId, editForm);
+      
+      if (response.success) {
+        setSuccessMessage("Image updated successfully!");
+        setSuccess(true);
+        setTimeout(() => {
+          setSuccess(false);
+          setSuccessMessage("");
+        }, 3000);
+        setEditingId(null);
+        fetchImages();
+      } else {
+        setError(response.error || "Failed to update image");
+      }
     } catch (err) {
       console.error("Update error:", err);
       setError(err.message || "Failed to update image");
+    } finally {
+      setUpdatingId(null);
     }
   };
 
   const handleToggleActive = async (image) => {
     try {
-      await scrollerAPI.update(image._id, { isActive: !image.isActive });
-      fetchImages();
+      setUpdatingId(image._id);
+      setError(null);
+      const response = await scrollerAPI.update(image._id, { isActive: !image.isActive });
+      
+      if (response.success) {
+        setSuccessMessage(`Image ${!image.isActive ? "activated" : "deactivated"} successfully!`);
+        setSuccess(true);
+        setTimeout(() => {
+          setSuccess(false);
+          setSuccessMessage("");
+        }, 2000);
+        fetchImages();
+      } else {
+        setError(response.error || "Failed to update image");
+      }
     } catch (err) {
       console.error("Toggle active error:", err);
       setError(err.message || "Failed to update image");
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -215,7 +271,7 @@ const Scroller = () => {
       <div className="p-6">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-[#3AB000] flex items-center justify-center">
                 <ImageIcon className="w-5 h-5 text-white" />
@@ -225,28 +281,79 @@ const Scroller = () => {
                 <p className="text-gray-600 text-sm">Upload and manage scroller images (16:9 ratio)</p>
               </div>
             </div>
-            <label className="flex items-center gap-2 px-4 py-2 bg-[#3AB000] hover:bg-[#2d8a00] text-white text-sm font-semibold rounded-lg cursor-pointer transition-colors">
-              <Upload className="w-4 h-4" />
-              Upload Image
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-            </label>
+            <div className="flex items-center gap-2">
+              {/* Filter Buttons */}
+              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setFilterActive(null)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                    filterActive === null
+                      ? "bg-[#3AB000] text-white"
+                      : "text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setFilterActive(true)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                    filterActive === true
+                      ? "bg-[#3AB000] text-white"
+                      : "text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  Active
+                </button>
+                <button
+                  onClick={() => setFilterActive(false)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                    filterActive === false
+                      ? "bg-[#3AB000] text-white"
+                      : "text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  Inactive
+                </button>
+              </div>
+              {/* Refresh Button */}
+              <button
+                onClick={fetchImages}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
+                title="Refresh"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              </button>
+              {/* Upload Button */}
+              <label className="flex items-center gap-2 px-4 py-2 bg-[#3AB000] hover:bg-[#2d8a00] text-white text-sm font-semibold rounded-lg cursor-pointer transition-colors">
+                <Upload className="w-4 h-4" />
+                Upload Image
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </label>
+            </div>
           </div>
         </div>
 
         {/* Success/Error Messages */}
-        {success && (
+        {success && successMessage && (
           <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4">
-            <p className="text-green-700 text-sm font-medium">Operation successful!</p>
+            <p className="text-green-700 text-sm font-medium">{successMessage}</p>
           </div>
         )}
         {error && (
           <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
             <p className="text-red-700 text-sm">{error}</p>
+            <button
+              onClick={() => setError(null)}
+              className="mt-2 text-xs text-red-600 hover:underline"
+            >
+              Dismiss
+            </button>
           </div>
         )}
 
@@ -342,14 +449,21 @@ const Scroller = () => {
                   <div className="absolute top-2 right-2 flex gap-2">
                     <button
                       onClick={() => handleToggleActive(image)}
-                      className={`p-2 rounded-full ${
+                      disabled={updatingId === image._id}
+                      className={`p-2 rounded-full transition-opacity ${
                         image.isActive
                           ? "bg-green-500 text-white"
                           : "bg-gray-500 text-white"
-                      }`}
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
                       title={image.isActive ? "Deactivate" : "Activate"}
                     >
-                      {image.isActive ? "✓" : "✗"}
+                      {updatingId === image._id ? (
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                      ) : image.isActive ? (
+                        "✓"
+                      ) : (
+                        "✗"
+                      )}
                     </button>
                   </div>
                 </div>
@@ -395,13 +509,22 @@ const Scroller = () => {
                       <div className="flex gap-2">
                         <button
                           onClick={handleSaveEdit}
-                          className="flex-1 px-2 py-1 text-xs bg-[#3AB000] text-white rounded"
+                          disabled={updatingId === image._id}
+                          className="flex-1 px-2 py-1 text-xs bg-[#3AB000] text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
                         >
-                          Save
+                          {updatingId === image._id ? (
+                            <>
+                              <RefreshCw className="w-3 h-3 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            "Save"
+                          )}
                         </button>
                         <button
                           onClick={() => setEditingId(null)}
-                          className="flex-1 px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded"
+                          disabled={updatingId === image._id}
+                          className="flex-1 px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded disabled:opacity-50"
                         >
                           Cancel
                         </button>
@@ -442,10 +565,15 @@ const Scroller = () => {
                           </button>
                           <button
                             onClick={() => handleDelete(image._id)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                            disabled={deletingId === image._id}
+                            className="p-1.5 text-red-600 hover:bg-red-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Delete"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            {deletingId === image._id ? (
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
                           </button>
                         </div>
                       </div>

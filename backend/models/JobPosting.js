@@ -211,7 +211,7 @@ const jobPostingSchema = new mongoose.Schema(
 );
 
 // Indexes
-jobPostingSchema.index({ advtNo: 1 });
+// advtNo index removed - already has unique: true which creates an index
 jobPostingSchema.index({ status: 1 });
 jobPostingSchema.index({ "post.en": "text", "post.hi": "text", "location.en": "text" });
 

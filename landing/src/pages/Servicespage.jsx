@@ -202,7 +202,7 @@ const checkupPackages = [
   "Immunity Profile",
   "Covid Antibody Packages",
   "D-DIMER",
-  "Infection Checkup Profilee",
+  "Infection Checkup Profile",
   "Post Covid Checkup Packages",
   "C-REACTIVE PROTEIN (CRP)",
   "CBC-CRP COMBO",
@@ -213,7 +213,7 @@ const checkupPackages = [
   "CBC / HEMOGRAM",
   "CBC-CRP-LDH-FERR-D-DIMER-IL6",
   "Wellness Packages",
-  "LIVER FUNCTION TESTS(LFT)",
+  "LIVER FUNCTION TESTS (LFT)",
   "Woman Wellness Profile",
   "Full Body Health Checkup",
   "FERRITIN",
@@ -227,17 +227,17 @@ const checkupPackages = [
 const diseases = [
   "Heart Disease",
   "Liver Problem",
-  "cancer",
+  "Cancer",
   "Allergies",
   "Unintentional Injuries",
   "Colds and Flu",
   "Chronic Lower Respiratory Disease",
-  'Conjunctivitis ("Pink Eye")',
+  "Conjunctivitis (Pink Eye)",
   "Stroke and Cerebrovascular Diseases",
   "Diarrhea",
   "Alzheimer's Disease",
   "Headaches",
-  "Diabaties",
+  "Diabetes",
   "Mononucleosis",
   "Influenza and Pneumonia",
   "Stomach Aches",
@@ -246,26 +246,6 @@ const diseases = [
   "Stomach Problems",
   "and, More Other Diseases",
 ];
-
-const inputStyle = {
-  width: "100%",
-  padding: "10px 12px",
-  border: "1px solid #ccc",
-  borderRadius: 4,
-  fontSize: 14,
-  background: "#fff",
-  outline: "none",
-  boxSizing: "border-box",
-  color: "#000",
-};
-
-const labelStyle = {
-  display: "block",
-  fontSize: 14,
-  fontWeight: 600,
-  color: "#111",
-  marginBottom: 6,
-};
 
 export default function ServicesPage() {
   const [form, setForm] = useState({
@@ -285,12 +265,16 @@ export default function ServicesPage() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    if (type === "checkbox") setForm((p) => ({ ...p, [name]: checked }));
-    else setForm((p) => ({ ...p, [name]: value }));
+    if (type === "checkbox") {
+      setForm((p) => ({ ...p, [name]: checked }));
+      return;
+    }
     if (name === "state") {
       setSelectedState(value);
       setForm((p) => ({ ...p, state: value, district: "" }));
+      return;
     }
+    setForm((p) => ({ ...p, [name]: value }));
   };
 
   return (
@@ -298,23 +282,89 @@ export default function ServicesPage() {
       style={{
         minHeight: "100vh",
         background: "#fff",
-        fontFamily: "'Segoe UI', 'Noto Sans', sans-serif",
+        fontFamily: "'Segoe UI','Noto Sans',sans-serif",
         color: "#000",
       }}
     >
-      {/* ── HEALTH CHECKUP PACKAGES ── */}
-      <div style={{ width: "100%", padding: "32px 40px", background: "#fff" }}>
-        <h2
-          style={{
-            fontWeight: 900,
-            fontSize: 22,
-            color: "#1a2a4a",
-            textAlign: "center",
-            marginBottom: 4,
-            textTransform: "uppercase",
-            letterSpacing: "0.02em",
-          }}
-        >
+      <style>{`
+        .svc-pkg-section  { padding: 32px 40px; background: #fff; }
+        .svc-dis-section  { padding: 24px 40px 32px; background: #fff; }
+        .svc-form-section { padding: 0 40px 48px; }
+
+        .svc-pkg-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px 32px; }
+        .svc-dis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 80px; }
+
+        .svc-form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .svc-form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+
+        .svc-h2-main { font-weight: 900; font-size: 22px; color: #1a2a4a; text-align: center; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.02em; }
+        .svc-h2-sub  { font-weight: 900; font-size: 20px; color: #1a2a4a; text-align: center; margin-bottom: 2px; }
+        .svc-h2-hin  { font-weight: 900; font-size: 18px; color: #1a2a4a; text-align: center; margin-bottom: 12px; }
+        .svc-form-h2 { font-weight: 900; font-size: 22px; color: #000; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.02em; }
+
+        .svc-field-label { display: block; font-size: 14px; font-weight: 600; color: #111; margin-bottom: 6px; }
+        .svc-field-input {
+          width: 100%; padding: 10px 12px;
+          border: 1px solid #ccc; border-radius: 4px;
+          font-size: 14px; background: #fff; outline: none;
+          box-sizing: border-box; color: #000;
+          font-family: inherit;
+        }
+        .svc-field-input:focus { border-color: ${GREEN}; }
+        .svc-field-textarea {
+          width: 100%; padding: 10px 12px;
+          border: 1px solid #ccc; border-radius: 4px;
+          font-size: 14px; background: #fff; outline: none;
+          box-sizing: border-box; color: #000; resize: vertical;
+          font-family: inherit; min-height: 120px;
+        }
+        .svc-field-textarea:focus { border-color: ${GREEN}; }
+
+        .svc-dot { margin-top: 5px; flex-shrink: 0; width: 6px; height: 6px; border-radius: 1px; background: #1a2a4a; min-width: 6px; }
+        .svc-item { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; color: #000; padding: 3px 0; }
+
+        .svc-cb-label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #000; cursor: pointer; }
+        .svc-cb       { width: 16px; height: 16px; cursor: pointer; accent-color: ${GREEN}; }
+
+        .svc-post-label { font-weight: 900; font-size: 14px; color: #000; margin-bottom: 16px; letter-spacing: 0.05em; }
+
+        @media (max-width: 768px) {
+          .svc-pkg-section  { padding: 14px 10px; }
+          .svc-dis-section  { padding: 10px 10px 14px; }
+          .svc-form-section { padding: 0 10px 24px; }
+
+          .svc-pkg-grid { grid-template-columns: 1fr 1fr 1fr !important; gap: 3px 8px !important; }
+          .svc-dis-grid { grid-template-columns: 1fr 1fr !important; gap: 3px 16px !important; }
+
+          .svc-form-grid-2 { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+          .svc-form-grid-3 { grid-template-columns: 1fr 1fr 1fr !important; gap: 6px !important; }
+
+          .svc-h2-main { font-size: 9px !important; margin-bottom: 2px !important; }
+          .svc-h2-sub  { font-size: 8px !important; margin-bottom: 1px !important; }
+          .svc-h2-hin  { font-size: 8px !important; margin-bottom: 6px !important; }
+          .svc-form-h2 { font-size: 10px !important; margin-bottom: 8px !important; }
+
+          .svc-item { font-size: 7px !important; padding: 1px 0 !important; gap: 4px !important; }
+          .svc-dot  { width: 4px !important; height: 4px !important; min-width: 4px !important; margin-top: 3px !important; }
+
+          .svc-field-label    { font-size: 7px !important; margin-bottom: 2px !important; }
+          .svc-field-input    { padding: 4px 5px !important; font-size: 7px !important; border-radius: 2px !important; }
+          .svc-field-textarea { padding: 4px 5px !important; font-size: 7px !important; border-radius: 2px !important; min-height: 50px !important; }
+
+          .svc-post-label { font-size: 7px !important; margin-bottom: 6px !important; }
+          .svc-cb-label   { font-size: 7px !important; gap: 4px !important; }
+          .svc-cb         { width: 10px !important; height: 10px !important; }
+
+          .svc-form-inner { gap: 10px !important; }
+          .svc-form-box   { padding: 12px 10px !important; }
+
+          .svc-submit-btn { font-size: 8px !important; padding: 7px 20px !important; }
+        }
+      `}</style>
+
+      {/* HEALTH CHECKUP PACKAGES */}
+      <div className="svc-pkg-section">
+        <h2 className="svc-h2-main">
           HEALTH CHECKUP PACKAGES / स्वास्थ्य जांच पैकेज
         </h2>
         <div
@@ -324,36 +374,10 @@ export default function ServicesPage() {
             paddingTop: 16,
           }}
         >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
-              gap: "8px 32px",
-            }}
-          >
+          <div className="svc-pkg-grid">
             {checkupPackages.map((pkg, i) => (
-              <div
-                key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 8,
-                  fontSize: 14,
-                  color: "#000",
-                  padding: "3px 0",
-                }}
-              >
-                <span
-                  style={{
-                    marginTop: 5,
-                    flexShrink: 0,
-                    width: 6,
-                    height: 6,
-                    borderRadius: 1,
-                    background: "#1a2a4a",
-                    minWidth: 6,
-                  }}
-                />
+              <div key={i} className="svc-item">
+                <span className="svc-dot" />
                 {pkg}
               </div>
             ))}
@@ -361,63 +385,19 @@ export default function ServicesPage() {
         </div>
       </div>
 
-      {/* ── MEDICINES & DOCTOR CONSULTATION ── */}
-      <div
-        style={{ width: "100%", padding: "24px 40px 32px", background: "#fff" }}
-      >
-        <h2
-          style={{
-            fontWeight: 900,
-            fontSize: 20,
-            color: "#1a2a4a",
-            textAlign: "center",
-            marginBottom: 2,
-          }}
-        >
+      {/* MEDICINES & DOCTOR CONSULTATION */}
+      <div className="svc-dis-section">
+        <h2 className="svc-h2-sub">
           Medicines and Doctor's Consultation for the following Diseases
         </h2>
-        <h2
-          style={{
-            fontWeight: 900,
-            fontSize: 18,
-            color: "#1a2a4a",
-            textAlign: "center",
-            marginBottom: 12,
-          }}
-        >
+        <h2 className="svc-h2-hin">
           निम्नलिखित बीमारियों के लिए दवाएं और डॉक्टरों का परामर्श
         </h2>
         <div style={{ borderTop: `2px solid ${GREEN}`, paddingTop: 16 }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "8px 80px",
-            }}
-          >
+          <div className="svc-dis-grid">
             {diseases.map((d, i) => (
-              <div
-                key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 8,
-                  fontSize: 14,
-                  color: "#000",
-                  padding: "4px 0",
-                }}
-              >
-                <span
-                  style={{
-                    marginTop: 5,
-                    flexShrink: 0,
-                    width: 6,
-                    height: 6,
-                    borderRadius: 1,
-                    background: "#1a2a4a",
-                    minWidth: 6,
-                  }}
-                />
+              <div key={i} className="svc-item">
+                <span className="svc-dot" />
                 {d}
               </div>
             ))}
@@ -425,109 +405,78 @@ export default function ServicesPage() {
         </div>
       </div>
 
-      {/* ── ONLINE FORM FOR SERVICES ── */}
-      <div style={{ width: "100%", padding: "0 40px 48px" }}>
-        <h2
-          style={{
-            fontWeight: 900,
-            fontSize: 22,
-            color: "#000",
-            marginBottom: 16,
-            textTransform: "uppercase",
-            letterSpacing: "0.02em",
-          }}
-        >
-          ONLINE FORM FOR SERVICES
-        </h2>
-
+      {/* ONLINE FORM FOR SERVICES */}
+      <div className="svc-form-section">
+        <h2 className="svc-form-h2">ONLINE FORM FOR SERVICES</h2>
         <div
+          className="svc-form-box"
           style={{
             background: "#f0f0f0",
             borderRadius: 6,
             padding: "32px 36px",
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-            {/* Your Name — full width */}
+          <div
+            className="svc-form-inner"
+            style={{ display: "flex", flexDirection: "column", gap: 24 }}
+          >
+            {/* Name */}
             <div>
-              <label style={labelStyle}>Your Name*</label>
+              <label className="svc-field-label">Your Name*</label>
               <input
+                className="svc-field-input"
                 name="name"
                 value={form.name}
                 onChange={handleChange}
-                style={inputStyle}
               />
             </div>
 
             {/* Email + Contact */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 24,
-              }}
-            >
+            <div className="svc-form-grid-2">
               <div>
-                <label style={labelStyle}>Email Id*</label>
+                <label className="svc-field-label">Email Id*</label>
                 <input
+                  className="svc-field-input"
                   name="email"
                   type="email"
                   value={form.email}
                   onChange={handleChange}
-                  style={inputStyle}
                 />
               </div>
               <div>
-                <label style={labelStyle}>Contact Number*</label>
+                <label className="svc-field-label">Contact Number*</label>
                 <input
+                  className="svc-field-input"
                   name="contact"
                   value={form.contact}
                   onChange={handleChange}
-                  style={inputStyle}
                 />
               </div>
             </div>
 
-            {/* Full Address — full width */}
+            {/* Address */}
             <div>
-              <label style={labelStyle}>Full Address</label>
+              <label className="svc-field-label">Full Address</label>
               <input
+                className="svc-field-input"
                 name="address"
                 value={form.address}
                 onChange={handleChange}
                 placeholder="House No, Street Name, Area and Landmark"
-                style={inputStyle}
               />
             </div>
 
-            {/* POSTING LOCATION heading */}
+            {/* Posting Location */}
             <div>
-              <p
-                style={{
-                  fontWeight: 900,
-                  fontSize: 14,
-                  color: "#000",
-                  marginBottom: 16,
-                  letterSpacing: "0.05em",
-                }}
-              >
-                POSTING LOCATION
-              </p>
-              {/* State + District + ZIP */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr",
-                  gap: 24,
-                }}
-              >
+              <p className="svc-post-label">POSTING LOCATION</p>
+              <div className="svc-form-grid-3">
                 <div>
-                  <label style={labelStyle}>State</label>
+                  <label className="svc-field-label">State</label>
                   <select
+                    className="svc-field-input"
                     name="state"
                     value={form.state}
                     onChange={handleChange}
-                    style={inputStyle}
                   >
                     <option value="">Select</option>
                     {indianStates.map((s) => (
@@ -538,12 +487,12 @@ export default function ServicesPage() {
                   </select>
                 </div>
                 <div>
-                  <label style={labelStyle}>District</label>
+                  <label className="svc-field-label">District</label>
                   <select
+                    className="svc-field-input"
                     name="district"
                     value={form.district}
                     onChange={handleChange}
-                    style={inputStyle}
                   >
                     <option value=""></option>
                     {(districtsByState[selectedState] || []).map((d) => (
@@ -554,67 +503,49 @@ export default function ServicesPage() {
                   </select>
                 </div>
                 <div>
-                  <label style={labelStyle}>Zip/Postal Code</label>
+                  <label className="svc-field-label">Zip/Postal Code</label>
                   <input
+                    className="svc-field-input"
                     name="zip"
                     value={form.zip}
                     onChange={handleChange}
-                    style={inputStyle}
                   />
                 </div>
               </div>
             </div>
 
-            {/* Type Of Service — full width */}
+            {/* Type of Service */}
             <div>
-              <label style={labelStyle}>Type Of Service*</label>
+              <label className="svc-field-label">Type Of Service*</label>
               <input
+                className="svc-field-input"
                 name="serviceType"
                 value={form.serviceType}
                 onChange={handleChange}
-                style={inputStyle}
               />
             </div>
 
-            {/* Message/Enquiry — textarea full width */}
+            {/* Message */}
             <div>
-              <label style={labelStyle}>Message/Enquiry*</label>
+              <label className="svc-field-label">Message/Enquiry*</label>
               <textarea
+                className="svc-field-textarea"
                 name="message"
                 value={form.message}
                 onChange={handleChange}
                 rows={6}
-                style={{
-                  ...inputStyle,
-                  resize: "vertical",
-                  fontFamily: "inherit",
-                }}
               />
             </div>
 
             {/* Checkboxes */}
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontSize: 14,
-                  color: "#000",
-                  cursor: "pointer",
-                }}
-              >
+              <label className="svc-cb-label">
                 <input
                   type="checkbox"
+                  className="svc-cb"
                   name="agree1"
                   checked={form.agree1}
                   onChange={handleChange}
-                  style={{
-                    width: 16,
-                    height: 16,
-                    cursor: "pointer",
-                    accentColor: GREEN,
-                  }}
                 />
                 I have read and agree to the Terms and Conditions.{" "}
                 <a
@@ -628,35 +559,22 @@ export default function ServicesPage() {
                   Click here to read
                 </a>
               </label>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontSize: 14,
-                  color: "#000",
-                  cursor: "pointer",
-                }}
-              >
+              <label className="svc-cb-label">
                 <input
                   type="checkbox"
+                  className="svc-cb"
                   name="agree2"
                   checked={form.agree2}
                   onChange={handleChange}
-                  style={{
-                    width: 16,
-                    height: 16,
-                    cursor: "pointer",
-                    accentColor: GREEN,
-                  }}
                 />
                 I declare all the informations....
               </label>
             </div>
 
-            {/* Submit Button */}
+            {/* Submit */}
             <div style={{ textAlign: "center", marginTop: 8 }}>
               <button
+                className="svc-submit-btn"
                 onClick={() => alert("Form submitted!")}
                 style={{
                   background: GREEN,

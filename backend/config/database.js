@@ -16,7 +16,8 @@ export async function connectDB() {
     }
 
     const options = {
-      // Remove deprecated options, use modern defaults
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+      socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
     };
 
     await mongoose.connect(MONGODB_URI, options);
@@ -47,6 +48,13 @@ export async function connectDB() {
     console.warn("⚠️  Please check your MongoDB connection string");
     return false; // Don't throw, let server start for testing
   }
+}
+
+/**
+ * Check if MongoDB is connected
+ */
+export function isDBConnected() {
+  return mongoose.connection.readyState === 1; // 1 = connected
 }
 
 /**

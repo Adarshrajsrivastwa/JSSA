@@ -10,6 +10,7 @@ import JobPostingView from "./pages/JobPosting/JobPostingView.jsx";
 import JobPostingApplicants from "./pages/JobPosting/JobPostingApplicants.jsx";
 
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
 import StudentRegistration from "./pages/StudentRegistration";
 import AdminDashboard from "./pages/AdminDashboard";
 import ApplicantDashboard from "./pages/ApplicantDashboard";
@@ -31,6 +32,7 @@ function App() {
           {/* Login page - always accessible, shows first on app start */}
           <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/student-register" element={<StudentRegistration />} />
 
           {/* Protected app routes */}

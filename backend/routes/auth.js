@@ -10,6 +10,8 @@ import {
 } from "../utils/validation.js";
 import { generateToken } from "../utils/jwt.js";
 import { authenticate } from "../middleware/auth.js";
+import { sendOTPEmail } from "../utils/email.js";
+import { isDBConnected } from "../config/database.js";
 
 const router = express.Router();
 
@@ -314,5 +316,292 @@ router.get("/me", authenticate, async (req, res) => {
     });
   }
 });
+
+/**
+ * POST /api/auth/forgot-password
+ * Send OTP to user's email for password reset
+ */
+router.post(
+  "/forgot-password",
+  [
+    body("email")
+      .notEmpty()
+      .withMessage("Email is required")
+      .isEmail()
+      .withMessage("Invalid email format"),
+  ],
+  async (req, res) => {
+    try {
+      // Check if database is connected
+      if (!isDBConnected()) {
+        return res.status(503).json({
+          error: "Database connection unavailable",
+          message: "Please check MongoDB connection. Server may be starting up.",
+        });
+      }
+
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          error: "Validation failed",
+          errors: errors.array(),
+        });
+      }
+
+      const { email } = req.body;
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // Find user by email
+      const user = await User.findOne({ email: normalizedEmail });
+
+      // For security, don't reveal if email exists or not
+      // Always return success message
+      if (!user) {
+        // Still return success to prevent email enumeration
+        return res.json({
+          success: true,
+          message: "If the email exists, an OTP has been sent.",
+        });
+      }
+
+      // Generate 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      // Save OTP to user
+      user.otp = otp;
+      user.otpExpiry = otpExpiry;
+      await user.save();
+
+      // Send OTP email (async, don't wait)
+      sendOTPEmail(normalizedEmail, otp).catch((err) => {
+        console.error("Failed to send OTP email:", err);
+        // Don't fail the request if email fails
+      });
+
+      res.json({
+        success: true,
+        message: "If the email exists, an OTP has been sent to your email.",
+      });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({
+        error: "Failed to process request",
+        message: error.message,
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/auth/verify-otp
+ * Verify OTP for password reset
+ */
+router.post(
+  "/verify-otp",
+  [
+    body("email")
+      .notEmpty()
+      .withMessage("Email is required")
+      .isEmail()
+      .withMessage("Invalid email format"),
+    body("otp")
+      .notEmpty()
+      .withMessage("OTP is required")
+      .isLength({ min: 6, max: 6 })
+      .withMessage("OTP must be 6 digits")
+      .isNumeric()
+      .withMessage("OTP must be numeric"),
+  ],
+  async (req, res) => {
+    try {
+      // Check if database is connected
+      if (!isDBConnected()) {
+        return res.status(503).json({
+          error: "Database connection unavailable",
+          message: "Please check MongoDB connection. Server may be starting up.",
+        });
+      }
+
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          error: "Validation failed",
+          errors: errors.array(),
+        });
+      }
+
+      const { email, otp } = req.body;
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // Find user by email
+      const user = await User.findOne({ email: normalizedEmail });
+
+      if (!user) {
+        return res.status(404).json({
+          error: "User not found",
+          message: "Invalid email address",
+        });
+      }
+
+      // Check if OTP exists
+      if (!user.otp || !user.otpExpiry) {
+        return res.status(400).json({
+          error: "OTP not found",
+          message: "Please request a new OTP",
+        });
+      }
+
+      // Check if OTP is expired
+      if (new Date() > user.otpExpiry) {
+        // Clear expired OTP
+        user.otp = null;
+        user.otpExpiry = null;
+        await user.save();
+
+        return res.status(400).json({
+          error: "OTP expired",
+          message: "OTP has expired. Please request a new one.",
+        });
+      }
+
+      // Verify OTP
+      if (user.otp !== otp) {
+        return res.status(400).json({
+          error: "Invalid OTP",
+          message: "The OTP you entered is incorrect",
+        });
+      }
+
+      // OTP is valid
+      res.json({
+        success: true,
+        message: "OTP verified successfully",
+      });
+    } catch (error) {
+      console.error("Verify OTP error:", error);
+      res.status(500).json({
+        error: "Failed to verify OTP",
+        message: error.message,
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/auth/reset-password
+ * Reset password after OTP verification
+ */
+router.post(
+  "/reset-password",
+  [
+    body("email")
+      .notEmpty()
+      .withMessage("Email is required")
+      .isEmail()
+      .withMessage("Invalid email format"),
+    body("otp")
+      .notEmpty()
+      .withMessage("OTP is required")
+      .isLength({ min: 6, max: 6 })
+      .withMessage("OTP must be 6 digits")
+      .isNumeric()
+      .withMessage("OTP must be numeric"),
+    body("newPassword")
+      .notEmpty()
+      .withMessage("New password is required")
+      .isLength({ min: 6 })
+      .withMessage("Password must be at least 6 characters"),
+  ],
+  async (req, res) => {
+    try {
+      // Check if database is connected
+      if (!isDBConnected()) {
+        return res.status(503).json({
+          error: "Database connection unavailable",
+          message: "Please check MongoDB connection. Server may be starting up.",
+        });
+      }
+
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          error: "Validation failed",
+          errors: errors.array(),
+        });
+      }
+
+      const { email, otp, newPassword } = req.body;
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // Validate password
+      if (!isValidPassword(newPassword)) {
+        return res.status(400).json({
+          error: "Invalid password",
+          message: "Password must be at least 6 characters",
+        });
+      }
+
+      // Find user by email
+      const user = await User.findOne({ email: normalizedEmail });
+
+      if (!user) {
+        return res.status(404).json({
+          error: "User not found",
+          message: "Invalid email address",
+        });
+      }
+
+      // Check if OTP exists
+      if (!user.otp || !user.otpExpiry) {
+        return res.status(400).json({
+          error: "OTP not found",
+          message: "Please request a new OTP",
+        });
+      }
+
+      // Check if OTP is expired
+      if (new Date() > user.otpExpiry) {
+        // Clear expired OTP
+        user.otp = null;
+        user.otpExpiry = null;
+        await user.save();
+
+        return res.status(400).json({
+          error: "OTP expired",
+          message: "OTP has expired. Please request a new one.",
+        });
+      }
+
+      // Verify OTP
+      if (user.otp !== otp) {
+        return res.status(400).json({
+          error: "Invalid OTP",
+          message: "The OTP you entered is incorrect",
+        });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update password and clear OTP
+      user.password = hashedPassword;
+      user.otp = null;
+      user.otpExpiry = null;
+      await user.save();
+
+      res.json({
+        success: true,
+        message: "Password reset successfully. You can now login with your new password.",
+      });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({
+        error: "Failed to reset password",
+        message: error.message,
+      });
+    }
+  }
+);
 
 export default router;

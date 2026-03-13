@@ -430,3 +430,172 @@ Thank you for applying!
     };
   }
 }
+
+/**
+ * Send OTP email for password reset
+ */
+export async function sendOTPEmail(email, otp) {
+  try {
+    // Check if email is configured
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.warn("Email not configured. Skipping email send.");
+      return { success: false, message: "Email not configured" };
+    }
+
+    const transporter = createTransporter();
+
+    // Email HTML template
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      background-color: #ffffff;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .header {
+      background: linear-gradient(135deg, #3AB000 0%, #2d8a00 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .otp-box {
+      background-color: #f0fdf4;
+      border: 2px solid #3AB000;
+      border-radius: 8px;
+      padding: 30px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .otp-code {
+      font-size: 36px;
+      font-weight: bold;
+      color: #3AB000;
+      letter-spacing: 8px;
+      margin: 15px 0;
+      font-family: 'Courier New', monospace;
+    }
+    .info-text {
+      color: #666;
+      font-size: 14px;
+      margin-top: 20px;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid #e0e0e0;
+      color: #666;
+      font-size: 14px;
+    }
+    .warning {
+      background-color: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+      color: #856404;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔐 Password Reset OTP</h1>
+      <p style="margin: 10px 0 0 0; font-size: 16px;">जन स्वास्थ्य सहायता अभियान (JSSA)</p>
+    </div>
+
+    <p style="font-size: 16px; color: #333;">Hello,</p>
+    <p style="font-size: 16px; color: #333;">You have requested to reset your password. Please use the following OTP (One-Time Password) to verify your identity:</p>
+
+    <div class="otp-box">
+      <p style="margin: 0; color: #666; font-size: 14px;">Your OTP Code:</p>
+      <div class="otp-code">${otp}</div>
+      <p style="margin: 0; color: #666; font-size: 12px;">This OTP is valid for 10 minutes</p>
+    </div>
+
+    <div class="warning">
+      <strong>⚠️ Security Notice:</strong><br>
+      If you did not request this password reset, please ignore this email. Your account remains secure.
+    </div>
+
+    <p class="info-text">
+      Enter this OTP on the password reset page to continue with resetting your password.
+    </p>
+
+    <div class="footer">
+      <p style="margin: 0;">This is an automated email. Please do not reply.</p>
+      <p style="margin: 5px 0 0 0; color: #999; font-size: 12px;">
+        © ${new Date().getFullYear()} JSSA - जन स्वास्थ्य सहायता अभियान
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    const textContent = `
+Password Reset OTP - JSSA
+
+Hello,
+
+You have requested to reset your password. Please use the following OTP (One-Time Password) to verify your identity:
+
+OTP Code: ${otp}
+
+This OTP is valid for 10 minutes.
+
+⚠️ Security Notice:
+If you did not request this password reset, please ignore this email. Your account remains secure.
+
+Enter this OTP on the password reset page to continue with resetting your password.
+
+This is an automated email. Please do not reply.
+
+© ${new Date().getFullYear()} JSSA - जन स्वास्थ्य सहायता अभियान
+    `;
+
+    // Send email
+    const mailOptions = {
+      from: `"JSSA" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: "Password Reset OTP - JSSA",
+      text: textContent,
+      html: htmlContent,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("OTP email sent:", info.messageId);
+
+    return {
+      success: true,
+      messageId: info.messageId,
+    };
+  } catch (error) {
+    console.error("Error sending OTP email:", error);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+}

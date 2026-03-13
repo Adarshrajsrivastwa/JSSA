@@ -38,90 +38,40 @@ export default function ContactsPage() {
         .touch-section { padding: 48px 120px 36px; background: #fff; max-width: 1100px; margin: 0 auto; }
         .touch-title { text-align: center; font-size: 1.3rem; font-weight: 700; color: #111; margin-bottom: 40px; }
 
-        .offices-grid { 
-          display: grid; 
-          grid-template-columns: repeat(3, 1fr); 
-          gap: 32px; 
-          margin-bottom: 36px; 
+        .offices-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 32px;
+          margin-bottom: 36px;
         }
-        .office-block { 
-          display: flex; 
-          gap: 12px; 
-          align-items: flex-start; 
-          padding: 16px;
-          background: #f9f9f9;
-          border-radius: 8px;
-          border: 1px solid #e0e0e0;
+        .office-block {
+          display: flex; gap: 12px; align-items: flex-start;
+          padding: 16px; background: #f9f9f9;
+          border-radius: 8px; border: 1px solid #e0e0e0;
           transition: all 0.3s ease;
         }
-        .office-block:hover {
-          background: #f5f5f5;
-          border-color: #2e7d00;
-          box-shadow: 0 2px 8px rgba(46, 125, 0, 0.1);
-        }
+        .office-block:hover { background: #f5f5f5; border-color: #2e7d00; box-shadow: 0 2px 8px rgba(46,125,0,0.1); }
 
-        .pin-icon {
-          width: 30px; 
-          height: 30px; 
-          border-radius: 50%;
-          border: 2px solid #2e7d00;
-          display: flex; 
-          align-items: center; 
-          justify-content: center;
-          flex-shrink: 0; 
-          margin-top: 2px;
-          background: rgba(46, 125, 0, 0.1);
-        }
-        .pin-svg { 
-          width: 14px; 
-          height: 14px; 
-          fill: none; 
-          stroke: #2e7d00; 
-          stroke-width: 2; 
-          stroke-linecap: round; 
-          stroke-linejoin: round; 
-        }
+        .pin-icon { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #2e7d00; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; background: rgba(46,125,0,0.1); }
+        .pin-svg  { width: 14px; height: 14px; fill: none; stroke: #2e7d00; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-        .office-title { 
-          font-size: 0.95rem; 
-          font-weight: 800; 
-          color: #111; 
-          margin-bottom: 6px; 
-        }
-        .office-addr { 
-          font-size: 0.83rem; 
-          color: #444; 
-          line-height: 1.6; 
-          font-weight: 500; 
-        }
+        .office-title { font-size: 0.95rem; font-weight: 800; color: #111; margin-bottom: 6px; }
+        .office-addr  { font-size: 0.83rem; color: #444; line-height: 1.6; font-weight: 500; }
 
-        .contact-info-row { display: flex; gap: 60px; align-items: flex-start; }
+        .contact-info-row  { display: flex; gap: 60px; align-items: flex-start; }
         .contact-info-item { display: flex; gap: 12px; align-items: flex-start; }
 
-        .mail-icon {
-          width: 30px; height: 30px; border-radius: 50%;
-          border: 2px solid #2e7d00;
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0;
-        }
-        .mail-svg { width: 14px; height: 14px; fill: none; stroke: #2e7d00; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .mail-icon  { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #2e7d00; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .mail-svg   { width: 14px; height: 14px; fill: none; stroke: #2e7d00; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .phone-icon { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #2e7d00; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .phone-svg  { width: 14px; height: 14px; fill: none; stroke: #2e7d00; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .info-text  { font-size: 0.88rem; font-weight: 700; color: #111; line-height: 1.7; }
 
-        .phone-icon {
-          width: 30px; height: 30px; border-radius: 50%;
-          border: 2px solid #2e7d00;
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0;
-        }
-        .phone-svg { width: 14px; height: 14px; fill: none; stroke: #2e7d00; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-
-        .info-text { font-size: 0.88rem; font-weight: 700; color: #111; line-height: 1.7; }
-
-        /* FORM */
-        .form-outer { padding: 0 120px; max-width: 1100px; margin: 0 auto; }
+        .form-outer   { padding: 0 120px; max-width: 1100px; margin: 0 auto; }
         .form-section { background: #f0f0f0; padding: 36px 40px 48px; border-radius: 6px; }
-        .form-row { margin-bottom: 24px; }
-        .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 24px; }
-        .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+        .form-row     { margin-bottom: 24px; }
+        .form-row-2   { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 24px; }
+        .form-row-3   { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 24px; }
 
         .field-label { font-size: 0.85rem; font-weight: 700; color: #111; margin-bottom: 6px; display: block; }
         .field-input {
@@ -151,25 +101,43 @@ export default function ContactsPage() {
           transition: background 0.2s, transform 0.1s;
           box-shadow: 0 4px 16px rgba(34,204,0,0.3);
         }
-        .submit-btn:hover { background: #1aaa00; }
+        .submit-btn:hover  { background: #1aaa00; }
         .submit-btn:active { transform: scale(0.97); }
 
-        .success-msg {
-          text-align: center; margin-top: 20px;
-          color: #2e7d00; font-weight: 800; font-size: 0.95rem;
-          animation: fadeIn 0.4s ease;
-        }
+        .success-msg { text-align: center; margin-top: 20px; color: #2e7d00; font-weight: 800; font-size: 0.95rem; animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 
-        @media(max-width: 1024px) {
-          .offices-grid { grid-template-columns: repeat(2, 1fr); gap: 24px; }
-        }
-        @media(max-width: 768px) {
-          .touch-section, .form-outer { padding: 32px 20px; }
-          .offices-grid { grid-template-columns: 1fr; gap: 24px; }
-          .form-row-2, .form-row-3 { grid-template-columns: 1fr; }
-          .contact-info-row { flex-direction: column; gap: 20px; }
-          .office-block { padding: 14px; }
+        /* ── MOBILE: same layout, just scaled down ── */
+        @media (max-width: 768px) {
+          .touch-section { padding: 16px 10px 16px; }
+          .touch-title   { font-size: 0.85rem; margin-bottom: 14px; }
+
+          .offices-grid  { grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 14px; }
+          .office-block  { padding: 7px 6px; gap: 5px; border-radius: 4px; }
+          .pin-icon      { width: 16px; height: 16px; flex-shrink: 0; }
+          .pin-svg       { width: 8px; height: 8px; }
+          .office-title  { font-size: 0.52rem; margin-bottom: 2px; }
+          .office-addr   { font-size: 0.46rem; line-height: 1.4; }
+
+          .contact-info-row  { gap: 16px; flex-direction: row; flex-wrap: wrap; }
+          .contact-info-item { gap: 5px; }
+          .mail-icon, .phone-icon { width: 16px; height: 16px; }
+          .mail-svg, .phone-svg   { width: 8px; height: 8px; }
+          .info-text { font-size: 0.5rem; line-height: 1.5; }
+
+          .form-outer   { padding: 0 10px; }
+          .form-section { padding: 12px 10px 20px; border-radius: 4px; }
+          .form-row     { margin-bottom: 10px; }
+          .form-row-2   { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+          .form-row-3   { grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+
+          .field-label    { font-size: 0.55rem; margin-bottom: 3px; }
+          .field-input    { padding: 5px 7px; font-size: 0.55rem; border-radius: 2px; }
+          .field-textarea { padding: 5px 7px; min-height: 60px; font-size: 0.55rem; border-radius: 2px; }
+
+          .submit-btn { padding: 7px 20px; font-size: 0.6rem; border-radius: 3px; }
+          .success-msg { font-size: 0.6rem; margin-top: 10px; }
+          .submit-row { margin-top: 12px; }
         }
       `}</style>
 
@@ -337,7 +305,7 @@ export default function ContactsPage() {
             </button>
           </div>
           {submitted && (
-            <div className="success-msg">✅ Message sent successfully!</div>
+            <div className="success-msg">Message sent successfully!</div>
           )}
         </div>
       </div>
