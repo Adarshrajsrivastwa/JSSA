@@ -2166,8 +2166,6 @@ function VerticalMarqueeBand({
       <a
         key={`${item.id || item._id || i}-${Math.floor(i / items.length)}`}
         href={link}
-        target={link !== "#" ? "_blank" : undefined}
-        rel="noopener noreferrer"
         style={{
           display: "flex",
           flexDirection: "column",
@@ -4047,6 +4045,35 @@ export default function JSSAbhiyan() {
           >
             Download Document
           </button>
+          <a
+            href="https://frontend.jssabhiyan.com/"
+            style={{
+              background: "#fff",
+              color: GREEN,
+              fontSize: 14,
+              fontWeight: 700,
+              padding: "7px 18px",
+              borderRadius: 4,
+              border: "none",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              textDecoration: "none",
+              display: "inline-block",
+              transition: "all 0.3s",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = "#f0f0f0";
+              e.target.style.transform = "translateY(-1px)";
+              e.target.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = "#fff";
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "none";
+            }}
+          >
+            Signup / साइन अप
+          </a>
         </div>
       </div>
 
@@ -4214,6 +4241,32 @@ export default function JSSAbhiyan() {
             >
               BROUCHERS
             </button>
+            <a
+              href="https://frontend.jssabhiyan.com/"
+              style={{
+                background: "#fff",
+                color: GREEN,
+                fontWeight: 900,
+                fontSize: 12,
+                padding: "6px 14px",
+                borderRadius: 3,
+                border: `2px solid ${GREEN}`,
+                cursor: "pointer",
+                textDecoration: "none",
+                display: "inline-block",
+                transition: "all 0.3s",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = GREEN;
+                e.target.style.color = "#fff";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = "#fff";
+                e.target.style.color = GREEN;
+              }}
+            >
+              SIGNUP
+            </a>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <img
