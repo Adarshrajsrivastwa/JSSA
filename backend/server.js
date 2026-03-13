@@ -24,8 +24,33 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+// CORS configuration - Allow all jssabhiyan.in domains and localhost
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:5174",
+  "https://jssabhiyan.in",
+  "https://www.jssabhiyan.in",
+  "https://api.jssabhiyan.in",
+  "https://frontend.jssabhiyan.in",
+  "http://jssabhiyan.in",
+  "http://www.jssabhiyan.in",
+  "http://api.jssabhiyan.in",
+  "http://frontend.jssabhiyan.in",
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [])
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 // Increase body parser limit to handle base64 images (10MB)
