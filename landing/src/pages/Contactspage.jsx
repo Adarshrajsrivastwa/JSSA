@@ -38,19 +38,62 @@ export default function ContactsPage() {
         .touch-section { padding: 48px 120px 36px; background: #fff; max-width: 1100px; margin: 0 auto; }
         .touch-title { text-align: center; font-size: 1.3rem; font-weight: 700; color: #111; margin-bottom: 40px; }
 
-        .offices-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-bottom: 36px; }
-        .office-block { display: flex; gap: 12px; align-items: flex-start; }
+        .offices-grid { 
+          display: grid; 
+          grid-template-columns: repeat(3, 1fr); 
+          gap: 32px; 
+          margin-bottom: 36px; 
+        }
+        .office-block { 
+          display: flex; 
+          gap: 12px; 
+          align-items: flex-start; 
+          padding: 16px;
+          background: #f9f9f9;
+          border-radius: 8px;
+          border: 1px solid #e0e0e0;
+          transition: all 0.3s ease;
+        }
+        .office-block:hover {
+          background: #f5f5f5;
+          border-color: #2e7d00;
+          box-shadow: 0 2px 8px rgba(46, 125, 0, 0.1);
+        }
 
         .pin-icon {
-          width: 30px; height: 30px; border-radius: 50%;
+          width: 30px; 
+          height: 30px; 
+          border-radius: 50%;
           border: 2px solid #2e7d00;
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0; margin-top: 2px;
+          display: flex; 
+          align-items: center; 
+          justify-content: center;
+          flex-shrink: 0; 
+          margin-top: 2px;
+          background: rgba(46, 125, 0, 0.1);
         }
-        .pin-svg { width: 14px; height: 14px; fill: none; stroke: #2e7d00; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .pin-svg { 
+          width: 14px; 
+          height: 14px; 
+          fill: none; 
+          stroke: #2e7d00; 
+          stroke-width: 2; 
+          stroke-linecap: round; 
+          stroke-linejoin: round; 
+        }
 
-        .office-title { font-size: 0.95rem; font-weight: 800; color: #111; margin-bottom: 4px; }
-        .office-addr { font-size: 0.83rem; color: #444; line-height: 1.6; font-weight: 500; }
+        .office-title { 
+          font-size: 0.95rem; 
+          font-weight: 800; 
+          color: #111; 
+          margin-bottom: 6px; 
+        }
+        .office-addr { 
+          font-size: 0.83rem; 
+          color: #444; 
+          line-height: 1.6; 
+          font-weight: 500; 
+        }
 
         .contact-info-row { display: flex; gap: 60px; align-items: flex-start; }
         .contact-info-item { display: flex; gap: 12px; align-items: flex-start; }
@@ -118,11 +161,15 @@ export default function ContactsPage() {
         }
         @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 
+        @media(max-width: 1024px) {
+          .offices-grid { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+        }
         @media(max-width: 768px) {
           .touch-section, .form-outer { padding: 32px 20px; }
           .offices-grid { grid-template-columns: 1fr; gap: 24px; }
           .form-row-2, .form-row-3 { grid-template-columns: 1fr; }
           .contact-info-row { flex-direction: column; gap: 20px; }
+          .office-block { padding: 14px; }
         }
       `}</style>
 

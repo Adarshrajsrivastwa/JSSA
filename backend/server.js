@@ -61,6 +61,21 @@ app.use(cors({
     
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
+
+    // Production convenience: allow our own domains (landing + dashboard) without env wiring
+    // This prevents Razorpay authenticated routes from failing due to missing LANDING_URL/FRONTEND_URL.
+    if (!isDevelopment) {
+      try {
+        const { hostname, protocol } = new URL(origin);
+        const isHttp = protocol === "http:" || protocol === "https:";
+        const isJssaDomain = hostname === "jssabhiyan.com" || hostname.endsWith(".jssabhiyan.com");
+        if (isHttp && isJssaDomain) {
+          return callback(null, true);
+        }
+      } catch (e) {
+        // ignore parse errors; fall through to allowlist check
+      }
+    }
     
     // Check if origin is in allowed list
     if (allowedOrigins.indexOf(origin) !== -1) {

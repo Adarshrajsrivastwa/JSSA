@@ -2099,7 +2099,9 @@ function Marquee({ items }) {
           }
           return (
             <a
-              key={item.id || i}
+              // items are doubled ([...items, ...items]) for marquee loop, so id alone will duplicate.
+              // Use a composite key to keep React keys unique across the doubled list.
+              key={`${item.id ?? "no-id"}-${i}`}
               href={item.link || "#"}
               style={{
                 color: "#1d4ed8",

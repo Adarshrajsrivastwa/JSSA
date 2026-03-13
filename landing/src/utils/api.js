@@ -1,4 +1,8 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "";
+// Use environment variable or default to production API
+const API_BASE_URL = 
+  import.meta.env.VITE_API_URL || 
+  import.meta.env.VITE_BACKEND_URL || 
+  (import.meta.env.DEV ? "/api" : "https://api.jssabhiyan.com/api");
 
 if (!API_BASE_URL) {
   console.error("VITE_API_URL or VITE_BACKEND_URL must be set in environment variables");
@@ -37,27 +41,40 @@ async function apiRequest(endpoint, options = {}) {
       data = await response.json();
     } else {
       const text = await response.text();
+      // For 404 errors, return empty data structure silently
+      if (response.status === 404) {
+        // Silently handle 404 - don't log to avoid console spam
+        return { success: false, data: null, error: "Route not found" };
+      }
       throw new Error(text || "Server returned non-JSON response");
     }
 
     if (!response.ok) {
+      // For 404 errors, return empty data structure silently
+      if (response.status === 404) {
+        // Silently handle 404 - don't log to avoid console spam
+        return { success: false, data: null, error: data.message || data.error || "Route not found" };
+      }
+      // Only log non-404 errors
+      console.error(`API Error ${response.status}:`, data.message || data.error || `Request failed`);
       throw new Error(data.message || data.error || `Request failed with status ${response.status}`);
     }
 
     return data;
   } catch (error) {
-    console.error("API Error:", error);
+    // Only log non-network errors (network errors are expected in some cases)
+    if (error.message !== "Failed to fetch" && error.name !== "TypeError") {
+      console.error("API Error:", error);
+    }
     
     // Provide more helpful error messages
     if (error.message === "Failed to fetch" || error.name === "TypeError") {
-      throw new Error(
-        "Cannot connect to backend server. Please ensure:\n" +
-        "1. Backend server is running\n" +
-        "2. Backend is accessible at " + API_BASE_URL
-      );
+      // Silently handle network errors - return empty data structure
+      return { success: false, data: null, error: "Network error" };
     }
     
-    throw error;
+    // For other errors, return error structure instead of throwing
+    return { success: false, data: null, error: error.message || "Unknown error" };
   }
 }
 

@@ -11,6 +11,7 @@ export default function JobDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showApplyForm, setShowApplyForm] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [applying, setApplying] = useState(false);
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeAmount, setFeeAmount] = useState(0);
@@ -158,7 +159,7 @@ export default function JobDetail() {
     });
   };
 
-  const handleApply = async (e) => {
+  const handlePreview = (e) => {
     e.preventDefault();
     
     if (!agreed1 || !agreed2) {
@@ -171,6 +172,11 @@ export default function JobDetail() {
       return;
     }
 
+    // Show preview page
+    setShowPreview(true);
+  };
+
+  const handleApply = async () => {
     setApplying(true);
 
     try {
@@ -178,11 +184,11 @@ export default function JobDetail() {
       const photoBase64 = await convertFileToBase64(photo);
       const signatureBase64 = await convertFileToBase64(signature);
 
-      // Get API URL from environment
-      const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL;
-      if (!apiUrl) {
-        throw new Error("API base URL is not configured. Please set VITE_API_URL or VITE_BACKEND_URL in your .env file");
-      }
+      // Get API URL from environment or use default
+      const apiUrl = 
+        import.meta.env.VITE_API_URL || 
+        import.meta.env.VITE_BACKEND_URL || 
+        (import.meta.env.DEV ? "/api" : "https://api.jssabhiyan.com/api");
 
       // Create application first
       const applyResponse = await fetch(
@@ -233,16 +239,17 @@ export default function JobDetail() {
 
       // If fee is zero, skip payment
       if (feeAmount <= 0) {
-        alert(
-          `Application submitted successfully!${
-            applyData.data.defaultPassword
-              ? `\nYour default password is: ${applyData.data.defaultPassword}`
-              : ""
-          }`
-        );
-        setShowApplyForm(false);
-        resetForm();
-        return;
+              alert(
+                `Application submitted successfully!${
+                  applyData.data.defaultPassword
+                    ? `\nYour default password is: ${applyData.data.defaultPassword}`
+                    : ""
+                }`
+              );
+              setShowApplyForm(false);
+              setShowPreview(false);
+              resetForm();
+              return;
       }
 
       // Create payment order with token
@@ -292,6 +299,7 @@ export default function JobDetail() {
                 }`
               );
               setShowApplyForm(false);
+              setShowPreview(false);
               resetForm();
             } else {
               alert("Payment verification failed. Please contact support.");
@@ -358,6 +366,7 @@ export default function JobDetail() {
     setAgreed1(false);
     setAgreed2(false);
     setFeeAmount(0);
+    setShowPreview(false);
   };
 
   if (loading) {
@@ -489,8 +498,379 @@ export default function JobDetail() {
         </button>
       </div>
 
+      {/* Preview Page */}
+      {showPreview && (
+        <div
+          style={{
+            maxWidth: 800,
+            margin: "24px auto",
+            background: "#fff",
+            padding: 32,
+            borderRadius: 12,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+            border: "1px solid #e0e0e0",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              marginBottom: 24,
+              paddingBottom: 16,
+              borderBottom: `3px solid ${GREEN}`,
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                background: `${GREEN}20`,
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 24,
+              }}
+            >
+              👁️
+            </div>
+            <h2
+              style={{
+                margin: 0,
+                color: "#333",
+                fontSize: 24,
+                fontWeight: 700,
+              }}
+            >
+              Application Preview / आवेदन पूर्वावलोकन
+            </h2>
+          </div>
+
+          {/* Personal Details Preview */}
+          <div
+            style={{
+              background: "#f8f9fa",
+              padding: 20,
+              borderRadius: 8,
+              marginBottom: 24,
+              border: `2px solid ${GREEN}`,
+            }}
+          >
+            <h3
+            style={{
+              color: GREEN,
+              marginBottom: 16,
+              fontSize: 18,
+              fontWeight: 700,
+            }}
+            >
+              Personal Details / व्यक्तिगत विवरण
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Application Number</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.applicationNumber || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Candidate Name</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.candidateName || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Father's Name</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.fatherName || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Mother's Name</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.motherName || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Date of Birth</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.dob || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Gender</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>
+                  {formData.gender === "male" ? "Male / पुरुष" : formData.gender === "female" ? "Female / महिला" : formData.gender === "other" ? "Other / अन्य" : "N/A"}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Nationality</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>
+                  {formData.nationality === "indian" ? "Indian / भारतीय" : formData.nationality === "other" ? "Other / अन्य" : "N/A"}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Category</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>
+                  {formData.category === "general" ? "General / सामान्य" :
+                   formData.category === "obc" ? "OBC / अन्य पिछड़ा वर्ग" :
+                   formData.category === "sc" ? "SC / अनुसूचित जाति" :
+                   formData.category === "st" ? "ST / अनुसूचित जनजाति" :
+                   formData.category === "ews" ? "EWS / आर्थिक रूप से कमजोर वर्ग" : "N/A"}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Aadhar Number</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.aadhar || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>PAN Number</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.pan || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Mobile Number</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.mobile || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Email ID</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.email || "N/A"}</div>
+              </div>
+            </div>
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Permanent Address</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.address || "N/A"}</div>
+            </div>
+          </div>
+
+          {/* Address Details Preview */}
+          <div
+            style={{
+              background: "#f8f9fa",
+              padding: 20,
+              borderRadius: 8,
+              marginBottom: 24,
+              border: `2px solid ${GREEN}`,
+            }}
+          >
+            <h3
+              style={{
+                color: GREEN,
+                marginBottom: 16,
+                fontSize: 18,
+                fontWeight: 700,
+              }}
+            >
+              Address Details / पता विवरण
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>State</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.state || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>District</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.district || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Block</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.block || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Panchayat</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.panchayat || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Pincode</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.pincode || "N/A"}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Education Details Preview */}
+          <div
+            style={{
+              background: "#f8f9fa",
+              padding: 20,
+              borderRadius: 8,
+              marginBottom: 24,
+              border: `2px solid ${GREEN}`,
+            }}
+          >
+            <h3
+              style={{
+                color: GREEN,
+                marginBottom: 16,
+                fontSize: 18,
+                fontWeight: 700,
+              }}
+            >
+              Education Details / शिक्षा विवरण
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Higher Education</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.higherEducation || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Board / University</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.board || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Marks</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.marks || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Mark Percentage</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.markPercentage || "N/A"}%</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Documents Preview */}
+          <div
+            style={{
+              background: "#f8f9fa",
+              padding: 20,
+              borderRadius: 8,
+              marginBottom: 24,
+              border: `2px solid ${GREEN}`,
+            }}
+          >
+            <h3
+              style={{
+                color: GREEN,
+                marginBottom: 16,
+                fontSize: 18,
+                fontWeight: 700,
+              }}
+            >
+              Documents / दस्तावेज़
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              {photoPreview && (
+                <div>
+                  <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Photograph</div>
+                  <img
+                    src={photoPreview}
+                    alt="Photo preview"
+                    style={{
+                      width: 120,
+                      height: 120,
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      border: `2px solid ${GREEN}`,
+                    }}
+                  />
+                </div>
+              )}
+              {signaturePreview && (
+                <div>
+                  <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Signature</div>
+                  <img
+                    src={signaturePreview}
+                    alt="Signature preview"
+                    style={{
+                      width: 180,
+                      height: 80,
+                      objectFit: "contain",
+                      borderRadius: 8,
+                      border: `2px solid ${GREEN}`,
+                      background: "#fff",
+                      padding: 4,
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Payment Amount Display */}
+          {formData.gender && formData.category && (
+            <div
+              style={{
+                background: "#fff3cd",
+                padding: 24,
+                borderRadius: 8,
+                marginBottom: 24,
+                border: `2px solid #ffc107`,
+                textAlign: "center",
+              }}
+            >
+              <div style={{ fontSize: 16, color: "#666", marginBottom: 8, fontWeight: 600 }}>
+                Application Fee / आवेदन शुल्क
+              </div>
+              <div style={{ fontSize: 32, fontWeight: 700, color: "#856404", marginBottom: 8 }}>
+                ₹{feeAmount || 0}
+              </div>
+              <div style={{ fontSize: 14, color: "#666" }}>
+                Based on: {formData.gender === "male" ? "Male" : formData.gender === "female" ? "Female" : "Other"} / {formData.category === "general" ? "General" : formData.category === "obc" ? "OBC" : formData.category === "sc" ? "SC" : formData.category === "st" ? "ST" : "EWS"}
+              </div>
+              {calculatingFee && (
+                <div style={{ fontSize: 12, color: "#666", marginTop: 8 }}>
+                  Calculating...
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div style={{ display: "flex", gap: 16 }}>
+            <button
+              onClick={() => setShowPreview(false)}
+              style={{
+                flex: 1,
+                padding: "16px",
+                background: "#6c757d",
+                color: "#fff",
+                border: "none",
+                borderRadius: 10,
+                fontSize: 16,
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "all 0.3s",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = "#5a6268";
+                e.target.style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = "#6c757d";
+                e.target.style.transform = "translateY(0)";
+              }}
+            >
+              ← Back to Edit / वापस संपादन करें
+            </button>
+            <button
+              onClick={handleApply}
+              disabled={applying}
+              style={{
+                flex: 1,
+                padding: "16px",
+                background: `linear-gradient(135deg, ${GREEN} 0%, #2d8a00 100%)`,
+                color: "#fff",
+                border: "none",
+                borderRadius: 10,
+                fontSize: 16,
+                fontWeight: 700,
+                cursor: applying ? "not-allowed" : "pointer",
+                opacity: applying ? 0.7 : 1,
+                transition: "all 0.3s",
+                boxShadow: "0 4px 12px rgba(58, 176, 0, 0.3)",
+              }}
+              onMouseEnter={(e) => {
+                if (!applying) {
+                  e.target.style.transform = "translateY(-2px)";
+                  e.target.style.boxShadow = "0 6px 16px rgba(58, 176, 0, 0.4)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 4px 12px rgba(58, 176, 0, 0.3)";
+              }}
+            >
+              {applying
+                ? "⏳ Processing..."
+                : feeAmount > 0
+                ? `✓ Submit & Pay ₹${feeAmount}`
+                : "✓ Submit Application"}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Apply Form */}
-      {showApplyForm && (
+      {showApplyForm && !showPreview && (
         <div
           style={{
             maxWidth: 650,
@@ -537,7 +917,7 @@ export default function JobDetail() {
               Application Form / आवेदन फॉर्म
             </h2>
           </div>
-          <form onSubmit={handleApply}>
+          <form onSubmit={handlePreview}>
             {/* Personal Details Section */}
             <div
               style={{
@@ -1592,6 +1972,7 @@ export default function JobDetail() {
                       type="file"
                       accept="image/*"
                       onChange={(e) => handleFileChange(e, "photo")}
+                      required
                       style={{ display: "none" }}
                     />
                   </label>
@@ -1667,6 +2048,7 @@ export default function JobDetail() {
                       type="file"
                       accept="image/*"
                       onChange={(e) => handleFileChange(e, "signature")}
+                      required
                       style={{ display: "none" }}
                     />
                   </label>
@@ -1796,7 +2178,7 @@ export default function JobDetail() {
 
             <button
               type="submit"
-              disabled={applying || !agreed1 || !agreed2 || !photo || !signature}
+              disabled={!agreed1 || !agreed2 || !photo || !signature}
               style={{
                 width: "100%",
                 padding: "16px",
@@ -1806,14 +2188,381 @@ export default function JobDetail() {
                 borderRadius: 10,
                 fontSize: 16,
                 fontWeight: 700,
-                cursor: applying || !agreed1 || !agreed2 || !photo || !signature ? "not-allowed" : "pointer",
-                opacity: applying || !agreed1 || !agreed2 || !photo || !signature ? 0.7 : 1,
+                cursor: !agreed1 || !agreed2 || !photo || !signature ? "not-allowed" : "pointer",
+                opacity: !agreed1 || !agreed2 || !photo || !signature ? 0.7 : 1,
                 transition: "all 0.3s",
                 boxShadow: "0 4px 12px rgba(58, 176, 0, 0.3)",
                 marginTop: 8,
               }}
               onMouseEnter={(e) => {
-                if (!applying && agreed1 && agreed2 && photo && signature) {
+                if (agreed1 && agreed2 && photo && signature) {
+                  e.target.style.transform = "translateY(-2px)";
+                  e.target.style.boxShadow = "0 6px 16px rgba(58, 176, 0, 0.4)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 4px 12px rgba(58, 176, 0, 0.3)";
+              }}
+            >
+              ✓ Preview Application / आवेदन पूर्वावलोकन
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Preview Page */}
+      {showPreview && (
+        <div
+          style={{
+            maxWidth: 800,
+            margin: "24px auto",
+            background: "#fff",
+            padding: 32,
+            borderRadius: 12,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+            border: "1px solid #e0e0e0",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              marginBottom: 24,
+              paddingBottom: 16,
+              borderBottom: `3px solid ${GREEN}`,
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                background: `${GREEN}20`,
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 24,
+              }}
+            >
+              👁️
+            </div>
+            <h2
+              style={{
+                margin: 0,
+                color: "#333",
+                fontSize: 24,
+                fontWeight: 700,
+              }}
+            >
+              Application Preview / आवेदन पूर्वावलोकन
+            </h2>
+          </div>
+
+          {/* Personal Details Preview */}
+          <div
+            style={{
+              background: "#f8f9fa",
+              padding: 20,
+              borderRadius: 8,
+              marginBottom: 24,
+              border: `2px solid ${GREEN}`,
+            }}
+          >
+            <h3
+              style={{
+                color: GREEN,
+                marginBottom: 16,
+                fontSize: 18,
+                fontWeight: 700,
+              }}
+            >
+              Personal Details / व्यक्तिगत विवरण
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Application Number</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.applicationNumber || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Candidate Name</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.candidateName || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Father's Name</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.fatherName || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Mother's Name</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.motherName || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Date of Birth</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.dob || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Gender</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>
+                  {formData.gender === "male" ? "Male / पुरुष" : formData.gender === "female" ? "Female / महिला" : formData.gender === "other" ? "Other / अन्य" : "N/A"}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Nationality</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>
+                  {formData.nationality === "indian" ? "Indian / भारतीय" : formData.nationality === "other" ? "Other / अन्य" : "N/A"}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Category</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>
+                  {formData.category === "general" ? "General / सामान्य" :
+                   formData.category === "obc" ? "OBC / अन्य पिछड़ा वर्ग" :
+                   formData.category === "sc" ? "SC / अनुसूचित जाति" :
+                   formData.category === "st" ? "ST / अनुसूचित जनजाति" :
+                   formData.category === "ews" ? "EWS / आर्थिक रूप से कमजोर वर्ग" : "N/A"}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Aadhar Number</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.aadhar || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>PAN Number</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.pan || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Mobile Number</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.mobile || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Email ID</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.email || "N/A"}</div>
+              </div>
+            </div>
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Permanent Address</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.address || "N/A"}</div>
+            </div>
+          </div>
+
+          {/* Address Details Preview */}
+          <div
+            style={{
+              background: "#f8f9fa",
+              padding: 20,
+              borderRadius: 8,
+              marginBottom: 24,
+              border: `2px solid ${GREEN}`,
+            }}
+          >
+            <h3
+              style={{
+                color: GREEN,
+                marginBottom: 16,
+                fontSize: 18,
+                fontWeight: 700,
+              }}
+            >
+              Address Details / पता विवरण
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>State</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.state || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>District</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.district || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Block</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.block || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Panchayat</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.panchayat || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Pincode</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.pincode || "N/A"}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Education Details Preview */}
+          <div
+            style={{
+              background: "#f8f9fa",
+              padding: 20,
+              borderRadius: 8,
+              marginBottom: 24,
+              border: `2px solid ${GREEN}`,
+            }}
+          >
+            <h3
+              style={{
+                color: GREEN,
+                marginBottom: 16,
+                fontSize: 18,
+                fontWeight: 700,
+              }}
+            >
+              Education Details / शिक्षा विवरण
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Higher Education</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.higherEducation || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Board / University</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.board || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Marks</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.marks || "N/A"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Mark Percentage</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#333" }}>{formData.markPercentage || "N/A"}%</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Documents Preview */}
+          <div
+            style={{
+              background: "#f8f9fa",
+              padding: 20,
+              borderRadius: 8,
+              marginBottom: 24,
+              border: `2px solid ${GREEN}`,
+            }}
+          >
+            <h3
+              style={{
+                color: GREEN,
+                marginBottom: 16,
+                fontSize: 18,
+                fontWeight: 700,
+              }}
+            >
+              Documents / दस्तावेज़
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              {photoPreview && (
+                <div>
+                  <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Photograph</div>
+                  <img
+                    src={photoPreview}
+                    alt="Photo preview"
+                    style={{
+                      width: 120,
+                      height: 120,
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      border: `2px solid ${GREEN}`,
+                    }}
+                  />
+                </div>
+              )}
+              {signaturePreview && (
+                <div>
+                  <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Signature</div>
+                  <img
+                    src={signaturePreview}
+                    alt="Signature preview"
+                    style={{
+                      width: 180,
+                      height: 80,
+                      objectFit: "contain",
+                      borderRadius: 8,
+                      border: `2px solid ${GREEN}`,
+                      background: "#fff",
+                      padding: 4,
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Payment Amount Display */}
+          {formData.gender && formData.category && (
+            <div
+              style={{
+                background: "#fff3cd",
+                padding: 24,
+                borderRadius: 8,
+                marginBottom: 24,
+                border: `2px solid #ffc107`,
+                textAlign: "center",
+              }}
+            >
+              <div style={{ fontSize: 16, color: "#666", marginBottom: 8, fontWeight: 600 }}>
+                Application Fee / आवेदन शुल्क
+              </div>
+              <div style={{ fontSize: 32, fontWeight: 700, color: "#856404", marginBottom: 8 }}>
+                ₹{feeAmount || 0}
+              </div>
+              <div style={{ fontSize: 14, color: "#666" }}>
+                Based on: {formData.gender === "male" ? "Male" : formData.gender === "female" ? "Female" : "Other"} / {formData.category === "general" ? "General" : formData.category === "obc" ? "OBC" : formData.category === "sc" ? "SC" : formData.category === "st" ? "ST" : "EWS"}
+              </div>
+              {calculatingFee && (
+                <div style={{ fontSize: 12, color: "#666", marginTop: 8 }}>
+                  Calculating...
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div style={{ display: "flex", gap: 16 }}>
+            <button
+              onClick={() => setShowPreview(false)}
+              style={{
+                flex: 1,
+                padding: "16px",
+                background: "#6c757d",
+                color: "#fff",
+                border: "none",
+                borderRadius: 10,
+                fontSize: 16,
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "all 0.3s",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = "#5a6268";
+                e.target.style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = "#6c757d";
+                e.target.style.transform = "translateY(0)";
+              }}
+            >
+              ← Back to Edit / वापस संपादन करें
+            </button>
+            <button
+              onClick={handleApply}
+              disabled={applying}
+              style={{
+                flex: 1,
+                padding: "16px",
+                background: `linear-gradient(135deg, ${GREEN} 0%, #2d8a00 100%)`,
+                color: "#fff",
+                border: "none",
+                borderRadius: 10,
+                fontSize: 16,
+                fontWeight: 700,
+                cursor: applying ? "not-allowed" : "pointer",
+                opacity: applying ? 0.7 : 1,
+                transition: "all 0.3s",
+                boxShadow: "0 4px 12px rgba(58, 176, 0, 0.3)",
+              }}
+              onMouseEnter={(e) => {
+                if (!applying) {
                   e.target.style.transform = "translateY(-2px)";
                   e.target.style.boxShadow = "0 6px 16px rgba(58, 176, 0, 0.4)";
                 }
@@ -1829,7 +2578,7 @@ export default function JobDetail() {
                 ? `✓ Submit & Pay ₹${feeAmount}`
                 : "✓ Submit Application"}
             </button>
-          </form>
+          </div>
         </div>
       )}
 
