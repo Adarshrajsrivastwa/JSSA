@@ -3228,11 +3228,16 @@ function VacanciesBand({ items = [] }) {
   );
 }
 function ResultsBand({ items = [] }) {
+  // Show "Coming Soon" when no items
+  const displayItems = items.length === 0 
+    ? [{ english: "Coming Soon", hindi: "जल्द ही आ रहा है", link: "#" }]
+    : items;
+  
   return (
     <MarqueeBand
       labelLine1="Latest"
       labelLine2="Results"
-      items={items}
+      items={displayItems}
       animId="res"
     />
   );
@@ -4133,21 +4138,10 @@ function HomePage({ onNavigate }) {
     return () => clearInterval(iv);
   }, []);
 
+  // Results API call removed - showing "Coming Soon" instead
   useEffect(() => {
-    const fetch_ = async () => {
-      try {
-        setLoadingResults(true);
-        const r = await jobPostingsAPI.getLatestResults();
-        setResults(r.success && r.data.results ? r.data.results : []);
-      } catch {
-        setResults([]);
-      } finally {
-        setLoadingResults(false);
-      }
-    };
-    fetch_();
-    const iv = setInterval(fetch_, 30000);
-    return () => clearInterval(iv);
+    setResults([]);
+    setLoadingResults(false);
   }, []);
 
   useEffect(() => {
