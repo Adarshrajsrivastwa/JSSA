@@ -3987,6 +3987,16 @@ export default function JSSAbhiyan() {
         overflowX: "hidden",
       }}
     >
+      {/* Dark Grey Strip at Top */}
+      <div
+        style={{
+          background: "#2a2a2a",
+          height: "3px",
+          width: "100%",
+        }}
+      />
+      
+      {/* Top Bar - Green Header */}
       <div
         style={{
           background: GREEN,
@@ -3995,6 +4005,7 @@ export default function JSSAbhiyan() {
           justifyContent: "space-between",
           padding: "8px 18px",
           gap: 8,
+          flexWrap: "wrap",
         }}
       >
         <div
