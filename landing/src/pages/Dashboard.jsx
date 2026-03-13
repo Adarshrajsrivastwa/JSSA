@@ -4848,6 +4848,7 @@ export default function JSSAbhiyan() {
   const socialLinks = [
     {
       bg: "#1877f2",
+      url: "https://www.facebook.com/",
       content: (
         <span
           style={{
@@ -4863,6 +4864,7 @@ export default function JSSAbhiyan() {
     },
     {
       bg: "radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285aeb 90%)",
+      url: "https://www.instagram.com/jssabhiyan8/?hl=en",
       content: (
         <svg
           viewBox="0 0 24 24"
@@ -4880,6 +4882,7 @@ export default function JSSAbhiyan() {
     },
     {
       bg: "#ff0000",
+      url: "https://www.youtube.com/@janswasthyasahayataabhiyan8183",
       content: (
         <svg viewBox="0 0 24 24" width="16" height="16" fill="white">
           <polygon points="9.5,7 9.5,17 18,12" />
@@ -4888,6 +4891,7 @@ export default function JSSAbhiyan() {
     },
     {
       bg: "#0077b5",
+      url: "https://www.linkedin.com/in/jss-abhiyan-3872b13b7/",
       content: (
         <span style={{ fontWeight: 900, fontSize: 12, color: "#fff" }}>in</span>
       ),
@@ -5132,7 +5136,9 @@ export default function JSSAbhiyan() {
               {socialLinks.map((s, i) => (
                 <a
                   key={i}
-                  href="#"
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     background: s.bg,
                     borderRadius: 7,
@@ -5249,7 +5255,9 @@ export default function JSSAbhiyan() {
             {socialLinks.map((s, i) => (
               <a
                 key={i}
-                href="#"
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
                   background: s.bg,
                   borderRadius: 4,

@@ -157,9 +157,9 @@ const Settings = () => {
   if (role !== "admin") {
     return (
       <DashboardLayout>
-        <div className="p-6">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-700">Access denied. Only admins can view settings.</p>
+        <div className="p-3 sm:p-6">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
+            <p className="text-red-700 text-sm">Access denied. Only admins can view settings.</p>
           </div>
         </div>
       </DashboardLayout>
@@ -169,9 +169,9 @@ const Settings = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="p-6">
+        <div className="p-3 sm:p-6">
           <div className="flex items-center justify-center h-64">
-            <div className="text-gray-500">Loading settings...</div>
+            <div className="text-gray-500 text-sm sm:text-base">Loading settings...</div>
           </div>
         </div>
       </DashboardLayout>
@@ -180,50 +180,50 @@ const Settings = () => {
 
   return (
     <DashboardLayout activePath="/settings">
-      <div className="p-6">
+      <div className="p-3 sm:p-6">
         {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-lg bg-[#3AB000] flex items-center justify-center">
-              <SettingsIcon className="w-5 h-5 text-white" />
+        <div className="mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#3AB000] flex items-center justify-center flex-shrink-0">
+              <SettingsIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Settings</h1>
           </div>
-          <p className="text-gray-600 text-sm">Manage application settings and payment gateway credentials</p>
+          <p className="text-gray-600 text-xs sm:text-sm">Manage application settings and payment gateway credentials</p>
         </div>
 
         {/* Success Message */}
         {success && (
-          <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4">
-            <p className="text-green-700 text-sm font-medium">Settings saved successfully!</p>
+          <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
+            <p className="text-green-700 text-xs sm:text-sm font-medium">Settings saved successfully!</p>
           </div>
         )}
 
         {/* Error Message */}
         {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-700 text-sm">{error}</p>
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
+            <p className="text-red-700 text-xs sm:text-sm">{error}</p>
           </div>
         )}
 
         {/* Settings Form */}
         <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-gray-200 shadow-sm">
           {/* Razorpay Section */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center gap-3 mb-4">
-              <CreditCard className="w-5 h-5 text-[#3AB000]" />
-              <h2 className="text-lg font-bold text-gray-900">Razorpay Payment Gateway</h2>
+          <div className="p-4 sm:p-6 border-b border-gray-200">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-[#3AB000] flex-shrink-0" />
+              <h2 className="text-base sm:text-lg font-bold text-gray-900">Razorpay Payment Gateway</h2>
             </div>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6">
               Configure your Razorpay credentials for payment processing. Use test mode for development and testing.
             </p>
 
             {/* Current Active Credentials Display */}
             {formData.razorpay.isTestMode ? (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <h3 className="text-sm font-bold text-gray-900">Currently Active: Test Mode</h3>
+                  <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                  <h3 className="text-xs sm:text-sm font-bold text-gray-900">Currently Active: Test Mode</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                   <div>
@@ -239,10 +239,10 @@ const Settings = () => {
                 </div>
               </div>
             ) : (
-              <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-orange-50 border border-orange-200 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  <h3 className="text-sm font-bold text-gray-900">Currently Active: Live Mode</h3>
+                  <div className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0"></div>
+                  <h3 className="text-xs sm:text-sm font-bold text-gray-900">Currently Active: Live Mode</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                   <div>
@@ -260,30 +260,30 @@ const Settings = () => {
             )}
 
             {/* Test Mode Toggle */}
-            <div className="mb-6">
-              <label className="flex items-center gap-3 cursor-pointer">
+            <div className="mb-4 sm:mb-6">
+              <label className="flex items-center gap-2 sm:gap-3 cursor-pointer">
                 <input
                   type="checkbox"
                   name="razorpay.isTestMode"
                   checked={formData.razorpay.isTestMode}
                   onChange={handleChange}
-                  className="w-4 h-4 text-[#3AB000] border-gray-300 rounded focus:ring-[#3AB000]"
+                  className="w-4 h-4 text-[#3AB000] border-gray-300 rounded focus:ring-[#3AB000] flex-shrink-0"
                 />
-                <span className="text-sm font-medium text-gray-700">Enable Test Mode</span>
+                <span className="text-xs sm:text-sm font-medium text-gray-700">Enable Test Mode</span>
               </label>
-              <p className="text-xs text-gray-500 mt-1 ml-7">
+              <p className="text-xs text-gray-500 mt-1 ml-6 sm:ml-7">
                 When enabled, test credentials will be used for all transactions
               </p>
             </div>
 
             {/* Test Credentials Section */}
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-bold text-gray-900">Test Credentials</h3>
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-3">
+                <h3 className="text-xs sm:text-sm font-bold text-gray-900">Test Credentials</h3>
                 <button
                   type="button"
                   onClick={loadTestCredentials}
-                  className="text-xs px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                  className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors w-full sm:w-auto"
                 >
                   Load Test Credentials
                 </button>
@@ -329,8 +329,8 @@ const Settings = () => {
             </div>
 
             {/* Live Credentials Section */}
-            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <h3 className="text-sm font-bold text-gray-900 mb-3">Live Credentials</h3>
+            <div className="p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <h3 className="text-xs sm:text-sm font-bold text-gray-900 mb-3">Live Credentials</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -374,19 +374,19 @@ const Settings = () => {
 
           {/* Verification Result */}
           {verificationResult && (
-            <div className={`mx-6 mb-4 p-4 rounded-lg border ${
+            <div className={`mx-4 sm:mx-6 mb-4 p-3 sm:p-4 rounded-lg border ${
               verificationResult.valid
                 ? "bg-green-50 border-green-200"
                 : "bg-red-50 border-red-200"
             }`}>
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-2 sm:gap-3">
                 {verificationResult.valid ? (
-                  <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0 mt-0.5" />
                 ) : (
-                  <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 flex-shrink-0 mt-0.5" />
                 )}
-                <div className="flex-1">
-                  <p className={`text-sm font-semibold ${
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs sm:text-sm font-semibold ${
                     verificationResult.valid ? "text-green-800" : "text-red-800"
                   }`}>
                     {verificationResult.message}
@@ -397,7 +397,7 @@ const Settings = () => {
                     </p>
                   )}
                   {verificationResult.keyId && (
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-xs text-gray-600 mt-1 break-all">
                       Key ID: {verificationResult.keyId}
                     </p>
                   )}
@@ -412,12 +412,12 @@ const Settings = () => {
           )}
 
           {/* Action Buttons */}
-          <div className="p-6 flex justify-between items-center">
+          <div className="p-4 sm:p-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
             <button
               type="button"
               onClick={handleVerifyCredentials}
               disabled={verifying || saving}
-              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
             >
               {verifying ? (
                 <>
@@ -434,7 +434,7 @@ const Settings = () => {
             <button
               type="submit"
               disabled={saving || verifying}
-              className="flex items-center gap-2 px-6 py-2.5 bg-[#3AB000] hover:bg-[#2d8a00] text-white text-sm font-semibold rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-[#3AB000] hover:bg-[#2d8a00] text-white text-xs sm:text-sm font-semibold rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
             >
               <Save className="w-4 h-4" />
               {saving ? "Saving..." : "Save Settings"}

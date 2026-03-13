@@ -135,8 +135,8 @@ const Notifications = () => {
   if (role !== "admin") {
     return (
       <DashboardLayout>
-        <div className="p-6">
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="p-3 sm:p-6">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded text-sm">
             {error || "Access denied. Only admins can manage notifications."}
           </div>
         </div>
@@ -146,15 +146,15 @@ const Notifications = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Push Notifications</h1>
+      <div className="p-3 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Push Notifications</h1>
           <button
             onClick={() => {
               resetForm();
               setIsModalOpen(true);
             }}
-            className="flex items-center gap-2 bg-[#3AB000] hover:bg-[#2d8a00] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center justify-center gap-2 bg-[#3AB000] hover:bg-[#2d8a00] text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors w-full sm:w-auto"
           >
             <Plus className="w-4 h-4" />
             Add Notification
@@ -162,72 +162,167 @@ const Notifications = () => {
         </div>
 
         {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded text-sm">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+          <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-3 sm:px-4 py-2 sm:py-3 rounded text-sm">
             {success}
           </div>
         )}
 
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">Loading notifications...</p>
+            <p className="text-gray-500 text-sm sm:text-base">Loading notifications...</p>
           </div>
         ) : notifications.length === 0 ? (
           <div className="text-center py-12 bg-gray-50 rounded-lg">
             <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">No notifications found. Create your first notification!</p>
+            <p className="text-gray-500 text-sm sm:text-base">No notifications found. Create your first notification!</p>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Title
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    URL
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {notifications.map((notification) => (
-                  <tr key={notification._id}>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">
+          <>
+            {/* Desktop Table */}
+            <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Title
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        URL
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date & Time
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {notifications.map((notification) => (
+                      <tr key={notification._id}>
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {notification.title || "N/A"}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          {notification.url ? (
+                            <a
+                              href={notification.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                            >
+                              <LinkIcon className="w-3 h-3" />
+                              {notification.url.length > 40
+                                ? `${notification.url.substring(0, 40)}...`
+                                : notification.url}
+                            </a>
+                          ) : (
+                            <span className="text-sm text-gray-400">No URL</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {notification.notificationDate
+                              ? new Date(notification.notificationDate).toLocaleDateString("en-IN", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                              : "N/A"}
+                          </div>
+                          {notification.notificationTime && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              {notification.notificationTime}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                              notification.isActive
+                                ? "bg-green-100 text-green-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {notification.isActive ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => handleEdit(notification)}
+                            className="text-indigo-600 hover:text-indigo-900 mr-4"
+                            title="Edit"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(notification._id)}
+                            className="text-red-600 hover:text-red-900"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+              {notifications.map((notification) => (
+                <div
+                  key={notification._id}
+                  className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base font-semibold text-gray-900 mb-1">
                         {notification.title || "N/A"}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
+                      </h3>
                       {notification.url ? (
                         <a
                           href={notification.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                          className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-1 break-all"
                         >
-                          <LinkIcon className="w-3 h-3" />
-                          {notification.url.length > 40
-                            ? `${notification.url.substring(0, 40)}...`
-                            : notification.url}
+                          <LinkIcon className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">{notification.url}</span>
                         </a>
                       ) : (
-                        <span className="text-sm text-gray-400">No URL</span>
+                        <span className="text-xs text-gray-400">No URL</span>
                       )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                    </div>
+                    <span
+                      className={`px-2 py-1 text-xs font-semibold rounded-full flex-shrink-0 ml-2 ${
+                        notification.isActive
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {notification.isActive ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-sm text-gray-700 mb-3">
+                    <div className="flex items-start">
+                      <span className="font-medium w-24 flex-shrink-0">Date:</span>
+                      <span className="flex-1">
                         {notification.notificationDate
                           ? new Date(notification.notificationDate).toLocaleDateString("en-IN", {
                               day: "2-digit",
@@ -235,59 +330,52 @@ const Notifications = () => {
                               year: "numeric",
                             })
                           : "N/A"}
-                      </div>
-                      {notification.notificationTime && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          {notification.notificationTime}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          notification.isActive
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {notification.isActive ? "Active" : "Inactive"}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleEdit(notification)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-4"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(notification._id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                    {notification.notificationTime && (
+                      <div className="flex items-start">
+                        <span className="font-medium w-24 flex-shrink-0">Time:</span>
+                        <span className="flex-1">{notification.notificationTime}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+                    <button
+                      onClick={() => handleEdit(notification)}
+                      className="text-indigo-600 hover:text-indigo-900 p-2"
+                      title="Edit"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(notification._id)}
+                      className="text-red-600 hover:text-red-900 p-2"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
 
         {/* Modal */}
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-4 sm:p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-gray-900">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">
                     {editingId ? "Edit Notification" : "Add Notification"}
                   </h2>
                   <button
                     onClick={handleCloseModal}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-gray-600 p-1"
                   >
-                    <X className="w-6 h-6" />
+                    <X className="w-5 h-5 sm:w-6 sm:h-6" />
                   </button>
                 </div>
 
@@ -302,7 +390,7 @@ const Notifications = () => {
                       value={formData.title}
                       onChange={handleChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3AB000]"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3AB000]"
                       placeholder="Enter notification title"
                     />
                   </div>
@@ -316,12 +404,12 @@ const Notifications = () => {
                       name="url"
                       value={formData.url}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3AB000]"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3AB000]"
                       placeholder="https://example.com"
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Notification Date
@@ -331,7 +419,7 @@ const Notifications = () => {
                         name="notificationDate"
                         value={formData.notificationDate}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3AB000]"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3AB000]"
                       />
                     </div>
 
@@ -344,7 +432,7 @@ const Notifications = () => {
                         name="notificationTime"
                         value={formData.notificationTime}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3AB000]"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3AB000]"
                       />
                     </div>
                   </div>
@@ -360,17 +448,17 @@ const Notifications = () => {
                     <label className="ml-2 block text-sm text-gray-700">Active</label>
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4">
+                  <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
                     <button
                       type="button"
                       onClick={handleCloseModal}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                      className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 text-sm font-medium"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-[#3AB000] text-white rounded-md hover:bg-[#2d8a00] flex items-center gap-2"
+                      className="w-full sm:w-auto px-4 py-2 bg-[#3AB000] text-white rounded-md hover:bg-[#2d8a00] flex items-center justify-center gap-2 text-sm font-medium"
                     >
                       <Save className="w-4 h-4" />
                       {editingId ? "Update" : "Create"}

@@ -397,11 +397,11 @@ const JobPostingList = () => {
 
   return (
     <DashboardLayout activePath="/job-postings">
-      <div className="p-0 ml-6">
+      <div className="p-0 ml-0 md:ml-6 px-2 md:px-0">
         {/* ── Top Bar ── */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1">
-            <div className="flex items-center gap-0 border border-gray-300 rounded overflow-hidden flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 w-full">
+            <div className="flex items-center gap-0 border border-gray-300 rounded overflow-hidden flex-shrink-0 w-full sm:w-auto">
               {["all", "active", "inactive"].map((tab) => (
                 <button
                   key={tab}
@@ -409,7 +409,7 @@ const JobPostingList = () => {
                     setActiveTab(tab);
                     setCurrentPage(1);
                   }}
-                  className={`px-6 py-2 text-sm font-medium border-r border-gray-300 last:border-r-0 transition-colors whitespace-nowrap ${
+                  className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 text-xs sm:text-sm font-medium border-r border-gray-300 last:border-r-0 transition-colors whitespace-nowrap ${
                     activeTab === tab
                       ? "bg-[#3AB000] text-white"
                       : "bg-white text-gray-600 hover:bg-gray-50"
@@ -420,18 +420,18 @@ const JobPostingList = () => {
               ))}
             </div>
 
-            <div className="flex items-center border border-gray-300 rounded overflow-hidden h-10 flex-1 max-w-[500px]">
+            <div className="flex items-center border border-gray-300 rounded overflow-hidden h-10 flex-1 w-full sm:max-w-[500px]">
               <input
                 type="text"
                 placeholder="Search by Post, Advt No, Location..."
-                className="flex-1 px-4 text-sm text-gray-700 focus:outline-none h-full bg-white"
+                className="flex-1 px-3 sm:px-4 text-xs sm:text-sm text-gray-700 focus:outline-none h-full bg-white"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
               />
-              <button className="bg-[#3AB000] hover:bg-[#2d8a00] text-white text-sm px-6 h-full font-medium transition-colors">
+              <button className="bg-[#3AB000] hover:bg-[#2d8a00] text-white text-xs sm:text-sm px-4 sm:px-6 h-full font-medium transition-colors whitespace-nowrap">
                 Search
               </button>
             </div>
@@ -440,176 +440,289 @@ const JobPostingList = () => {
           {role === "admin" && (
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bg-black hover:bg-[#3AB000] text-white text-sm font-medium px-6 py-2.5 rounded-sm transition-colors whitespace-nowrap"
+              className="bg-black hover:bg-[#3AB000] text-white text-xs sm:text-sm font-medium px-4 sm:px-6 py-2.5 rounded-sm transition-colors whitespace-nowrap w-full sm:w-auto"
             >
               + Add Job Posting
             </button>
           )}
         </div>
 
-        {/* ── Table ── */}
-        <div className="bg-white rounded overflow-hidden border border-gray-200">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-[#3AB000]">
-                {[
-                  "S.N",
-                  "Advt No.",
-                  "Post Name",
-                  "Income",
-                  "Education",
-                  "Location",
-                  "Last Date",
-                  "Status",
-                  "Action",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-
-            {loading ? (
-              <TableSkeleton />
-            ) : filteredPostings.length === 0 ? (
-              <EmptyState />
-            ) : (
-              <tbody>
-                {currentPostings.map((posting, idx) => (
-                  <tr
-                    key={posting.id}
-                    className="border-b border-gray-100 hover:bg-[#e8f5e2] transition-colors"
-                  >
-                    <td className="px-4 py-4 text-center text-gray-700">
-                      {indexOfFirst + idx + 1}
-                    </td>
-                    <td className="px-4 py-4 text-center text-[#2d8a00] font-semibold whitespace-nowrap">
-                      {posting.advtNo}
-                    </td>
-                    <td className="px-4 py-4 text-center text-gray-700 font-medium whitespace-nowrap">
-                      {typeof posting.post === 'object' ? posting.post.en : posting.post}
-                    </td>
-                    <td className="px-4 py-4 text-center text-gray-700 whitespace-nowrap">
-                      {typeof posting.income === 'object' ? posting.income.en : posting.income}
-                    </td>
-                    <td className="px-4 py-4 text-center text-gray-700">
-                      {typeof posting.education === 'object' ? posting.education.en : posting.education}
-                    </td>
-                    <td className="px-4 py-4 text-center text-gray-700 max-w-[160px] truncate">
-                      {typeof posting.location === 'object' ? posting.location.en : posting.location}
-                    </td>
-                    <td className="px-4 py-4 text-center text-gray-700 whitespace-nowrap">
-                      {posting.lastDate}
-                    </td>
-                    <td
-                      className={`px-4 py-4 text-center ${statusColor(posting.status)}`}
+        {/* ── Desktop Table ── */}
+        <div className="hidden md:block bg-white rounded overflow-hidden border border-gray-200">
+          <div className="overflow-x-auto -mx-2 md:mx-0">
+            <table className="w-full text-sm min-w-[900px]">
+              <thead>
+                <tr className="bg-[#3AB000]">
+                  {[
+                    "S.N",
+                    "Advt No.",
+                    "Post Name",
+                    "Income",
+                    "Education",
+                    "Location",
+                    "Last Date",
+                    "Status",
+                    "Action",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap"
                     >
-                      {posting.status}
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      <div className="flex items-center justify-center gap-3">
-                        {role === "admin" && (
-                          <>
-                            <button
-                              onClick={() => {
-                                setEditingPosting(posting);
-                                setIsEditModalOpen(true);
-                              }}
-                              className="text-[#3AB000] hover:text-blue-600 transition-colors"
-                              title="Edit"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(posting.id)}
-                              className="text-[#3AB000] hover:text-red-600 transition-colors"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                        {/* ✅ View → navigate to dedicated view page */}
-                        <button
-                          onClick={() =>
-                            navigate(`/job-postings/view/${posting.id}`)
-                          }
-                          className="text-[#3AB000] hover:text-[#2d8a00] transition-colors"
-                          title="View"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            )}
-          </table>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+
+              {loading ? (
+                <TableSkeleton />
+              ) : filteredPostings.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <tbody>
+                  {currentPostings.map((posting, idx) => (
+                    <tr
+                      key={posting.id}
+                      className="border-b border-gray-100 hover:bg-[#e8f5e2] transition-colors"
+                    >
+                      <td className="px-4 py-4 text-center text-gray-700">
+                        {indexOfFirst + idx + 1}
+                      </td>
+                      <td className="px-4 py-4 text-center text-[#2d8a00] font-semibold whitespace-nowrap">
+                        {posting.advtNo}
+                      </td>
+                      <td className="px-4 py-4 text-center text-gray-700 font-medium whitespace-nowrap">
+                        {typeof posting.post === 'object' ? posting.post.en : posting.post}
+                      </td>
+                      <td className="px-4 py-4 text-center text-gray-700 whitespace-nowrap">
+                        {typeof posting.income === 'object' ? posting.income.en : posting.income}
+                      </td>
+                      <td className="px-4 py-4 text-center text-gray-700">
+                        {typeof posting.education === 'object' ? posting.education.en : posting.education}
+                      </td>
+                      <td className="px-4 py-4 text-center text-gray-700 max-w-[160px] truncate">
+                        {typeof posting.location === 'object' ? posting.location.en : posting.location}
+                      </td>
+                      <td className="px-4 py-4 text-center text-gray-700 whitespace-nowrap">
+                        {posting.lastDate}
+                      </td>
+                      <td
+                        className={`px-4 py-4 text-center ${statusColor(posting.status)}`}
+                      >
+                        {posting.status}
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <div className="flex items-center justify-center gap-3">
+                          {role === "admin" && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setEditingPosting(posting);
+                                  setIsEditModalOpen(true);
+                                }}
+                                className="text-[#3AB000] hover:text-blue-600 transition-colors"
+                                title="Edit"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(posting.id)}
+                                className="text-[#3AB000] hover:text-red-600 transition-colors"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                          <button
+                            onClick={() =>
+                              navigate(`/job-postings/view/${posting.id}`)
+                            }
+                            className="text-[#3AB000] hover:text-[#2d8a00] transition-colors"
+                            title="View"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              )}
+            </table>
+          </div>
+        </div>
+
+        {/* ── Mobile Card View ── */}
+        <div className="md:hidden space-y-3">
+          {loading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, idx) => (
+                <div key={idx} className="bg-white rounded border border-gray-200 p-4 animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                </div>
+              ))}
+            </div>
+          ) : filteredPostings.length === 0 ? (
+            <div className="bg-white rounded border border-gray-200 p-8 text-center text-gray-400 text-sm">
+              {error ? (
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-red-500">Error: {error}</p>
+                  <button
+                    onClick={fetchPostings}
+                    className="bg-[#3AB000] text-white px-4 py-1.5 rounded text-xs hover:bg-[#2d8a00]"
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : (
+                "No job postings found."
+              )}
+            </div>
+          ) : (
+            currentPostings.map((posting, idx) => (
+              <div
+                key={posting.id}
+                className="bg-white rounded border border-gray-200 p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-500 mb-1">S.N: {indexOfFirst + idx + 1}</div>
+                    <div className="text-sm font-semibold text-[#2d8a00] mb-1">
+                      {posting.advtNo}
+                    </div>
+                    <div className="text-base font-medium text-gray-800">
+                      {typeof posting.post === 'object' ? posting.post.en : posting.post}
+                    </div>
+                  </div>
+                  <div className={`text-xs font-semibold px-2 py-1 rounded ${statusColor(posting.status)}`}>
+                    {posting.status}
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-sm text-gray-700 mb-3">
+                  <div className="flex items-start">
+                    <span className="font-medium w-20 flex-shrink-0">Income:</span>
+                    <span className="flex-1">{typeof posting.income === 'object' ? posting.income.en : posting.income}</span>
+                  </div>
+                  <div className="flex items-start">
+                    <span className="font-medium w-20 flex-shrink-0">Education:</span>
+                    <span className="flex-1">{typeof posting.education === 'object' ? posting.education.en : posting.education}</span>
+                  </div>
+                  <div className="flex items-start">
+                    <span className="font-medium w-20 flex-shrink-0">Location:</span>
+                    <span className="flex-1">{typeof posting.location === 'object' ? posting.location.en : posting.location}</span>
+                  </div>
+                  <div className="flex items-start">
+                    <span className="font-medium w-20 flex-shrink-0">Last Date:</span>
+                    <span className="flex-1">{posting.lastDate}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+                  {role === "admin" && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setEditingPosting(posting);
+                          setIsEditModalOpen(true);
+                        }}
+                        className="text-[#3AB000] hover:text-blue-600 transition-colors p-2"
+                        title="Edit"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(posting.id)}
+                        className="text-[#3AB000] hover:text-red-600 transition-colors p-2"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => navigate(`/job-postings/view/${posting.id}`)}
+                    className="text-[#3AB000] hover:text-[#2d8a00] transition-colors p-2"
+                    title="View"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         {/* ── Pagination ── */}
         {!loading && filteredPostings.length > 0 && (
-          <div className="flex justify-end items-center gap-4 mt-6">
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="bg-[#3AB000] disabled:opacity-50 text-white px-10 py-2.5 text-sm font-medium hover:bg-[#2d8a00] transition-colors rounded-sm"
-            >
-              Back
-            </button>
-
-            <div className="flex items-center gap-2 text-sm font-medium">
-              {(() => {
-                const pages = [];
-                const visiblePages = new Set([
-                  1,
-                  2,
-                  totalPages - 1,
-                  totalPages,
-                  currentPage - 1,
-                  currentPage,
-                  currentPage + 1,
-                ]);
-                for (let i = 1; i <= totalPages; i++) {
-                  if (visiblePages.has(i)) pages.push(i);
-                  else if (pages[pages.length - 1] !== "...") pages.push("...");
-                }
-                return pages.map((page, idx) =>
-                  page === "..." ? (
-                    <span key={idx} className="px-1 text-gray-500 select-none">
-                      ...
-                    </span>
-                  ) : (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`w-7 h-7 flex items-center justify-center rounded text-sm transition-colors ${
-                        currentPage === page
-                          ? "text-[#3AB000] font-bold"
-                          : "text-gray-600 hover:text-[#3AB000]"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ),
-                );
-              })()}
+          <div className="flex flex-col sm:flex-row justify-between sm:justify-end items-center gap-3 sm:gap-4 mt-6">
+            <div className="text-xs sm:text-sm text-gray-600 sm:hidden">
+              Page {currentPage} of {totalPages}
             </div>
+            <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto justify-center">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="bg-[#3AB000] disabled:opacity-50 text-white px-6 sm:px-10 py-2 sm:py-2.5 text-xs sm:text-sm font-medium hover:bg-[#2d8a00] transition-colors rounded-sm flex-1 sm:flex-none"
+              >
+                Back
+              </button>
 
-            <button
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
-              disabled={currentPage === totalPages}
-              className="bg-[#3AB000] disabled:opacity-50 text-white px-10 py-2.5 text-sm font-medium hover:bg-[#2d8a00] transition-colors rounded-sm"
-            >
-              Next
-            </button>
+              <div className="hidden sm:flex items-center gap-2 text-sm font-medium">
+                {(() => {
+                  const pages = [];
+                  const visiblePages = new Set([
+                    1,
+                    2,
+                    totalPages - 1,
+                    totalPages,
+                    currentPage - 1,
+                    currentPage,
+                    currentPage + 1,
+                  ]);
+                  for (let i = 1; i <= totalPages; i++) {
+                    if (visiblePages.has(i)) pages.push(i);
+                    else if (pages[pages.length - 1] !== "...") pages.push("...");
+                  }
+                  return pages.map((page, idx) =>
+                    page === "..." ? (
+                      <span key={idx} className="px-1 text-gray-500 select-none">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-7 h-7 flex items-center justify-center rounded text-sm transition-colors ${
+                          currentPage === page
+                            ? "text-[#3AB000] font-bold"
+                            : "text-gray-600 hover:text-[#3AB000]"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ),
+                  );
+                })()}
+              </div>
+
+              <div className="sm:hidden text-sm font-medium text-gray-700 px-2">
+                {currentPage}
+              </div>
+
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="bg-[#3AB000] disabled:opacity-50 text-white px-6 sm:px-10 py-2 sm:py-2.5 text-xs sm:text-sm font-medium hover:bg-[#2d8a00] transition-colors rounded-sm flex-1 sm:flex-none"
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
       </div>

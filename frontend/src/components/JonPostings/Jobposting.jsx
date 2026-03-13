@@ -749,7 +749,7 @@ const JobPostingForm = ({
             <div className="mt-4">
               <div className="mb-3">
                 <label className="block text-xs font-semibold text-gray-600 mb-2">
-                  Application Fee / आवेदन शुल्क (₹) – By Gender & Category / लिंग और श्रेणी के अनुसार
+                  Fee Structure / शुल्क संरचना (₹) – By Gender & Category / लिंग और श्रेणी के अनुसार
                   <span className="text-red-500 ml-0.5">*</span>
                 </label>
                 <div className="flex gap-2 mb-3 items-end">

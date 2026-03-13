@@ -3499,7 +3499,7 @@ async function downloadJobPDF(job, lang) {
     ["Selection Process", job.selectionProcess?.en || ""],
     ["Application Opening On", job.applicationOpeningDate || ""],
     ["Last Date of Application", job.lastDate || ""],
-    ["Application Fee", job.fee?.en || ""],
+    ["Fee Structure", job.fee?.en || ""],
   ].filter((r) => r[1]);
 
   const rowsHi = [
@@ -3511,7 +3511,7 @@ async function downloadJobPDF(job, lang) {
     ["चयन प्रक्रिया", job.selectionProcess?.hi || ""],
     ["आवेदन खुलने की तिथि", job.applicationOpeningDate || ""],
     ["आवेदन की अंतिम तिथि", job.lastDate || ""],
-    ["आवेदन शुल्क", job.fee?.hi || ""],
+    ["शुल्क संरचना", job.fee?.hi || ""],
   ].filter((r) => r[1]);
 
   const rows = isHi ? rowsHi : rowsEn;
@@ -3678,6 +3678,7 @@ function ApplicationForm({
   const socialLinks = [
     {
       bg: "#1877f2",
+      url: "https://www.facebook.com/",
       content: (
         <span
           style={{
@@ -3693,6 +3694,7 @@ function ApplicationForm({
     },
     {
       bg: "radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285aeb 90%)",
+      url: "https://www.instagram.com/jssabhiyan8/?hl=en",
       content: (
         <svg
           viewBox="0 0 24 24"
@@ -3710,6 +3712,7 @@ function ApplicationForm({
     },
     {
       bg: "#ff0000",
+      url: "https://www.youtube.com/@janswasthyasahayataabhiyan8183",
       content: (
         <svg viewBox="0 0 24 24" width="16" height="16" fill="white">
           <polygon points="9.5,7 9.5,17 18,12" />
@@ -3718,6 +3721,7 @@ function ApplicationForm({
     },
     {
       bg: "#0077b5",
+      url: "https://www.linkedin.com/in/jss-abhiyan-3872b13b7/",
       content: (
         <span style={{ fontWeight: 900, fontSize: 12, color: "#fff" }}>in</span>
       ),
@@ -4037,7 +4041,9 @@ function ApplicationForm({
               {socialLinks.map((s, i) => (
                 <a
                   key={i}
-                  href="#"
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     background: s.bg,
                     borderRadius: 7,
@@ -4154,7 +4160,9 @@ function ApplicationForm({
             {socialLinks.map((s, i) => (
               <a
                 key={i}
-                href="#"
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
                   background: s.bg,
                   borderRadius: 4,
@@ -4583,7 +4591,7 @@ function ApplicationForm({
               }}
             >
               <div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>
-                Application Fee / आवेदन शुल्क
+                Fee Structure / शुल्क संरचना
               </div>
               <div style={{ fontSize: 24, fontWeight: 700, color: "#856404" }}>
                 ₹{feeAmount}
@@ -5719,7 +5727,7 @@ export default function JobDetail() {
                 }}
               >
                 <div style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>
-                  Application Fee / आवेदन शुल्क
+                  Fee Structure / शुल्क संरचना
                 </div>
                 <div style={{ fontSize: 28, fontWeight: 700, color: "#856404" }}>
                   ₹{feeAmount}
@@ -5813,7 +5821,7 @@ export default function JobDetail() {
     ["Last Date of Application", job.lastDate || ""],
     ["1st Merit List Released", job.firstMeritListDate || ""],
     ["Final Merit List Released", job.finalMeritListDate || ""],
-    ["Application Fee", job.fee?.en || ""],
+    ["Fee Structure", job.fee?.en || ""],
   ].filter((r) => r[1]);
 
   const rowsHi = [
@@ -5831,7 +5839,7 @@ export default function JobDetail() {
     ["आवेदन की अंतिम तिथि", job.lastDate || ""],
     ["मेधा सूची जारी", job.firstMeritListDate || ""],
     ["अंतिम मेधा सूची जारी", job.finalMeritListDate || ""],
-    ["आवेदन शुल्क", job.fee?.hi || ""],
+    ["शुल्क संरचना", job.fee?.hi || ""],
   ].filter((r) => r[1]);
 
   const rows = Math.max(rowsEn.length, rowsHi.length);
@@ -5855,6 +5863,7 @@ export default function JobDetail() {
   const socialLinks = [
     {
       bg: "#1877f2",
+      url: "https://www.facebook.com/",
       content: (
         <span
           style={{
@@ -5870,6 +5879,7 @@ export default function JobDetail() {
     },
     {
       bg: "radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285aeb 90%)",
+      url: "https://www.instagram.com/jssabhiyan8/?hl=en",
       content: (
         <svg
           viewBox="0 0 24 24"
@@ -5887,6 +5897,7 @@ export default function JobDetail() {
     },
     {
       bg: "#ff0000",
+      url: "https://www.youtube.com/@janswasthyasahayataabhiyan8183",
       content: (
         <svg viewBox="0 0 24 24" width="16" height="16" fill="white">
           <polygon points="9.5,7 9.5,17 18,12" />
@@ -5895,6 +5906,7 @@ export default function JobDetail() {
     },
     {
       bg: "#0077b5",
+      url: "https://www.linkedin.com/in/jss-abhiyan-3872b13b7/",
       content: (
         <span style={{ fontWeight: 900, fontSize: 12, color: "#fff" }}>in</span>
       ),
@@ -6214,7 +6226,9 @@ export default function JobDetail() {
               {socialLinks.map((s, i) => (
                 <a
                   key={i}
-                  href="#"
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     background: s.bg,
                     borderRadius: 7,
@@ -6331,7 +6345,9 @@ export default function JobDetail() {
             {socialLinks.map((s, i) => (
               <a
                 key={i}
-                href="#"
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
                   background: s.bg,
                   borderRadius: 4,

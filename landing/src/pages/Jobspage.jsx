@@ -1543,7 +1543,7 @@
 //     ["Last Date of Application", posting.lastDate || ""],
 //     ["1st Merit List Released", posting.firstMeritListDate || ""],
 //     ["Final Merit List Released", posting.finalMeritListDate || ""],
-//     ["Application Fee", posting.fee?.en || ""],
+//     ["Fee Structure", posting.fee?.en || ""],
 //   ];
 
 //   const rowsHi = [
@@ -1558,7 +1558,7 @@
 //     ["आवेदन की अंतिम तिथि", posting.lastDate || ""],
 //     ["मेधा सूची जारी", posting.firstMeritListDate || ""],
 //     ["अंतिम मेधा सूची जारी", posting.finalMeritListDate || ""],
-//     ["आवेदन शुल्क", posting.fee?.hi || ""],
+//     ["शुल्क संरचना", posting.fee?.hi || ""],
 //   ];
 
 //   return {
@@ -2796,7 +2796,7 @@ function convertJobToComponentFormat(posting) {
     ["Last Date of Application", posting.lastDate || ""],
     ["1st Merit List Released", posting.firstMeritListDate || ""],
     ["Final Merit List Released", posting.finalMeritListDate || ""],
-    ["Application Fee", posting.fee?.en || ""],
+    ["Fee Structure", posting.fee?.en || ""],
   ];
   const rowsHi = [
     ["पद", posting.post?.hi || posting.postTitle?.hi || ""],
@@ -2810,7 +2810,7 @@ function convertJobToComponentFormat(posting) {
     ["आवेदन की अंतिम तिथि", posting.lastDate || ""],
     ["मेधा सूची जारी", posting.firstMeritListDate || ""],
     ["अंतिम मेधा सूची जारी", posting.finalMeritListDate || ""],
-    ["आवेदन शुल्क", posting.fee?.hi || ""],
+    ["शुल्क संरचना", posting.fee?.hi || ""],
   ];
   return {
     id: posting._id,

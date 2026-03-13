@@ -494,9 +494,17 @@ const JobPostingView = () => {
             />
             <QuickInfo
               icon={<Users className="w-4 h-4" />}
-              label="Application Fee / आवेदन शुल्क"
-              value={posting.fee?.en || ""}
-              valueHi={posting.fee?.hi || ""}
+              label="Fee Structure / शुल्क संरचना"
+              value={
+                posting.feeStructure && Object.keys(posting.feeStructure).length > 0
+                  ? "See Details Below"
+                  : posting.fee?.en || ""
+              }
+              valueHi={
+                posting.feeStructure && Object.keys(posting.feeStructure).length > 0
+                  ? "नीचे विवरण देखें"
+                  : posting.fee?.hi || ""
+              }
               valueClass="text-[#3AB000] font-bold"
             />
           </div>
@@ -602,52 +610,135 @@ const JobPostingView = () => {
                     ["Monthly Income / मासिक आय", posting.income?.en || "", posting.income?.hi || ""],
                     ["Age Limit / आयु सीमा", posting.ageLimit?.en || "19 – 40 Years", posting.ageLimit?.hi || "19 – 40 वर्ष"],
                     ["Age As On / आयु की तिथि", posting.ageAsOn || "—", null],
-                    ["Application Fee / आवेदन शुल्क", posting.fee?.en || "", posting.fee?.hi || ""],
+                    ["Fee Structure / शुल्क संरचना", 
+                      posting.feeStructure && Object.keys(posting.feeStructure).length > 0 
+                        ? "See Table Below" 
+                        : posting.fee?.en || "", 
+                      posting.feeStructure && Object.keys(posting.feeStructure).length > 0 
+                        ? "नीचे तालिका देखें" 
+                        : posting.fee?.hi || ""
+                    ],
                     ["Selection Process / चयन प्रक्रिया", posting.selectionProcess?.en || "—", posting.selectionProcess?.hi || "—"],
                     ["Status / स्थिति", posting.status, null],
-                  ].map(([key, valEn, valHi]) => (
-                    <tr
-                      key={key}
-                      className="border-b border-gray-50 last:border-0"
-                    >
-                      <td className="py-2.5 pr-4 text-gray-500 font-medium w-2/5">
-                        {key}
-                      </td>
-                      <td className="py-2.5">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {valEn && (
-                            <p className={`font-semibold ${
-                              key.includes("Status")
-                                ? isActive
-                                  ? "text-[#3AB000]"
-                                  : "text-gray-500"
-                                : key.includes("Application Fee")
-                                  ? "text-[#3AB000]"
-                                  : "text-gray-800"
-                            }`}>
-                              {valEn}
-                            </p>
-                          )}
-                          {valHi && (
-                            <p className={`text-sm ${
-                              key.includes("Status")
-                                ? isActive
-                                  ? "text-[#3AB000]"
-                                  : "text-gray-500"
-                                : key.includes("Application Fee")
-                                  ? "text-[#3AB000]"
-                                  : "text-gray-600"
-                            }`}>
-                              {valHi}
-                            </p>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  ].map(([key, valEn, valHi]) => {
+                    // Special handling for Fee Structure
+                    if (key.includes("Fee Structure") && posting.feeStructure && 
+                        Object.keys(posting.feeStructure).length > 0 && 
+                        Object.values(posting.feeStructure).some(val => val && val.toString().trim() !== "")) {
+                      return (
+                        <tr key={key} className="border-b border-gray-50 last:border-0">
+                          <td className="py-2.5 pr-4 text-gray-500 font-medium w-2/5">
+                            {key}
+                          </td>
+                          <td className="py-2.5" colSpan={1}>
+                            <div className="text-xs sm:text-sm text-[#3AB000] font-semibold">
+                              See detailed table below / नीचे विस्तृत तालिका देखें
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+                    
+                    return (
+                      <tr
+                        key={key}
+                        className="border-b border-gray-50 last:border-0"
+                      >
+                        <td className="py-2.5 pr-4 text-gray-500 font-medium w-2/5">
+                          {key}
+                        </td>
+                        <td className="py-2.5">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {valEn && (
+                              <p className={`font-semibold ${
+                                key.includes("Status")
+                                  ? isActive
+                                    ? "text-[#3AB000]"
+                                    : "text-gray-500"
+                                  : key.includes("Fee Structure")
+                                    ? "text-[#3AB000]"
+                                    : "text-gray-800"
+                              }`}>
+                                {valEn}
+                              </p>
+                            )}
+                            {valHi && (
+                              <p className={`text-sm ${
+                                key.includes("Status")
+                                  ? isActive
+                                    ? "text-[#3AB000]"
+                                    : "text-gray-500"
+                                  : key.includes("Fee Structure")
+                                    ? "text-[#3AB000]"
+                                    : "text-gray-600"
+                              }`}>
+                                {valHi}
+                              </p>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </DetailCard>
+
+            {/* Fee Structure Table */}
+            {posting.feeStructure && Object.keys(posting.feeStructure).length > 0 && 
+              Object.values(posting.feeStructure).some(val => val && val.toString().trim() !== "") && (
+              <DetailCard
+                icon={<IndianRupee className="w-4 h-4 text-[#3AB000]" />}
+                title="Fee Structure / शुल्क संरचना"
+              >
+                <div className="bg-[#fff9e6] border-2 border-[#ffc107] rounded-lg p-3 sm:p-4 mt-2 overflow-x-auto">
+                  <div className="text-sm font-bold text-[#856404] mb-3 flex items-center gap-2">
+                    <span>💰</span>
+                    <span>Fee Structure by Gender & Category / लिंग और श्रेणी के अनुसार शुल्क संरचना</span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs sm:text-sm border-collapse min-w-[300px]">
+                      <thead>
+                        <tr className="bg-[#ffc107] text-gray-800">
+                          <th className="px-2 sm:px-3 py-2 text-left border border-[#ffc107] font-bold">Category / श्रेणी</th>
+                          <th className="px-2 sm:px-3 py-2 text-center border border-[#ffc107] font-bold">Male / पुरुष</th>
+                          <th className="px-2 sm:px-3 py-2 text-center border border-[#ffc107] font-bold">Female / महिला</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          { key: "general", label: "General / सामान्य" },
+                          { key: "obc", label: "OBC" },
+                          { key: "sc", label: "SC" },
+                          { key: "st", label: "ST" },
+                          { key: "ews", label: "EWS" },
+                        ].map((cat, idx) => {
+                          const maleFee = posting.feeStructure[`male_${cat.key}`];
+                          const femaleFee = posting.feeStructure[`female_${cat.key}`];
+                          if (!maleFee && !femaleFee) return null;
+                          return (
+                            <tr
+                              key={cat.key}
+                              className={idx % 2 === 0 ? "bg-white" : "bg-[#fffbf0]"}
+                            >
+                              <td className="px-2 sm:px-3 py-2 border border-gray-300 font-semibold">
+                                {cat.label}
+                              </td>
+                              <td className="px-2 sm:px-3 py-2 border border-gray-300 text-center text-[#3AB000] font-bold">
+                                {maleFee ? `₹${maleFee}` : "—"}
+                              </td>
+                              <td className="px-2 sm:px-3 py-2 border border-gray-300 text-center text-[#3AB000] font-bold">
+                                {femaleFee ? `₹${femaleFee}` : "—"}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </DetailCard>
+            )}
           </div>
 
           {/* Right column – Dates */}
@@ -722,12 +813,65 @@ const JobPostingView = () => {
                   value={posting.education?.en || ""}
                   valueHi={posting.education?.hi || ""}
                 />
-                <Row
-                  label="Application Fee / आवेदन शुल्क"
-                  value={posting.fee?.en || ""}
-                  valueHi={posting.fee?.hi || ""}
-                  valueClass="text-[#3AB000] font-bold text-sm"
-                />
+                {posting.feeStructure && Object.keys(posting.feeStructure).length > 0 && 
+                  Object.values(posting.feeStructure).some(val => val && val.toString().trim() !== "") ? (
+                  <div className="col-span-full">
+                    <p className="text-xs text-gray-500 mb-2">Fee Structure / शुल्क संरचना</p>
+                    <div className="bg-[#fff9e6] border-2 border-[#ffc107] rounded-lg p-3 sm:p-4 overflow-x-auto">
+                      <div className="text-sm font-bold text-[#856404] mb-3 flex items-center gap-2">
+                        <span>💰</span>
+                        <span>Fee Structure / शुल्क संरचना</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs sm:text-sm border-collapse">
+                          <thead>
+                            <tr className="bg-[#ffc107] text-gray-800">
+                              <th className="px-2 sm:px-3 py-2 text-left border border-[#ffc107] font-bold">Category / श्रेणी</th>
+                              <th className="px-2 sm:px-3 py-2 text-center border border-[#ffc107] font-bold">Male / पुरुष</th>
+                              <th className="px-2 sm:px-3 py-2 text-center border border-[#ffc107] font-bold">Female / महिला</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {[
+                              { key: "general", label: "General / सामान्य" },
+                              { key: "obc", label: "OBC" },
+                              { key: "sc", label: "SC" },
+                              { key: "st", label: "ST" },
+                              { key: "ews", label: "EWS" },
+                            ].map((cat, idx) => {
+                              const maleFee = posting.feeStructure[`male_${cat.key}`];
+                              const femaleFee = posting.feeStructure[`female_${cat.key}`];
+                              if (!maleFee && !femaleFee) return null;
+                              return (
+                                <tr
+                                  key={cat.key}
+                                  className={idx % 2 === 0 ? "bg-white" : "bg-[#fffbf0]"}
+                                >
+                                  <td className="px-2 sm:px-3 py-2 border border-gray-300 font-semibold">
+                                    {cat.label}
+                                  </td>
+                                  <td className="px-2 sm:px-3 py-2 border border-gray-300 text-center text-[#3AB000] font-bold">
+                                    {maleFee ? `₹${maleFee}` : "—"}
+                                  </td>
+                                  <td className="px-2 sm:px-3 py-2 border border-gray-300 text-center text-[#3AB000] font-bold">
+                                    {femaleFee ? `₹${femaleFee}` : "—"}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <Row
+                    label="Fee Structure / शुल्क संरचना"
+                    value={posting.fee?.en || ""}
+                    valueHi={posting.fee?.hi || ""}
+                    valueClass="text-[#3AB000] font-bold text-sm"
+                  />
+                )}
               </div>
             </div>
           </div>
