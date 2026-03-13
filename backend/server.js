@@ -24,19 +24,18 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-// CORS configuration - Allow all jssabhiyan.in domains and localhost
+// CORS configuration - Allow domains from environment variables
 const allowedOrigins = [
+  // Localhost for development
   "http://localhost:5173",
   "http://localhost:3000",
   "http://localhost:5174",
-  "https://jssabhiyan.in",
-  "https://www.jssabhiyan.in",
-  "https://api.jssabhiyan.in",
-  "https://frontend.jssabhiyan.in",
-  "http://jssabhiyan.in",
-  "http://www.jssabhiyan.in",
-  "http://api.jssabhiyan.in",
-  "http://frontend.jssabhiyan.in",
+  // Parse CORS_ALLOWED_ORIGINS from .env (comma-separated)
+  ...(process.env.CORS_ALLOWED_ORIGINS 
+    ? process.env.CORS_ALLOWED_ORIGINS.split(',').map(origin => origin.trim()).filter(Boolean)
+    : []
+  ),
+  // Legacy support for FRONTEND_URL
   ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [])
 ];
 

@@ -178,9 +178,15 @@ export default function JobDetail() {
       const photoBase64 = await convertFileToBase64(photo);
       const signatureBase64 = await convertFileToBase64(signature);
 
+      // Get API URL from environment
+      const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL;
+      if (!apiUrl) {
+        throw new Error("API base URL is not configured. Please set VITE_API_URL or VITE_BACKEND_URL in your .env file");
+      }
+
       // Create application first
       const applyResponse = await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/applications/apply`,
+        `${apiUrl}/applications/apply`,
         {
           method: "POST",
           headers: {

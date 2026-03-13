@@ -65,8 +65,15 @@ Create a `.env` file in the `backend/` folder:
 PORT=3000
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 NODE_ENV=development
-FRONTEND_URL=http://localhost:5173
 MONGODB_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/jssa?retryWrites=true&w=majority
+
+# CORS Configuration - Add all allowed origins separated by commas
+# Supports both .com and .in domains
+# Example for production:
+CORS_ALLOWED_ORIGINS=https://jssabhiyan.in,https://www.jssabhiyan.in,https://jssabhiyan.com,https://www.jssabhiyan.com,https://api.jssabhiyan.in,https://frontend.jssabhiyan.in,http://jssabhiyan.in,http://www.jssabhiyan.in,http://api.jssabhiyan.in,http://frontend.jssabhiyan.in
+
+# Legacy support (optional - use CORS_ALLOWED_ORIGINS instead)
+# FRONTEND_URL=https://frontend.jssabhiyan.in
 
 # Email Configuration (Nodemailer)
 SMTP_HOST=smtp.gmail.com

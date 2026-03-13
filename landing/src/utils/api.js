@@ -1,4 +1,8 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "";
+
+if (!API_BASE_URL) {
+  console.error("VITE_API_URL or VITE_BACKEND_URL must be set in environment variables");
+}
 
 /**
  * Make API request (public endpoints don't need authentication)
@@ -7,6 +11,10 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api"
  * @param {string} options.token - Optional authentication token
  */
 async function apiRequest(endpoint, options = {}) {
+  if (!API_BASE_URL) {
+    throw new Error("API base URL is not configured. Please set VITE_API_URL or VITE_BACKEND_URL in your .env file");
+  }
+  
   const url = `${API_BASE_URL}${endpoint}`;
   const { token, ...restOptions } = options;
 
