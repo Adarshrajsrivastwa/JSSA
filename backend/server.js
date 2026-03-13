@@ -25,11 +25,20 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 // CORS configuration - Allow domains from environment variables
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
 const allowedOrigins = [
-  // Localhost for development
+  // Localhost for development (common ports)
   "http://localhost:5173",
   "http://localhost:3000",
   "http://localhost:5174",
+  "http://localhost:5175",
+  "http://localhost:5176",
+  "http://localhost:4173",
+  "http://localhost:8080",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:5174",
   // Parse CORS_ALLOWED_ORIGINS from .env (comma-separated)
   ...(process.env.CORS_ALLOWED_ORIGINS 
     ? process.env.CORS_ALLOWED_ORIGINS.split(',').map(origin => origin.trim()).filter(Boolean)
@@ -41,16 +50,30 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
+    // In development, allow all localhost origins
+    if (isDevelopment) {
+      if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
+      }
+    }
+    
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
+    // Check if origin is in allowed list
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      // Log the blocked origin for debugging
+      console.warn(`CORS blocked origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Authorization'],
+  maxAge: 86400 // 24 hours
 }));
 // Increase body parser limit to handle base64 images (10MB)
 app.use(express.json({ limit: "10mb" }));
@@ -80,6 +103,15 @@ app.use((req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
+  // Handle CORS errors specifically
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({
+      error: 'CORS Error: Origin not allowed',
+      message: `The origin ${req.headers.origin || 'unknown'} is not allowed by CORS policy.`,
+      allowedOrigins: isDevelopment ? 'All localhost origins' : allowedOrigins
+    });
+  }
+  
   console.error("Error:", err);
   res.status(err.status || 500).json({
     error: err.message || "Internal server error",
@@ -92,6 +124,12 @@ connectDB()
     app.listen(PORT, () => {
       console.log(`🚀 JSSA Backend server running on http://localhost:${PORT}`);
       console.log(`📡 Health check: http://localhost:${PORT}/health`);
+      console.log(`🌐 CORS Mode: ${isDevelopment ? 'Development (allowing all localhost)' : 'Production'}`);
+      if (isDevelopment) {
+        console.log(`   Allowing all localhost origins for development`);
+      } else {
+        console.log(`   Allowed origins: ${allowedOrigins.length > 0 ? allowedOrigins.join(', ') : 'None configured'}`);
+      }
       if (!connected) {
         console.log(`⚠️  Note: MongoDB not connected - update MONGODB_URI in .env`);
       }
@@ -103,6 +141,7 @@ connectDB()
     app.listen(PORT, () => {
       console.log(`🚀 JSSA Backend server running on http://localhost:${PORT} (without DB)`);
       console.log(`📡 Health check: http://localhost:${PORT}/health`);
+      console.log(`🌐 CORS Mode: ${isDevelopment ? 'Development (allowing all localhost)' : 'Production'}`);
       console.warn(`⚠️  MongoDB connection failed - database operations will not work`);
     });
   });

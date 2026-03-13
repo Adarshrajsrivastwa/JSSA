@@ -14,5 +14,15 @@ export default defineConfig({
   plugins: [react()],
   server: {
     historyApiFallback: true,
+    hmr: {
+      overlay: true,
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
   },
 });
