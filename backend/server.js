@@ -45,7 +45,9 @@ const allowedOrigins = [
     : []
   ),
   // Legacy support for FRONTEND_URL
-  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [])
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+  // Support for LANDING_URL (landing page URL)
+  ...(process.env.LANDING_URL ? [process.env.LANDING_URL] : [])
 ];
 
 app.use(cors({
@@ -66,6 +68,7 @@ app.use(cors({
     } else {
       // Log the blocked origin for debugging
       console.warn(`CORS blocked origin: ${origin}`);
+      console.warn(`Allowed origins: ${allowedOrigins.join(', ')}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
