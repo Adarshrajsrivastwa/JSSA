@@ -37,7 +37,7 @@
 // import { jobPostingsAPI, scrollerAPI, notificationsAPI } from "../utils/api.js";
 // import brochurePDF from "../assets/broucher.pdf";
 
-// const GREEN = "#3AB000";
+// const GREEN = "#0aca00";
 // const BLUE_TEXT = "#1a56c4";
 
 // const fallbackSlides = [
@@ -119,7 +119,7 @@
 //   return <span ref={ref}>{count.toLocaleString("en-IN")}</span>;
 // }
 
-// /* ─── Unified MarqueeBand — screenshot design + marquee scroll ─── */
+// /* ─── Unified MarqueeBand ─── */
 // function MarqueeBand({ labelLine1, labelLine2, items = [], animId }) {
 //   const ROWS = 3;
 //   const rows = Array.from({ length: ROWS }, (_, i) =>
@@ -175,7 +175,6 @@
 //             minHeight: rowHeightD * ROWS,
 //           }}
 //         >
-//           {/* Label */}
 //           <div
 //             style={{
 //               width: 200,
@@ -201,7 +200,6 @@
 //               {labelLine2}
 //             </span>
 //           </div>
-//           {/* Dotted divider */}
 //           <div
 //             style={{
 //               width: 0,
@@ -210,7 +208,6 @@
 //               margin: "18px 0",
 //             }}
 //           />
-//           {/* Marquee rows */}
 //           <div style={{ flex: 1, overflow: "hidden" }}>
 //             {rows.map((item, i) => (
 //               <div
@@ -296,7 +293,6 @@
 //             minHeight: rowHeightM * ROWS,
 //           }}
 //         >
-//           {/* Label */}
 //           <div
 //             style={{
 //               flexShrink: 0,
@@ -322,7 +318,6 @@
 //               {labelLine2}
 //             </span>
 //           </div>
-//           {/* Dotted divider */}
 //           <div
 //             style={{
 //               width: 0,
@@ -331,7 +326,6 @@
 //               margin: "10px 0",
 //             }}
 //           />
-//           {/* Rows */}
 //           <div style={{ flex: 1, overflow: "hidden" }}>
 //             {rows.map((item, i) => (
 //               <div
@@ -415,13 +409,203 @@
 //   );
 // }
 // function ResultsBand({ items = [] }) {
+//   // Show "Coming Soon" when no items
+//   const displayItems = items.length === 0
+//     ? [{ english: "Coming Soon", hindi: "जल्द ही आ रहा है", link: "#" }]
+//     : items;
+
 //   return (
 //     <MarqueeBand
 //       labelLine1="Latest"
 //       labelLine2="Results"
-//       items={items}
+//       items={displayItems}
 //       animId="res"
 //     />
+//   );
+// }
+
+// /* ─── Vertical Notification Ticker ─── */
+// function NotificationTicker({
+//   notifications = [],
+//   onSeeMore,
+//   isMobile = false,
+// }) {
+//   const tickerRef = useRef(null);
+//   const innerRef = useRef(null);
+//   const animRef = useRef(null);
+//   const posRef = useRef(0);
+
+//   useEffect(() => {
+//     const ticker = tickerRef.current;
+//     const inner = innerRef.current;
+//     if (!ticker || !inner || notifications.length === 0) return;
+
+//     posRef.current = 0;
+//     inner.style.transform = "translateY(0px)";
+
+//     const SPEED = isMobile ? 0.4 : 0.5;
+
+//     const tick = () => {
+//       posRef.current += SPEED;
+//       const halfH = inner.scrollHeight / 2;
+//       if (halfH > 0 && posRef.current >= halfH) posRef.current = 0;
+//       inner.style.transform = `translateY(-${posRef.current}px)`;
+//       animRef.current = requestAnimationFrame(tick);
+//     };
+
+//     animRef.current = requestAnimationFrame(tick);
+
+//     const pause = () => cancelAnimationFrame(animRef.current);
+//     const resume = () => {
+//       animRef.current = requestAnimationFrame(tick);
+//     };
+//     ticker.addEventListener("mouseenter", pause);
+//     ticker.addEventListener("mouseleave", resume);
+
+//     return () => {
+//       cancelAnimationFrame(animRef.current);
+//       ticker.removeEventListener("mouseenter", pause);
+//       ticker.removeEventListener("mouseleave", resume);
+//     };
+//   }, [notifications, isMobile]);
+
+//   const fs = isMobile ? 11 : 13;
+//   const subFs = isMobile ? 10 : 12;
+//   const pad = isMobile ? "9px 11px" : "11px 14px";
+//   const gap = isMobile ? 6 : 10;
+//   const height = isMobile ? 220 : 340;
+
+//   const cards = notifications.slice(0, 8).map((n, i) => (
+//     <a
+//       key={i}
+//       href={n.url || "#"}
+//       target={n.url ? "_blank" : undefined}
+//       rel={n.url ? "noopener noreferrer" : undefined}
+//       style={{
+//         display: "block",
+//         // background: "rgba(255,255,255,0.88)",
+//         color: "#1e40af",
+//         fontWeight: 600,
+//         fontSize: fs,
+//         padding: pad,
+//         // borderRadius: isMobile ? 4 : 5,
+//         lineHeight: 1.55,
+//         textDecoration: "none",
+//         borderLeft: "3px solid rgba(255,255,255,0.6)",
+//         marginBottom: gap,
+//         flexShrink: 0,
+//       }}
+//       onMouseEnter={(e) => (e.currentTarget.style.background = "")}
+//       onMouseLeave={(e) => (e.currentTarget.style.background = "")}
+//     >
+//       <span style={{ textDecoration: "underline" }}>{n.title}</span>
+//       {n.url && (
+//         <span
+//           style={{
+//             display: "block",
+//             fontSize: subFs,
+//             color: "#1e40af",
+//             marginTop: 2,
+//           }}
+//         >
+//           🔗 {n.url.length > 40 ? n.url.substring(0, 40) + "..." : n.url}
+//         </span>
+//       )}
+//       {n.notificationDate && (
+//         <span
+//           style={{
+//             display: "block",
+//             fontSize: subFs,
+//             color: "#555",
+//             marginTop: 2,
+//           }}
+//         >
+//           {new Date(n.notificationDate).toLocaleDateString("en-IN", {
+//             day: "2-digit",
+//             month: "short",
+//             year: "numeric",
+//           })}
+//           {n.notificationTime && ` • ${n.notificationTime}`}
+//         </span>
+//       )}
+//     </a>
+//   ));
+
+//   return (
+//     <div
+//       style={{
+//         flex: 1,
+//         borderRadius: isMobile ? 8 : 10,
+//         padding: isMobile ? 10 : 20,
+//         background: GREEN,
+//         display: "flex",
+//         flexDirection: "column",
+//       }}
+//     >
+//       <h2
+//         style={{
+//           color: "#fff",
+//           fontWeight: 900,
+//           fontSize: isMobile ? 12 : 22,
+//           marginBottom: isMobile ? 8 : 14,
+//           flexShrink: 0,
+//         }}
+//       >
+//         Notification
+//       </h2>
+
+//       {notifications.length === 0 ? (
+//         <div
+//           style={{
+//             background: "rgba(255,255,255,0.88)",
+//             color: "#666",
+//             fontSize: isMobile ? 10 : 13,
+//             padding: isMobile ? "6px 8px" : "10px 12px",
+//             borderRadius: isMobile ? 4 : 5,
+//             textAlign: "center",
+//           }}
+//         >
+//           No notifications available
+//         </div>
+//       ) : (
+//         <div
+//           ref={tickerRef}
+//           style={{
+//             height: height,
+//             overflow: "hidden",
+//             flex: 1,
+//             cursor: "pointer",
+//           }}
+//         >
+//           <div ref={innerRef} style={{ willChange: "transform" }}>
+//             {cards}
+//             {cards}
+//           </div>
+//         </div>
+//       )}
+
+//       <button
+//         onClick={onSeeMore}
+//         style={{
+//           marginTop: isMobile ? 10 : 14,
+//           width: "100%",
+//           background: "#fff",
+//           color: GREEN,
+//           fontWeight: 800,
+//           fontSize: isMobile ? 13 : 15,
+//           padding: isMobile ? "9px 0" : "12px 0",
+//           borderRadius: isMobile ? 5 : 6,
+//           border: "2px solid #fff",
+//           cursor: "pointer",
+//           letterSpacing: "0.03em",
+//           flexShrink: 0,
+//         }}
+//         onMouseEnter={(e) => (e.currentTarget.style.background = "")}
+//         onMouseLeave={(e) => (e.currentTarget.style.background = "")}
+//       >
+//         See More →
+//       </button>
+//     </div>
 //   );
 // }
 
@@ -811,7 +995,7 @@
 //   );
 // }
 
-// /* ─── Cert Slider — Updated with 15 certificates ─── */
+// /* ─── Cert Slider ─── */
 // function CertSlider() {
 //   const [current, setCurrent] = useState(0);
 //   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -847,7 +1031,6 @@
 //   const cardHeight = isMobile ? 90 : 220;
 //   const maxSlide = certImages.length - visibleCount;
 
-//   // Auto-slide: har 2.5 second me next, end pe wapas 0
 //   useEffect(() => {
 //     const t = setInterval(() => {
 //       setCurrent((c) => (c >= maxSlide ? 0 : c + 1));
@@ -889,8 +1072,6 @@
 //           ))}
 //         </div>
 //       </div>
-
-//       {/* Prev Button */}
 //       {current > 0 && (
 //         <button
 //           onClick={() => setCurrent((c) => Math.max(0, c - 1))}
@@ -913,8 +1094,6 @@
 //           ‹
 //         </button>
 //       )}
-
-//       {/* Next Button */}
 //       {current < maxSlide && (
 //         <button
 //           onClick={() => setCurrent((c) => Math.min(maxSlide, c + 1))}
@@ -937,8 +1116,6 @@
 //           ›
 //         </button>
 //       )}
-
-//       {/* Dots — same layout for both mobile and desktop */}
 //       <div
 //         style={{
 //           display: "flex",
@@ -1142,21 +1319,10 @@
 //     return () => clearInterval(iv);
 //   }, []);
 
+//   // Results API call removed - showing "Coming Soon" instead
 //   useEffect(() => {
-//     const fetch_ = async () => {
-//       try {
-//         setLoadingResults(true);
-//         const r = await jobPostingsAPI.getLatestResults();
-//         setResults(r.success && r.data.results ? r.data.results : []);
-//       } catch {
-//         setResults([]);
-//       } finally {
-//         setLoadingResults(false);
-//       }
-//     };
-//     fetch_();
-//     const iv = setInterval(fetch_, 30000);
-//     return () => clearInterval(iv);
+//     setResults([]);
+//     setLoadingResults(false);
 //   }, []);
 
 //   useEffect(() => {
@@ -1199,80 +1365,6 @@
 //       label: "Yoga Camps",
 //     },
 //   ];
-
-//   const notifCard = (n, i, isMobile) => (
-//     <a
-//       key={n._id || i}
-//       href={n.url || "#"}
-//       target={n.url ? "_blank" : undefined}
-//       rel={n.url ? "noopener noreferrer" : undefined}
-//       style={{
-//         display: "block",
-//         background: "rgba(255,255,255,0.88)",
-//         color: "#1e40af",
-//         fontWeight: 600,
-//         fontSize: isMobile ? 11 : 13,
-//         padding: isMobile ? "9px 11px" : "11px 14px",
-//         borderRadius: isMobile ? 4 : 5,
-//         lineHeight: 1.55,
-//         textDecoration: "underline",
-//       }}
-//     >
-//       {n.title}
-//       {n.url && (
-//         <span
-//           style={{
-//             display: "block",
-//             fontSize: isMobile ? 10 : 12,
-//             color: "#1e40af",
-//             marginTop: 2,
-//           }}
-//         >
-//           🔗 {n.url.length > 40 ? n.url.substring(0, 40) + "..." : n.url}
-//         </span>
-//       )}
-//       {n.notificationDate && (
-//         <span
-//           style={{
-//             display: "block",
-//             fontSize: isMobile ? 10 : 12,
-//             color: "#666",
-//             marginTop: 2,
-//           }}
-//         >
-//           {new Date(n.notificationDate).toLocaleDateString("en-IN", {
-//             day: "2-digit",
-//             month: "short",
-//             year: "numeric",
-//           })}
-//           {n.notificationTime && ` • ${n.notificationTime}`}
-//         </span>
-//       )}
-//     </a>
-//   );
-
-//   const seeMoreBtn = (isMobile) => (
-//     <button
-//       onClick={() => onNavigate("notifications")}
-//       style={{
-//         marginTop: isMobile ? 10 : 14,
-//         width: "100%",
-//         background: "#fff",
-//         color: GREEN,
-//         fontWeight: 800,
-//         fontSize: isMobile ? 13 : 15,
-//         padding: isMobile ? "9px 0" : "12px 0",
-//         borderRadius: isMobile ? 5 : 6,
-//         border: "2px solid #fff",
-//         cursor: "pointer",
-//         letterSpacing: "0.03em",
-//       }}
-//       onMouseEnter={(e) => (e.currentTarget.style.background = "#e8ffe0")}
-//       onMouseLeave={(e) => (e.currentTarget.style.background = "#fff")}
-//     >
-//       See More →
-//     </button>
-//   );
 
 //   return (
 //     <>
@@ -1479,7 +1571,6 @@
 //             to submit the required documents within the stipulated date may lead
 //             to cancellation of candidate.
 //           </p>
-
 //           <div
 //             className="body-text"
 //             style={{
@@ -1495,7 +1586,6 @@
 //             IMPORTANT NOTICE:– जन स्वास्थ्य सहायता अभियान के कार्यक्रमों को
 //             जमीनी स्तर पर शुरुवात करने हेतु आवश्यक अधिसूचना।
 //           </div>
-
 //           <div
 //             className="action-btns-row"
 //             style={{ display: "flex", gap: 20, marginBottom: 32 }}
@@ -1529,7 +1619,6 @@
 //               </button>
 //             ))}
 //           </div>
-
 //           <div
 //             className="app-imgs-row"
 //             style={{
@@ -1620,7 +1709,7 @@
 //         </p>
 //       </div>
 
-//       {/* Notifications + Cards — Desktop */}
+//       {/* ── Notifications + Cards — Desktop (UPDATED: ticker) ── */}
 //       <div
 //         className="notif-cards-desktop"
 //         style={{ background: "#fff", padding: "20px 0" }}
@@ -1635,55 +1724,11 @@
 //             alignItems: "stretch",
 //           }}
 //         >
-//           <div
-//             style={{
-//               flex: 1,
-//               borderRadius: 10,
-//               padding: 20,
-//               background: GREEN,
-//               display: "flex",
-//               flexDirection: "column",
-//               minHeight: 0,
-//             }}
-//           >
-//             <h2
-//               style={{
-//                 color: "#fff",
-//                 fontWeight: 900,
-//                 fontSize: 22,
-//                 marginBottom: 18,
-//               }}
-//             >
-//               Notification
-//             </h2>
-//             <div
-//               style={{
-//                 display: "flex",
-//                 flexDirection: "column",
-//                 gap: 10,
-//                 flex: 1,
-//               }}
-//             >
-//               {notifications.length > 0 ? (
-//                 notifications.slice(0, 5).map((n, i) => notifCard(n, i, false))
-//               ) : (
-//                 <div
-//                   style={{
-//                     background: "rgba(255,255,255,0.88)",
-//                     color: "#666",
-//                     fontSize: 13,
-//                     padding: "10px 12px",
-//                     borderRadius: 5,
-//                     textAlign: "center",
-//                   }}
-//                 >
-//                   No notifications available
-//                 </div>
-//               )}
-//             </div>
-//             {seeMoreBtn(false)}
-//           </div>
-
+//           <NotificationTicker
+//             notifications={notifications}
+//             onSeeMore={() => onNavigate("notifications")}
+//             isMobile={false}
+//           />
 //           <div
 //             style={{
 //               flex: 1,
@@ -1707,7 +1752,7 @@
 //         </div>
 //       </div>
 
-//       {/* Notifications + Cards — Mobile */}
+//       {/* ── Notifications + Cards — Mobile (UPDATED: ticker) ── */}
 //       <div
 //         className="notif-cards-mobile"
 //         style={{
@@ -1717,53 +1762,11 @@
 //           background: "#fff",
 //         }}
 //       >
-//         <div
-//           style={{
-//             flex: 1,
-//             borderRadius: 8,
-//             padding: 10,
-//             background: GREEN,
-//             display: "flex",
-//             flexDirection: "column",
-//           }}
-//         >
-//           <h2
-//             style={{
-//               color: "#fff",
-//               fontWeight: 900,
-//               fontSize: 12,
-//               marginBottom: 8,
-//             }}
-//           >
-//             Notification
-//           </h2>
-//           <div
-//             style={{
-//               display: "flex",
-//               flexDirection: "column",
-//               gap: 6,
-//               flex: 1,
-//             }}
-//           >
-//             {notifications.length > 0 ? (
-//               notifications.slice(0, 5).map((n, i) => notifCard(n, i, true))
-//             ) : (
-//               <div
-//                 style={{
-//                   background: "rgba(255,255,255,0.88)",
-//                   color: "#666",
-//                   fontSize: 10,
-//                   padding: "6px 8px",
-//                   borderRadius: 4,
-//                   textAlign: "center",
-//                 }}
-//               >
-//                 No notifications available
-//               </div>
-//             )}
-//           </div>
-//           {seeMoreBtn(true)}
-//         </div>
+//         <NotificationTicker
+//           notifications={notifications}
+//           onSeeMore={() => onNavigate("notifications")}
+//           isMobile={true}
+//         />
 //         <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
 //           <img
 //             src={cardImg1}
@@ -1840,7 +1843,6 @@
 //                 </button>
 //               </p>
 //             </div>
-
 //             <div style={{ flex: "1 1 0" }}>
 //               <h3
 //                 className="intro-heading"
@@ -2027,6 +2029,7 @@
 //   const socialLinks = [
 //     {
 //       bg: "#1877f2",
+//       url: "https://www.facebook.com/",
 //       content: (
 //         <span
 //           style={{
@@ -2042,6 +2045,7 @@
 //     },
 //     {
 //       bg: "radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285aeb 90%)",
+//       url: "https://www.instagram.com/jssabhiyan8/?hl=en",
 //       content: (
 //         <svg
 //           viewBox="0 0 24 24"
@@ -2059,6 +2063,7 @@
 //     },
 //     {
 //       bg: "#ff0000",
+//       url: "https://www.youtube.com/@janswasthyasahayataabhiyan8183",
 //       content: (
 //         <svg viewBox="0 0 24 24" width="16" height="16" fill="white">
 //           <polygon points="9.5,7 9.5,17 18,12" />
@@ -2067,6 +2072,7 @@
 //     },
 //     {
 //       bg: "#0077b5",
+//       url: "https://www.linkedin.com/in/jss-abhiyan-3872b13b7/",
 //       content: (
 //         <span style={{ fontWeight: 900, fontSize: 12, color: "#fff" }}>in</span>
 //       ),
@@ -2123,8 +2129,8 @@
 //               display: "flex",
 //               alignItems: "center",
 //               gap: 5,
-//               color: "#fff",
-//               fontSize: 13,
+//               color: "#070606",
+//               fontSize: 20,
 //               fontWeight: 600,
 //               whiteSpace: "nowrap",
 //             }}
@@ -2134,7 +2140,7 @@
 //               height="14"
 //               viewBox="0 0 24 24"
 //               fill="none"
-//               stroke="white"
+//               stroke="black"
 //               strokeWidth="2"
 //             >
 //               <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z" />
@@ -2147,8 +2153,8 @@
 //               display: "flex",
 //               alignItems: "center",
 //               gap: 5,
-//               color: "#fff",
-//               fontSize: 13,
+//               color: "#040404",
+//               fontSize: 20,
 //               fontWeight: 600,
 //               whiteSpace: "nowrap",
 //             }}
@@ -2158,7 +2164,7 @@
 //               height="14"
 //               viewBox="0 0 24 24"
 //               fill="none"
-//               stroke="white"
+//               stroke="black"
 //               strokeWidth="2"
 //             >
 //               <rect x="2" y="4" width="20" height="16" rx="2" />
@@ -2311,7 +2317,9 @@
 //               {socialLinks.map((s, i) => (
 //                 <a
 //                   key={i}
-//                   href="#"
+//                   href={s.url}
+//                   target="_blank"
+//                   rel="noopener noreferrer"
 //                   style={{
 //                     background: s.bg,
 //                     borderRadius: 7,
@@ -2428,7 +2436,9 @@
 //             {socialLinks.map((s, i) => (
 //               <a
 //                 key={i}
-//                 href="#"
+//                 href={s.url}
+//                 target="_blank"
+//                 rel="noopener noreferrer"
 //                 style={{
 //                   background: s.bg,
 //                   borderRadius: 4,
@@ -2542,7 +2552,15 @@
 //               }}
 //               className="ft-list"
 //             >
-//               {quickLinks.map((l, i) => (
+//               {[
+//                 { label: "About Us", page: "about" },
+//                 { label: "MemberShip & Benifits", page: "membership" },
+//                 { label: "View Jobs & Carrier", page: "jobs" },
+//                 { label: "View Our Services", page: "services" },
+//                 { label: "Our Privacy Policy", page: "home" },
+//                 { label: "Refund & Cancellation", page: "home" },
+//                 { label: "Terms & Condition", page: "home" },
+//               ].map((l, i) => (
 //                 <li key={i}>
 //                   <button
 //                     onClick={() => navigate(l.page)}
@@ -2616,9 +2634,7 @@
 //               <div className="ft-contact-item">
 //                 Email : support@jssabhiyan.com
 //               </div>
-//               <div className="ft-contact-item">
-//                 Email : support@jssabhiyan.com
-//               </div>
+
 //               <button
 //                 onClick={() => navigate("contacts")}
 //                 className="ft-contact-link"
@@ -2661,7 +2677,6 @@
 //         nav::-webkit-scrollbar { height: 3px; }
 //         nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 2px; }
 
-//         /* ── DESKTOP DEFAULTS ── */
 //         .hdr-desktop { display: flex !important; }
 //         .hdr-mobile  { display: none !important; }
 //         .tb-left     { display: flex !important; }
@@ -2669,7 +2684,6 @@
 //         .tb-email    { display: flex !important; }
 //         .tb-search   { display: flex !important; }
 
-//         /* Slider + Stats */
 //         .slider-stats-wrap { display: flex; }
 //         .slider-area  { flex: 0 0 75%; position: relative; overflow: hidden; min-height: 500px; max-height: 680px; }
 //         .stats-area   { flex: 0 0 25%; display: grid; grid-template-columns: 1fr 1fr; border-left: 1px solid #eee; background: #fff; }
@@ -2677,22 +2691,18 @@
 //         .stat-cell:nth-child(2), .stat-cell:nth-child(4) { border-right: none; }
 //         .stat-cell:nth-child(3), .stat-cell:nth-child(4) { border-bottom: none; }
 
-//         /* Nav */
 //         .nav-list { width: 100%; }
 //         .nav-item  { flex: 1; }
 //         .nav-btn   { width: 100%; font-size: 14px; padding: 14px 4px; color: #000 !important; }
 
-//         /* Bands */
 //         .notif-cards-desktop { display: flex !important; }
 //         .notif-cards-mobile  { display: none !important; }
 
-//         /* Stat sizing */
 //         .stat-num          { font-size: 22px; }
 //         .stat-icon-desktop { display: block; }
 //         .stat-icon-mobile  { display: none; }
 //         .stat-label        { font-size: 13px; }
 
-//         /* Typography */
 //         .body-text       { font-size: 15px; }
 //         .action-btn      { font-size: 13px; }
 //         .pub-notice-title{ font-size: 16px; }
@@ -2700,14 +2710,8 @@
 //         .cert-btn        { font-size: 15px; }
 //         .accred-label    { font-size: 11px; }
 //         .accred-logo     { height: 100px; }
-
-//         /* App images */
 //         .app-img { width: 31%; }
-
-//         /* Intro */
 //         .intro-inner { flex-direction: row; }
-
-//         /* Footer */
 //         .footer-inner  { flex-direction: row; }
 //         .ft-heading    { font-size: 15px; }
 //         .ft-list       { gap: 14px; }
@@ -2719,13 +2723,10 @@
 //         .ft-contact-link { font-size: 14px; font-weight: 500; margin-top: 6px; }
 //         .ft-copyright  { font-size: 12px; padding: 16px 0; margin-top: 40px; }
 
-//         /* ── MOBILE BREAKPOINT ── */
 //         @media (max-width: 768px) {
-//           /* Header */
 //           .hdr-desktop { display: none !important; }
 //           .hdr-mobile  { display: flex !important; flex-direction: column !important; }
 
-//           /* Top bar */
 //           .tb-topbar { flex-wrap: nowrap !important; padding: 4px 8px !important; gap: 4px !important; justify-content: space-between !important; }
 //           .tb-left   { display: flex !important; gap: 6px !important; flex-shrink: 1 !important; min-width: 0 !important; align-items: center !important; }
 //           .tb-phone  { display: flex !important; font-size: 9px !important; gap: 2px !important; white-space: nowrap !important; flex-shrink: 0 !important; }
@@ -2737,7 +2738,6 @@
 //           .tb-search svg { width: 9px !important; height: 9px !important; right: 4px !important; }
 //           .tb-dl-btn { font-size: 9px !important; padding: 4px 7px !important; white-space: nowrap !important; flex-shrink: 0 !important; }
 
-//           /* Slider + Stats: 70/30 row */
 //           .slider-stats-wrap { display: flex !important; flex-direction: row !important; min-height: unset !important; }
 //           .slider-area { flex: 0 0 70% !important; width: 70% !important; height: 180px !important; min-height: 180px !important; max-height: 180px !important; }
 //           .stats-area  { flex: 0 0 30% !important; width: 30% !important; display: grid !important; grid-template-columns: 1fr 1fr !important; border-left: 1px solid #eee !important; border-top: none !important; background: #fff !important; }
@@ -2745,22 +2745,18 @@
 //           .stat-cell:nth-child(2), .stat-cell:nth-child(4) { border-right: none !important; }
 //           .stat-cell:nth-child(3), .stat-cell:nth-child(4) { border-bottom: none !important; }
 
-//           /* Nav */
 //           .nav-list { width: 100% !important; flex-wrap: nowrap !important; display: flex !important; }
 //           .nav-item  { flex: 1 1 0 !important; }
 //           .nav-btn   { font-size: 5.5px !important; padding: 4px 1px !important; width: 100% !important; text-align: center !important; letter-spacing: 0 !important; white-space: nowrap !important; color: #000 !important; }
 
-//           /* Notif cards */
 //           .notif-cards-desktop { display: none !important; }
 //           .notif-cards-mobile  { display: flex !important; flex-direction: row !important; }
 
-//           /* Stats */
 //           .stat-num          { font-size: 10px !important; }
 //           .stat-icon-desktop { display: none !important; }
 //           .stat-icon-mobile  { display: block !important; }
 //           .stat-label        { font-size: 7px !important; }
 
-//           /* Notice + app section */
 //           .notice-app-wrap { padding: 20px 0 0 !important; }
 //           .notice-app-inner { padding: 0 14px !important; }
 //           .action-btns-row { flex-direction: row !important; gap: 5px !important; margin-bottom: 16px !important; }
@@ -2768,32 +2764,26 @@
 //           .app-imgs-row { gap: 6px !important; }
 //           .app-img { width: 31% !important; }
 
-//           /* Public notice */
 //           .public-notice-wrap { padding: 16px 10px !important; }
 //           .pub-notice-title { font-size: 11px !important; padding: 6px 10px !important; }
 
-//           /* Typography */
 //           .body-text       { font-size: 11px; }
 //           .section-heading { font-size: 11px; }
 //           .cert-btn        { font-size: 8px !important; padding: 10px 2px !important; }
 //           .accred-label    { font-size: 9px; }
 //           .accred-logo     { height: 44px; }
 
-//           /* Intro section */
 //           .intro-inner { flex-direction: row !important; gap: 10px !important; }
 //           .intro-section { padding: 16px 0 !important; }
 //           .intro-section > div { padding: 0 12px !important; }
 //           .intro-heading { font-size: 9px !important; margin-bottom: 5px !important; }
 
-//           /* Cert section */
 //           .cert-section { padding: 16px 10px !important; }
 //           .cert-btn-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 4px !important; }
 
-//           /* Accreditations */
 //           .accred-section { padding: 16px 10px !important; }
 //           .accred-logos   { gap: 12px !important; }
 
-//           /* Footer */
 //           footer { padding: 10px 6px 0 !important; }
 //           .footer-inner   { flex-direction: row !important; gap: 6px !important; align-items: flex-start !important; }
 //           .ft-heading     { font-size: 8px !important; margin-bottom: 6px !important; letter-spacing: 0.02em !important; }
@@ -2806,7 +2796,6 @@
 //           .ft-contact-link { font-size: 7px !important; text-align: left !important; margin-top: 2px !important; }
 //           .ft-copyright   { font-size: 7px !important; padding: 8px 0 !important; margin-top: 10px !important; }
 
-//           /* Floating buttons smaller on mobile */
 //           div[style*="position: fixed"][style*="left: 20px"] a,
 //           div[style*="position: fixed"][style*="right: 20px"] a {
 //             width: 48px !important;
@@ -3228,11 +3217,11 @@ function VacanciesBand({ items = [] }) {
   );
 }
 function ResultsBand({ items = [] }) {
-  // Show "Coming Soon" when no items
-  const displayItems = items.length === 0 
-    ? [{ english: "Coming Soon", hindi: "जल्द ही आ रहा है", link: "#" }]
-    : items;
-  
+  const displayItems =
+    items.length === 0
+      ? [{ english: "Coming Soon", hindi: "जल्द ही आ रहा है", link: "#" }]
+      : items;
+
   return (
     <MarqueeBand
       labelLine1="Latest"
@@ -3291,9 +3280,10 @@ function NotificationTicker({
   const fs = isMobile ? 11 : 13;
   const subFs = isMobile ? 10 : 12;
   const pad = isMobile ? "9px 11px" : "11px 14px";
-  const gap = isMobile ? 6 : 10;
+  const gap = isMobile ? 0 : 0;
   const height = isMobile ? 220 : 340;
 
+  /* ── UPDATED: >> prefix, white text, dotted bottom border ── */
   const cards = notifications.slice(0, 8).map((n, i) => (
     <a
       key={i}
@@ -3302,59 +3292,43 @@ function NotificationTicker({
       rel={n.url ? "noopener noreferrer" : undefined}
       style={{
         display: "block",
-        // background: "rgba(255,255,255,0.88)",
-        color: "#1e40af",
-        fontWeight: 600,
+        color: "#000",
+        fontWeight: 700,
         fontSize: fs,
         padding: pad,
-        // borderRadius: isMobile ? 4 : 5,
-        lineHeight: 1.55,
-        textDecoration: "none",
-        borderLeft: "3px solid rgba(255,255,255,0.6)",
+        lineHeight: 1.7,
+        textDecoration: "underline",
+        textUnderlineOffset: 2,
+        borderBottom: "1px dotted rgba(0,0,0,0.2)",
         marginBottom: gap,
         flexShrink: 0,
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "")}
-      onMouseLeave={(e) => (e.currentTarget.style.background = "")}
     >
-      <span style={{ textDecoration: "underline" }}>{n.title}</span>
-      {n.url && (
-        <span
-          style={{
-            display: "block",
-            fontSize: subFs,
-            color: "#1e40af",
-            marginTop: 2,
-          }}
-        >
-          🔗 {n.url.length > 40 ? n.url.substring(0, 40) + "..." : n.url}
-        </span>
-      )}
-      {n.notificationDate && (
-        <span
-          style={{
-            display: "block",
-            fontSize: subFs,
-            color: "#555",
-            marginTop: 2,
-          }}
-        >
-          {new Date(n.notificationDate).toLocaleDateString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })}
-          {n.notificationTime && ` • ${n.notificationTime}`}
-        </span>
-      )}
+      {">>"} {n.title}{" "}
+      <span
+        style={{
+          display: "inline-block",
+          fontSize: isMobile ? 7 : 9,
+          fontWeight: 900,
+          padding: "1px 4px",
+          borderRadius: 2,
+          verticalAlign: "middle",
+          animation: "newBadge 1.5s infinite",
+          color: "#fff",
+          letterSpacing: "0.04em",
+        }}
+      >
+        NEW
+      </span>
     </a>
   ));
 
   return (
+    /* ── UPDATED: borderRadius 4 (rounded-sm) ── */
     <div
       style={{
         flex: 1,
-        borderRadius: isMobile ? 8 : 10,
+        borderRadius: 4,
         padding: isMobile ? 10 : 20,
         background: GREEN,
         display: "flex",
@@ -3376,11 +3350,9 @@ function NotificationTicker({
       {notifications.length === 0 ? (
         <div
           style={{
-            background: "rgba(255,255,255,0.88)",
-            color: "#666",
+            color: "rgba(255,255,255,0.8)",
             fontSize: isMobile ? 10 : 13,
             padding: isMobile ? "6px 8px" : "10px 12px",
-            borderRadius: isMobile ? 4 : 5,
             textAlign: "center",
           }}
         >
@@ -3402,28 +3374,6 @@ function NotificationTicker({
           </div>
         </div>
       )}
-
-      <button
-        onClick={onSeeMore}
-        style={{
-          marginTop: isMobile ? 10 : 14,
-          width: "100%",
-          background: "#fff",
-          color: GREEN,
-          fontWeight: 800,
-          fontSize: isMobile ? 13 : 15,
-          padding: isMobile ? "9px 0" : "12px 0",
-          borderRadius: isMobile ? 5 : 6,
-          border: "2px solid #fff",
-          cursor: "pointer",
-          letterSpacing: "0.03em",
-          flexShrink: 0,
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = "")}
-        onMouseLeave={(e) => (e.currentTarget.style.background = "")}
-      >
-        See More →
-      </button>
     </div>
   );
 }
@@ -4138,7 +4088,6 @@ function HomePage({ onNavigate }) {
     return () => clearInterval(iv);
   }, []);
 
-  // Results API call removed - showing "Coming Soon" instead
   useEffect(() => {
     setResults([]);
     setLoadingResults(false);
@@ -4528,7 +4477,7 @@ function HomePage({ onNavigate }) {
         </p>
       </div>
 
-      {/* ── Notifications + Cards — Desktop (UPDATED: ticker) ── */}
+      {/* ── Notifications + Cards — Desktop ── */}
       <div
         className="notif-cards-desktop"
         style={{ background: "#fff", padding: "20px 0" }}
@@ -4543,17 +4492,23 @@ function HomePage({ onNavigate }) {
             alignItems: "stretch",
           }}
         >
+          {/* Notification Ticker — rounded-sm (borderRadius: 4) */}
           <NotificationTicker
             notifications={notifications}
             onSeeMore={() => onNavigate("notifications")}
             isMobile={false}
           />
+
+          {/* Card Image — rounded-sm border */}
           <div
             style={{
               flex: 1,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              border: "2px solid #e0e0e0",
+              borderRadius: 4,
+              overflow: "hidden",
             }}
           >
             <img
@@ -4563,15 +4518,13 @@ function HomePage({ onNavigate }) {
                 width: "100%",
                 height: "auto",
                 display: "block",
-                borderRadius: 6,
-                boxShadow: "0 6px 24px rgba(0,0,0,0.18)",
               }}
             />
           </div>
         </div>
       </div>
 
-      {/* ── Notifications + Cards — Mobile (UPDATED: ticker) ── */}
+      {/* ── Notifications + Cards — Mobile ── */}
       <div
         className="notif-cards-mobile"
         style={{
@@ -4581,12 +4534,24 @@ function HomePage({ onNavigate }) {
           background: "#fff",
         }}
       >
+        {/* Notification Ticker — rounded-sm */}
         <NotificationTicker
           notifications={notifications}
           onSeeMore={() => onNavigate("notifications")}
           isMobile={true}
         />
-        <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
+
+        {/* Card Image — rounded-sm border */}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            border: "2px solid #e0e0e0",
+            borderRadius: 4,
+            overflow: "hidden",
+          }}
+        >
           <img
             src={cardImg1}
             alt="JSS Card"
@@ -4594,8 +4559,6 @@ function HomePage({ onNavigate }) {
               width: "100%",
               height: "auto",
               display: "block",
-              borderRadius: 6,
-              boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
             }}
           />
         </div>
@@ -4896,16 +4859,6 @@ export default function JSSAbhiyan() {
         <span style={{ fontWeight: 900, fontSize: 12, color: "#fff" }}>in</span>
       ),
     },
-  ];
-
-  const quickLinks = [
-    { label: "About Us", page: "about" },
-    { label: "MemberShip & Benifits", page: "membership" },
-    { label: "View Jobs & Carrier", page: "jobs" },
-    { label: "View Our Services", page: "services" },
-    { label: "Our Privacy Policy", page: "home" },
-    { label: "Refund & Cancellation", page: "home" },
-    { label: "Terms & Condition", page: "home" },
   ];
 
   return (
@@ -5453,7 +5406,6 @@ export default function JSSAbhiyan() {
               <div className="ft-contact-item">
                 Email : support@jssabhiyan.com
               </div>
-
               <button
                 onClick={() => navigate("contacts")}
                 className="ft-contact-link"
@@ -5489,6 +5441,13 @@ export default function JSSAbhiyan() {
       </footer>
 
       <style>{`
+        @keyframes newBadge {
+          0%   { background: #e53e3e; }
+          25%  { background: #d97706; }
+          50%  { background: #7c3aed; }
+          75%  { background: #0369a1; }
+          100% { background: #e53e3e; }
+        }
         @keyframes marquee-scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
         .marquee-inner { animation: marquee-scroll 30s linear infinite; }
         .marquee-inner:hover { animation-play-state: paused; }

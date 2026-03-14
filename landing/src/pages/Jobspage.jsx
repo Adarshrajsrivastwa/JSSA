@@ -1942,7 +1942,6 @@ const districtsByState = {
   ],
 };
 
-// ── LOAD SCRIPTS ──────────────────────────────────────────────
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     if (document.querySelector(`script[src="${src}"]`)) {
@@ -1957,7 +1956,6 @@ function loadScript(src) {
   });
 }
 
-// ── GENERATE & AUTO-DOWNLOAD PDF ─────────────────────────────
 async function downloadPDF(job, lang) {
   const isHi = lang === "hi";
   await loadScript(
@@ -2027,7 +2025,6 @@ async function downloadPDF(job, lang) {
   }
 }
 
-// ── APPLICATION FORM ──────────────────────────────────────────
 function ApplicationForm({ job, onBack }) {
   const [stateVal, setStateVal] = useState("");
   const [form, setForm] = useState({
@@ -2094,7 +2091,6 @@ function ApplicationForm({ job, onBack }) {
         fontFamily: "'Segoe UI','Noto Sans',sans-serif",
       }}
     >
-      {/* Back bar */}
       <div
         style={{
           background: GREEN,
@@ -2123,7 +2119,6 @@ function ApplicationForm({ job, onBack }) {
           {job.title} — Advt. No. {job.advt}
         </span>
       </div>
-
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 14px 40px" }}>
         <div
           style={{
@@ -2143,7 +2138,6 @@ function ApplicationForm({ job, onBack }) {
           >
             {job.title} Advt. No. {job.advt} / {job.titleHi} {job.advt}
           </p>
-
           <h3 className="jobs-section-heading">PERSONAL DETAILS</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
@@ -2374,7 +2368,6 @@ function ApplicationForm({ job, onBack }) {
               </div>
             </div>
           </div>
-
           <h3 className="jobs-section-heading" style={{ marginTop: 24 }}>
             EDUCATION DETAILS
           </h3>
@@ -2420,7 +2413,6 @@ function ApplicationForm({ job, onBack }) {
               </div>
             </div>
           </div>
-
           <div
             style={{
               display: "flex",
@@ -2491,7 +2483,6 @@ function ApplicationForm({ job, onBack }) {
               is correct to the best of my knowledge and belief.
             </label>
           </div>
-
           <div style={{ textAlign: "center", marginTop: 22 }}>
             <button
               onClick={() => alert("Application submitted!")}
@@ -2502,27 +2493,15 @@ function ApplicationForm({ job, onBack }) {
           </div>
         </div>
       </div>
-
       <style>{jobsCSS}</style>
     </div>
   );
 }
 
-// ── JOB DETAIL PAGE ───────────────────────────────────────────
 function JobDetailPage({ job, onBack, onApply }) {
   const [downloading, setDownloading] = useState(null);
   const d = job.rows;
   const rows = d.en.length;
-
-  const handleDownload = async (lang) => {
-    setDownloading(lang);
-    try {
-      await downloadPDF(job, lang);
-    } catch (e) {
-      alert("PDF download failed: " + e.message);
-    }
-    setDownloading(null);
-  };
 
   return (
     <div
@@ -2531,36 +2510,8 @@ function JobDetailPage({ job, onBack, onApply }) {
         fontFamily: "'Segoe UI','Noto Sans',sans-serif",
       }}
     >
-      {/* Back bar */}
       <div
-        style={{
-          background: GREEN,
-          padding: "10px 16px",
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-        }}
-      >
-        <button
-          onClick={onBack}
-          style={{
-            background: "rgba(255,255,255,0.2)",
-            border: "none",
-            color: "#fff",
-            fontWeight: 700,
-            fontSize: 13,
-            padding: "7px 14px",
-            borderRadius: 4,
-            cursor: "pointer",
-          }}
-        >
-          ← Back
-        </button>
-        <span className="jobs-back-title">Job Detail / नौकरी विवरण</span>
-      </div>
-
-      <div
-        style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 14px 40px" }}
+        style={{ maxWidth: 1000, margin: "0 auto", padding: "20px 16px 40px" }}
       >
         <div
           style={{
@@ -2569,7 +2520,6 @@ function JobDetailPage({ job, onBack, onApply }) {
             overflow: "hidden",
           }}
         >
-          {/* Header row */}
           <div
             style={{
               background: `${GREEN}22`,
@@ -2583,8 +2533,6 @@ function JobDetailPage({ job, onBack, onApply }) {
           >
             {job.title} Advt. No. {job.advt} / {job.titleHi} {job.advt}
           </div>
-
-          {/* Download row — stacks on mobile */}
           <div className="jobs-detail-download-row">
             <div
               className="jobs-detail-download-cell"
@@ -2611,7 +2559,15 @@ function JobDetailPage({ job, onBack, onApply }) {
                 Date: {job.date}
               </div>
               <button
-                onClick={() => handleDownload("en")}
+                onClick={async () => {
+                  setDownloading("en");
+                  try {
+                    await downloadPDF(job, "en");
+                  } catch (e) {
+                    alert("PDF download failed: " + e.message);
+                  }
+                  setDownloading(null);
+                }}
                 disabled={downloading === "en"}
                 style={{
                   color: "#1a56c4",
@@ -2656,7 +2612,15 @@ function JobDetailPage({ job, onBack, onApply }) {
                 दिनांक - {job.date}
               </div>
               <button
-                onClick={() => handleDownload("hi")}
+                onClick={async () => {
+                  setDownloading("hi");
+                  try {
+                    await downloadPDF(job, "hi");
+                  } catch (e) {
+                    alert("PDF download failed: " + e.message);
+                  }
+                  setDownloading(null);
+                }}
                 disabled={downloading === "hi"}
                 style={{
                   color: "#1a56c4",
@@ -2680,15 +2644,12 @@ function JobDetailPage({ job, onBack, onApply }) {
               </button>
             </div>
           </div>
-
-          {/* Detail rows — stacked on mobile */}
           {Array.from({ length: rows }).map((_, i) => (
             <div
               key={i}
               className="jobs-detail-row"
               style={{ background: i % 2 === 0 ? `${GREEN}08` : "#fff" }}
             >
-              {/* English cell */}
               <div
                 className="jobs-detail-lang-cell"
                 style={{ borderRight: `1px solid ${GREEN}` }}
@@ -2696,7 +2657,6 @@ function JobDetailPage({ job, onBack, onApply }) {
                 <div className="jobs-detail-key">{d.en[i][0]}</div>
                 <div className="jobs-detail-val">: {d.en[i][1]}</div>
               </div>
-              {/* Hindi cell */}
               <div className="jobs-detail-lang-cell">
                 <div className="jobs-detail-key">{d.hi[i][0]}</div>
                 <div className="jobs-detail-val">: {d.hi[i][1]}</div>
@@ -2704,7 +2664,6 @@ function JobDetailPage({ job, onBack, onApply }) {
             </div>
           ))}
         </div>
-
         <div
           style={{ marginTop: 20, display: "flex", gap: 12, flexWrap: "wrap" }}
         >
@@ -2729,22 +2688,15 @@ function JobDetailPage({ job, onBack, onApply }) {
           )}
         </div>
       </div>
-
       <style>{jobsCSS}</style>
     </div>
   );
 }
 
-// ── VACANCY ITEM ──────────────────────────────────────────────
 function VacancyItem({ job, onClick }) {
   return (
     <div>
-      <div
-        onClick={() => onClick(job)}
-        className="jobs-vacancy-item"
-        onMouseEnter={(e) => (e.currentTarget.style.background = "#f0fae8")}
-        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-      >
+      <div onClick={() => onClick(job)} className="jobs-vacancy-item">
         <span style={{ fontWeight: 700, flexShrink: 0, marginTop: 1 }}>
           &gt;&gt;
         </span>
@@ -2755,14 +2707,14 @@ function VacancyItem({ job, onClick }) {
             <span
               style={{
                 display: "inline-block",
-                background: "#e53e3e",
-                color: "#fff",
                 fontSize: 10,
                 fontWeight: 900,
                 padding: "1px 6px",
                 borderRadius: 3,
                 marginLeft: 6,
                 verticalAlign: "middle",
+                color: "#fff",
+                animation: "newBadgeJob 1.5s infinite",
               }}
             >
               NEW
@@ -2775,7 +2727,6 @@ function VacancyItem({ job, onClick }) {
   );
 }
 
-// ── CONVERT API JOB ───────────────────────────────────────────
 function convertJobToComponentFormat(posting) {
   const isActive = posting.status === "Active";
   const lastDate = new Date(posting.lastDate);
@@ -2783,7 +2734,7 @@ function convertJobToComponentFormat(posting) {
   const isClosed = lastDate < today;
   const rowsEn = [
     ["Post", posting.post?.en || posting.postTitle?.en || ""],
-    ["Total Post", posting.location?.en || ""],
+    ["Total Post", posting.totalPost || ""],
     ["Monthly Income", posting.income?.en || ""],
     ["Education Qualification", posting.education?.en || ""],
     [
@@ -2800,7 +2751,7 @@ function convertJobToComponentFormat(posting) {
   ];
   const rowsHi = [
     ["पद", posting.post?.hi || posting.postTitle?.hi || ""],
-    ["कुल पद", posting.location?.hi || ""],
+    ["कुल पद", posting.totalPost || ""],
     ["मासिक आय", posting.income?.hi || ""],
     ["शैक्षणिक योग्यता", posting.education?.hi || ""],
     ["आयु सीमा", `${posting.ageLimit?.hi || ""} (${posting.ageAsOn || ""} को)`],
@@ -2829,25 +2780,26 @@ function convertJobToComponentFormat(posting) {
   };
 }
 
-// ── SHARED CSS ────────────────────────────────────────────────
 const jobsCSS = `
   * { box-sizing: border-box; }
 
-  /* ── Back bar title ── */
-  .jobs-back-title {
-    color: #fff; font-weight: 700; font-size: 14px;
+  @keyframes newBadgeJob {
+    0%   { background: #e53e3e; }
+    25%  { background: #d97706; }
+    50%  { background: #7c3aed; }
+    75%  { background: #0369a1; }
+    100% { background: #e53e3e; }
   }
 
-  /* ── Section heading in form ── */
+  .jobs-back-title { color: #fff; font-weight: 700; font-size: 14px; }
+
   .jobs-section-heading {
-    font-weight: 900; font-size: 16px; color: #1a2a4a;
-    margin: 20px 0 14px;
+    font-weight: 900; font-size: 16px; color: #1a2a4a; margin: 20px 0 14px;
   }
 
-  /* ── Submit / Apply button ── */
   .jobs-submit-btn {
     background: ${GREEN}; color: #fff; font-weight: 900;
-    font-size: 15px; padding: 12px 40px; border-radius: 4;
+    font-size: 15px; padding: 12px 40px;
     border: none; cursor: pointer; border-radius: 4px;
   }
 
@@ -2858,27 +2810,21 @@ const jobsCSS = `
     display: flex; align-items: flex-start; gap: 8px;
   }
 
-  /* ── Job list page outer padding ── */
+  /* ── Job list page — CENTERED with side gaps ── */
   .jobs-list-wrap {
+    max-width: 1000px;
+    margin: 0 auto;
     padding: 32px 40px;
   }
 
-  /* ── List section headings ── */
   .jobs-list-heading {
     font-weight: 700; font-size: 20px; color: #1a2a4a; margin-bottom: 6px;
   }
 
-  /* ── 2-col grid ── */
-  .jobs-grid-2 {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
-  }
+  .jobs-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .jobs-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
 
-  /* ── 3-col grid ── */
-  .jobs-grid-3 {
-    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;
-  }
-
-  /* ── Detail page: download row ── */
+  /* ── Detail download row ── */
   .jobs-detail-download-row {
     display: grid; grid-template-columns: 1fr 1fr;
     border-bottom: 1px solid ${GREEN};
@@ -2887,7 +2833,7 @@ const jobsCSS = `
     padding: 16px 18px; background: ${GREEN}0d;
   }
 
-  /* ── Detail page: bilingual data rows ── */
+  /* ── Detail bilingual rows ── */
   .jobs-detail-row {
     display: grid; grid-template-columns: 1fr 1fr;
     border-bottom: 1px solid ${GREEN}44;
@@ -2895,8 +2841,7 @@ const jobsCSS = `
   .jobs-detail-row:last-child { border-bottom: none; }
 
   .jobs-detail-lang-cell {
-    display: grid; grid-template-columns: 150px 1fr;
-    padding: 0;
+    display: grid; grid-template-columns: 150px 1fr; padding: 0;
   }
   .jobs-detail-key {
     padding: 10px 12px; font-weight: 700; font-size: 13px;
@@ -2906,62 +2851,28 @@ const jobsCSS = `
     padding: 10px 12px; font-size: 13px; color: #333; line-height: 1.6;
   }
 
-  /* ══════════════════════════════
-     MOBILE  ≤ 768px
-  ══════════════════════════════ */
   @media (max-width: 768px) {
-
-    /* List page padding */
     .jobs-list-wrap { padding: 16px 12px; }
+    .jobs-list-heading { font-size: 14px; }
+    .jobs-vacancy-item { padding: 8px 10px; font-size: 10px; }
+    .jobs-back-title { font-size: 10px; }
+    .jobs-section-heading { font-size: 11px; }
+    .jobs-submit-btn { font-size: 11px; padding: 8px 18px; }
+    .jobs-grid-2 { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+    .jobs-grid-3 { grid-template-columns: 1fr 1fr 1fr !important; gap: 6px !important; }
 
-    /* List heading */
-    .jobs-list-heading { font-size: 16px; }
+    /* download row — keep 2 cols, just smaller */
+    .jobs-detail-download-row { grid-template-columns: 1fr 1fr !important; }
+    .jobs-detail-download-cell { padding: 8px 6px; }
 
-    /* Vacancy item */
-    .jobs-vacancy-item { padding: 12px 12px; font-size: 13px; }
-
-    /* Back bar title */
-    .jobs-back-title { font-size: 12px; }
-
-    /* Section headings in form */
-    .jobs-section-heading { font-size: 14px; }
-
-    /* Submit button */
-    .jobs-submit-btn { font-size: 13px; padding: 10px 24px; }
-
-    /* 2-col → 1-col */
-    .jobs-grid-2 { grid-template-columns: 1fr; gap: 14px; }
-
-    /* 3-col → 1-col */
-    .jobs-grid-3 { grid-template-columns: 1fr; gap: 14px; }
-
-    /* Detail download row → stack */
-    .jobs-detail-download-row {
-      grid-template-columns: 1fr;
-    }
-    .jobs-detail-download-cell {
-      border-right: none !important;
-      border-bottom: 1px solid ${GREEN};
-      padding: 12px 12px;
-    }
-
-    /* Detail data rows → stack (show EN above HI) */
-    .jobs-detail-row {
-      grid-template-columns: 1fr;
-    }
-    .jobs-detail-lang-cell {
-      grid-template-columns: 110px 1fr;
-      border-bottom: 1px solid ${GREEN}22;
-    }
-    .jobs-detail-lang-cell:last-child { border-bottom: none; }
-
-    /* Slightly smaller key/val text on mobile */
-    .jobs-detail-key { font-size: 12px; padding: 8px 8px; }
-    .jobs-detail-val { font-size: 12px; padding: 8px 8px; }
+    /* detail rows — keep 2 cols (EN | HI) side by side */
+    .jobs-detail-row { grid-template-columns: 1fr 1fr !important; }
+    .jobs-detail-lang-cell { grid-template-columns: 60px 1fr; }
+    .jobs-detail-key { font-size: 7px; padding: 5px 4px; }
+    .jobs-detail-val { font-size: 7px; padding: 5px 4px; }
   }
 `;
 
-// ── MAIN ──────────────────────────────────────────────────────
 export default function JobsPage() {
   const navigate = useNavigate();
   const [view, setView] = useState("list");
