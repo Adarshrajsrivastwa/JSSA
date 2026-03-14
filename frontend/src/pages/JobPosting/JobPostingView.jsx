@@ -132,6 +132,7 @@ const JobPostingView = () => {
   }, []);
 
   const [processingPayment, setProcessingPayment] = useState(false);
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
 
   const handlePayNow = async () => {
     if (!applicationStatus?.applicationId || !applicationStatus?.gender || !applicationStatus?.category) {
@@ -228,6 +229,214 @@ const JobPostingView = () => {
         alert(err.message || "Failed to delete posting");
         console.error("Delete error:", err);
       }
+    }
+  };
+
+  // ── PDF Download Function ────────────────────────────────────────────────────
+  const loadScript = (src) => {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) {
+        resolve();
+        return;
+      }
+      const s = document.createElement("script");
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  };
+
+  const downloadJobPDF = async (lang = "en") => {
+    if (!posting) return;
+    
+    setDownloadingPDF(true);
+    try {
+      await loadScript(
+        "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+      );
+      await loadScript(
+        "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+      );
+
+      const isHi = lang === "hi";
+      const GREEN = "#3AB000";
+      const DARK_BLUE = "#1e2840";
+      
+      // Build fee structure table if exists
+      let feeTableHTML = "";
+      if (posting.feeStructure && Object.keys(posting.feeStructure).length > 0 && 
+          Object.values(posting.feeStructure).some(val => val && val.toString().trim() !== "")) {
+        const categories = [
+          { key: "general", label: "General / सामान्य" },
+          { key: "obc", label: "OBC" },
+          { key: "sc", label: "SC" },
+          { key: "st", label: "ST" },
+          { key: "ews", label: "EWS" },
+        ];
+        
+        const allFees = [];
+        categories.forEach(cat => {
+          const maleFee = posting.feeStructure[`male_${cat.key}`];
+          const femaleFee = posting.feeStructure[`female_${cat.key}`];
+          if (maleFee) allFees.push(parseFloat(maleFee));
+          if (femaleFee) allFees.push(parseFloat(femaleFee));
+        });
+        
+        const uniqueFees = [...new Set(allFees)];
+        const allSame = uniqueFees.length === 1 && allFees.length > 0;
+        
+        if (allSame) {
+          feeTableHTML = `<div style="text-align:center;padding:8px;background:#fff9e6;border:2px solid #ffc107;border-radius:4px;margin:8px 0"><div style="font-weight:900;font-size:16px;color:#3AB000;margin-bottom:4px">₹${uniqueFees[0]}</div><div style="font-weight:700;font-size:11px;color:#856404">${isHi ? "सभी श्रेणियों के लिए राशि" : "AMOUNT (FOR ALL CATEGORIES)"}</div></div>`;
+        } else {
+          const tableRows = categories
+            .map((cat) => {
+              const maleFee = posting.feeStructure[`male_${cat.key}`];
+              const femaleFee = posting.feeStructure[`female_${cat.key}`];
+              if (!maleFee && !femaleFee) return "";
+              return `<tr style="background:#fff"><td style="padding:6px 10px;border:1px solid #ddd;font-weight:700;font-size:11px">${cat.label}</td><td style="padding:6px 10px;border:1px solid #ddd;text-align:center;font-weight:900;font-size:11px;color:#3AB000">${maleFee ? `₹${maleFee}` : "—"}</td><td style="padding:6px 10px;border:1px solid #ddd;text-align:center;font-weight:900;font-size:11px;color:#3AB000">${femaleFee ? `₹${femaleFee}` : "—"}</td></tr>`;
+            })
+            .filter(r => r)
+            .join("");
+          
+          feeTableHTML = `<div style="background:#fff9e6;border:2px solid #ffc107;border-radius:4px;padding:8px;margin:8px 0"><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="background:#ffc107"><th style="padding:6px 10px;border:1px solid #ffc107;text-align:left;font-weight:900;font-size:11px">${isHi ? "श्रेणी" : "Category"}</th><th style="padding:6px 10px;border:1px solid #ffc107;text-align:center;font-weight:900;font-size:11px">${isHi ? "पुरुष" : "Male"}</th><th style="padding:6px 10px;border:1px solid #ffc107;text-align:center;font-weight:900;font-size:11px">${isHi ? "महिला" : "Female"}</th></tr></thead><tbody>${tableRows}</tbody></table></div>`;
+        }
+      }
+
+      // Build rows data
+      const rows = [
+        [isHi ? "पद का नाम" : "Post Name", 
+         isHi ? (posting.post?.hi || "") : (posting.post?.en || ""),
+         isHi ? (posting.post?.en || "") : (posting.post?.hi || "")],
+        [isHi ? "शैक्षणिक योग्यता" : "Education Qualification",
+         isHi ? (posting.education?.hi || "") : (posting.education?.en || ""),
+         isHi ? (posting.education?.en || "") : (posting.education?.hi || "")],
+        [isHi ? "मासिक आय" : "Monthly Income",
+         isHi ? (posting.income?.hi || "") : (posting.income?.en || ""),
+         isHi ? (posting.income?.en || "") : (posting.income?.hi || "")],
+        [isHi ? "आयु सीमा" : "Age Limit",
+         isHi ? (posting.ageLimit?.hi || "19 – 40 वर्ष") : (posting.ageLimit?.en || "19 – 40 Years"),
+         isHi ? (posting.ageLimit?.en || "19 – 40 Years") : (posting.ageLimit?.hi || "19 – 40 वर्ष")],
+        [isHi ? "आयु की तिथि" : "Age As On",
+         posting.ageAsOn || "—", ""],
+        [isHi ? "नौकरी करने का स्थान" : "Job Location",
+         isHi ? (posting.location?.hi || (posting.locationArrHi?.join(", ") || "पूरे भारत में")) : (posting.location?.en || (posting.locationArr?.join(", ") || "All India")),
+         isHi ? (posting.location?.en || (posting.locationArr?.join(", ") || "All India")) : (posting.location?.hi || (posting.locationArrHi?.join(", ") || "पूरे भारत में"))],
+        [isHi ? "चयन प्रक्रिया" : "Selection Process",
+         isHi ? (posting.selectionProcess?.hi || "—") : (posting.selectionProcess?.en || "—"),
+         isHi ? (posting.selectionProcess?.en || "—") : (posting.selectionProcess?.hi || "—")],
+        [isHi ? "आवेदन खुलने की तिथि" : "Application Opening Date",
+         posting.applicationOpeningDate || "—", ""],
+        [isHi ? "आवेदन की अंतिम तिथि" : "Last Date to Apply",
+         posting.lastDate || "—", ""],
+        [isHi ? "1st मेरिट सूची" : "1st Merit List Date",
+         posting.firstMeritListDate || "—", ""],
+        [isHi ? "अंतिम मेरिट सूची" : "Final Merit List Date",
+         posting.finalMeritListDate || "—", ""],
+      ].filter((r) => r[1] && r[1] !== "—");
+
+      const tableRowsHTML = rows
+        .map(
+          (r, i) =>
+            `<tr style="background:${i % 2 === 0 ? "#f8f9fa" : "#fff"}"><td style="padding:7px 12px;font-weight:900;font-size:11px;color:#1e2840;border:1px solid #ddd;width:28%;vertical-align:top">${r[0]}</td><td style="padding:7px 8px;font-weight:900;font-size:11px;color:#1e2840;border:1px solid #ddd;width:2%;text-align:center;vertical-align:top">:</td><td style="padding:7px 12px;font-weight:700;font-size:11px;color:#000;border:1px solid #ddd;vertical-align:top;line-height:1.5">${r[1]}${r[2] ? `<br/><span style="font-weight:700;font-size:10px;color:#666">${r[2]}</span>` : ""}</td></tr>`,
+        )
+        .join("");
+
+      const advt = posting.advtNo || "";
+      const date = posting.date || posting.lastDate || "";
+      const titleEn = posting.title?.en || posting.postTitle?.en || posting.post?.en || "";
+      const titleHi = posting.title?.hi || posting.postTitle?.hi || posting.post?.hi || "";
+      const invitationEn = posting.title?.en || `Invitation for all eligible candidates on vacant posts of ${titleEn} under Jan Swasthya Sahayata Abhiyan by Healthcare Research and Development Board (A Division of NAC India).`;
+      const invitationHi = posting.title?.hi || `हेल्थ केयर रिसर्च एंड डेवलपमेंट बोर्ड (A Division Of NAC INDIA) द्वारा जन स्वास्थ्य सहायता अभियान के तहत ${titleHi} के रिक्त पदों पर सभी पात्र उम्मीदवारों के लिए आमंत्रण।`;
+
+      const container = document.createElement("div");
+      container.style.cssText = `
+        position: fixed; left: -9999px; top: 0;
+        width: 680px; background: #fff;
+        font-family: 'Noto Sans Devanagari', 'Noto Sans', Arial, sans-serif;
+        font-size: 11px; color: #000;
+        border: 2px solid #ddd; border-radius: 6px;
+        overflow: hidden;
+      `;
+
+      container.innerHTML = `
+        <div style="background:${DARK_BLUE};display:flex;align-items:center;gap:14px;padding:12px 18px">
+          <div style="width:56px;height:56px;border-radius:50%;background:${GREEN};border:3px solid #fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:13px">JSS</div>
+          <div>
+            <div style="color:#fff;font-size:${isHi ? "20px" : "17px"};font-weight:900;line-height:1.2">${isHi ? "जन स्वास्थ्य सहायता अभियान" : "JAN SWASTHYA SAHAYATA ABHIYAN"}</div>
+            <div style="color:#fff;font-size:12px;font-weight:700;margin-top:3px">A Project of Healthcare Research & Development Board</div>
+            <div style="color:rgba(255,255,255,0.7);font-size:10px;margin-top:2px">(HRDB is Division Of Social Welfare Organization "NAC India")</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 18px;background:#f5f5f5;border-bottom:2px solid #ddd">
+          <span style="font-weight:900;font-size:12px;color:#1e2840">${isHi ? "विज्ञापन सं0 :" : "Advt. No. :"} ${advt}</span>
+          <span style="background:#1e2840;color:#fff;font-weight:900;font-size:11px;padding:6px 16px;border-radius:2px;letter-spacing:0.05em">${isHi ? "भर्ती आमंत्रण" : "RECRUITMENT INVITATION"}</span>
+          <span style="font-weight:900;font-size:12px;color:#1e2840">${isHi ? "दिनांक :" : "DATE :"} ${date}</span>
+        </div>
+        <div style="background:#1e2840;color:#fff;padding:12px 18px;text-align:center;font-size:${isHi ? "14px" : "12px"};font-weight:700;line-height:1.5">${isHi ? invitationHi : invitationEn}</div>
+        <div style="padding:12px 18px">
+          <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px">
+            <tbody>${tableRowsHTML}</tbody>
+          </table>
+          ${feeTableHTML ? `<div style="margin-top:8px"><div style="font-weight:900;font-size:11px;color:#1e2840;margin-bottom:4px">${isHi ? "शुल्क संरचना" : "Fee Structure"}</div>${feeTableHTML}</div>` : ""}
+        </div>
+        <div style="background:#1e2840;color:#fff;padding:10px 18px;text-align:center">
+          <div style="font-size:${isHi ? "14px" : "13px"};font-weight:900;margin-bottom:5px">${isHi ? "अधिक जानकारी के लिए :" : "FOR MORE INFORMATION :"}</div>
+          <div style="font-size:11px;display:flex;justify-content:space-around;font-weight:700">
+            <span>Website : https://www.jssabhiyan-nac.in</span>
+            <span>Email : support@jssabhiyan.com</span>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(container);
+      await new Promise((r) => setTimeout(r, 150));
+
+      const canvas = await window.html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        width: 680,
+        height: container.scrollHeight,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait",
+      });
+
+      const pageW = 210;
+      const pageH = 297;
+      const imgW = pageW - 15;
+      const imgH = (canvas.height * imgW) / canvas.width;
+
+      // Scale to fit on single page
+      if (imgH > pageH - 15) {
+        const scale = (pageH - 15) / imgH;
+        const scaledW = imgW * scale;
+        const scaledH = imgH * scale;
+        const xOffset = (pageW - scaledW) / 2;
+        pdf.addImage(imgData, "PNG", xOffset, 7.5, scaledW, scaledH);
+      } else {
+        pdf.addImage(imgData, "PNG", 7.5, 7.5, imgW, imgH);
+      }
+
+      const advtClean = advt.replace(/\//g, "-");
+      pdf.save(
+        isHi
+          ? `JSSA_${advtClean}_Hindi.pdf`
+          : `JSSA_${advtClean}_English.pdf`,
+      );
+      document.body.removeChild(container);
+    } catch (err) {
+      console.error("PDF generation error:", err);
+      alert("Failed to generate PDF: " + err.message);
+    } finally {
+      setDownloadingPDF(false);
     }
   };
 
@@ -434,6 +643,24 @@ const JobPostingView = () => {
                   विज्ञापन डाउनलोड करें (हिंदी)
                 </a>
               )}
+              <span className="text-gray-300 hidden sm:block">|</span>
+              <button
+                onClick={() => downloadJobPDF("en")}
+                disabled={downloadingPDF}
+                className="flex items-center gap-1.5 text-[#3AB000] text-xs font-semibold hover:underline transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Download className="w-3.5 h-3.5" />
+                {downloadingPDF ? "Generating..." : "Download PDF (English)"}
+              </button>
+              <span className="text-gray-300 hidden sm:block">|</span>
+              <button
+                onClick={() => downloadJobPDF("hi")}
+                disabled={downloadingPDF}
+                className="flex items-center gap-1.5 text-[#3AB000] text-xs font-semibold hover:underline transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Download className="w-3.5 h-3.5" />
+                {downloadingPDF ? "बन रहा है..." : "PDF डाउनलोड करें (हिंदी)"}
+              </button>
             </div>
             {/* Apply Now Button - Only show for applicants who haven't applied yet */}
             {role === "applicant" && isActive && !hasApplied && (
@@ -686,59 +913,86 @@ const JobPostingView = () => {
 
             {/* Fee Structure Table */}
             {posting.feeStructure && Object.keys(posting.feeStructure).length > 0 && 
-              Object.values(posting.feeStructure).some(val => val && val.toString().trim() !== "") && (
-              <DetailCard
-                icon={<IndianRupee className="w-4 h-4 text-[#3AB000]" />}
-                title="Fee Structure / शुल्क संरचना"
-              >
-                <div className="bg-[#fff9e6] border-2 border-[#ffc107] rounded-lg p-3 sm:p-4 mt-2 overflow-x-auto">
-                  <div className="text-sm font-bold text-[#856404] mb-3 flex items-center gap-2">
-                    <span>💰</span>
-                    <span>Fee Structure by Gender & Category / लिंग और श्रेणी के अनुसार शुल्क संरचना</span>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs sm:text-sm border-collapse min-w-[300px]">
-                      <thead>
-                        <tr className="bg-[#ffc107] text-gray-800">
-                          <th className="px-2 sm:px-3 py-2 text-left border border-[#ffc107] font-bold">Category / श्रेणी</th>
-                          <th className="px-2 sm:px-3 py-2 text-center border border-[#ffc107] font-bold">Male / पुरुष</th>
-                          <th className="px-2 sm:px-3 py-2 text-center border border-[#ffc107] font-bold">Female / महिला</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[
-                          { key: "general", label: "General / सामान्य" },
-                          { key: "obc", label: "OBC" },
-                          { key: "sc", label: "SC" },
-                          { key: "st", label: "ST" },
-                          { key: "ews", label: "EWS" },
-                        ].map((cat, idx) => {
-                          const maleFee = posting.feeStructure[`male_${cat.key}`];
-                          const femaleFee = posting.feeStructure[`female_${cat.key}`];
-                          if (!maleFee && !femaleFee) return null;
-                          return (
-                            <tr
-                              key={cat.key}
-                              className={idx % 2 === 0 ? "bg-white" : "bg-[#fffbf0]"}
-                            >
-                              <td className="px-2 sm:px-3 py-2 border border-gray-300 font-semibold">
-                                {cat.label}
-                              </td>
-                              <td className="px-2 sm:px-3 py-2 border border-gray-300 text-center text-[#3AB000] font-bold">
-                                {maleFee ? `₹${maleFee}` : "—"}
-                              </td>
-                              <td className="px-2 sm:px-3 py-2 border border-gray-300 text-center text-[#3AB000] font-bold">
-                                {femaleFee ? `₹${femaleFee}` : "—"}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </DetailCard>
-            )}
+              Object.values(posting.feeStructure).some(val => val && val.toString().trim() !== "") && (() => {
+                // Check if all fees are the same
+                const categories = ["general", "obc", "sc", "st", "ews"];
+                const allFees = [];
+                categories.forEach(cat => {
+                  const maleFee = posting.feeStructure[`male_${cat}`];
+                  const femaleFee = posting.feeStructure[`female_${cat}`];
+                  if (maleFee) allFees.push(parseFloat(maleFee));
+                  if (femaleFee) allFees.push(parseFloat(femaleFee));
+                });
+                
+                const uniqueFees = [...new Set(allFees)];
+                const allSame = uniqueFees.length === 1 && allFees.length > 0;
+                const sameAmount = allSame ? uniqueFees[0] : null;
+                
+                return (
+                  <DetailCard
+                    icon={<IndianRupee className="w-4 h-4 text-[#3AB000]" />}
+                    title="Fee Structure / शुल्क संरचना"
+                  >
+                    <div className="bg-[#fff9e6] border-2 border-[#ffc107] rounded-lg p-3 sm:p-4 mt-2 overflow-x-auto">
+                      <div className="text-sm font-bold text-[#856404] mb-3 flex items-center gap-2">
+                        <span>💰</span>
+                        <span>Fee Structure by Gender & Category / लिंग और श्रेणी के अनुसार शुल्क संरचना</span>
+                      </div>
+                      {allSame ? (
+                        <div className="text-center py-4">
+                          <p className="text-lg sm:text-xl font-bold text-[#3AB000] mb-2">
+                            ₹{sameAmount}
+                          </p>
+                          <p className="text-sm text-gray-700 font-medium">
+                            AMOUNT (FOR ALL CATEGORIES) / सभी श्रेणियों के लिए राशि
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs sm:text-sm border-collapse min-w-[300px]">
+                            <thead>
+                              <tr className="bg-[#ffc107] text-gray-800">
+                                <th className="px-2 sm:px-3 py-2 text-left border border-[#ffc107] font-bold">Category / श्रेणी</th>
+                                <th className="px-2 sm:px-3 py-2 text-center border border-[#ffc107] font-bold">Male / पुरुष</th>
+                                <th className="px-2 sm:px-3 py-2 text-center border border-[#ffc107] font-bold">Female / महिला</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {[
+                                { key: "general", label: "General / सामान्य" },
+                                { key: "obc", label: "OBC" },
+                                { key: "sc", label: "SC" },
+                                { key: "st", label: "ST" },
+                                { key: "ews", label: "EWS" },
+                              ].map((cat, idx) => {
+                                const maleFee = posting.feeStructure[`male_${cat.key}`];
+                                const femaleFee = posting.feeStructure[`female_${cat.key}`];
+                                if (!maleFee && !femaleFee) return null;
+                                return (
+                                  <tr
+                                    key={cat.key}
+                                    className={idx % 2 === 0 ? "bg-white" : "bg-[#fffbf0]"}
+                                  >
+                                    <td className="px-2 sm:px-3 py-2 border border-gray-300 font-semibold">
+                                      {cat.label}
+                                    </td>
+                                    <td className="px-2 sm:px-3 py-2 border border-gray-300 text-center text-[#3AB000] font-bold">
+                                      {maleFee ? `₹${maleFee}` : "—"}
+                                    </td>
+                                    <td className="px-2 sm:px-3 py-2 border border-gray-300 text-center text-[#3AB000] font-bold">
+                                      {femaleFee ? `₹${femaleFee}` : "—"}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </DetailCard>
+                );
+              })()}
           </div>
 
           {/* Right column – Dates */}
@@ -814,57 +1068,81 @@ const JobPostingView = () => {
                   valueHi={posting.education?.hi || ""}
                 />
                 {posting.feeStructure && Object.keys(posting.feeStructure).length > 0 && 
-                  Object.values(posting.feeStructure).some(val => val && val.toString().trim() !== "") ? (
-                  <div className="col-span-full">
-                    <p className="text-xs text-gray-500 mb-2">Fee Structure / शुल्क संरचना</p>
-                    <div className="bg-[#fff9e6] border-2 border-[#ffc107] rounded-lg p-3 sm:p-4 overflow-x-auto">
-                      <div className="text-sm font-bold text-[#856404] mb-3 flex items-center gap-2">
-                        <span>💰</span>
-                        <span>Fee Structure / शुल्क संरचना</span>
-                      </div>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs sm:text-sm border-collapse">
-                          <thead>
-                            <tr className="bg-[#ffc107] text-gray-800">
-                              <th className="px-2 sm:px-3 py-2 text-left border border-[#ffc107] font-bold">Category / श्रेणी</th>
-                              <th className="px-2 sm:px-3 py-2 text-center border border-[#ffc107] font-bold">Male / पुरुष</th>
-                              <th className="px-2 sm:px-3 py-2 text-center border border-[#ffc107] font-bold">Female / महिला</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {[
-                              { key: "general", label: "General / सामान्य" },
-                              { key: "obc", label: "OBC" },
-                              { key: "sc", label: "SC" },
-                              { key: "st", label: "ST" },
-                              { key: "ews", label: "EWS" },
-                            ].map((cat, idx) => {
-                              const maleFee = posting.feeStructure[`male_${cat.key}`];
-                              const femaleFee = posting.feeStructure[`female_${cat.key}`];
-                              if (!maleFee && !femaleFee) return null;
-                              return (
-                                <tr
-                                  key={cat.key}
-                                  className={idx % 2 === 0 ? "bg-white" : "bg-[#fffbf0]"}
-                                >
-                                  <td className="px-2 sm:px-3 py-2 border border-gray-300 font-semibold">
-                                    {cat.label}
-                                  </td>
-                                  <td className="px-2 sm:px-3 py-2 border border-gray-300 text-center text-[#3AB000] font-bold">
-                                    {maleFee ? `₹${maleFee}` : "—"}
-                                  </td>
-                                  <td className="px-2 sm:px-3 py-2 border border-gray-300 text-center text-[#3AB000] font-bold">
-                                    {femaleFee ? `₹${femaleFee}` : "—"}
-                                  </td>
+                  Object.values(posting.feeStructure).some(val => val && val.toString().trim() !== "") ? (() => {
+                    // Check if all fees are the same
+                    const categories = ["general", "obc", "sc", "st", "ews"];
+                    const allFees = [];
+                    categories.forEach(cat => {
+                      const maleFee = posting.feeStructure[`male_${cat}`];
+                      const femaleFee = posting.feeStructure[`female_${cat}`];
+                      if (maleFee) allFees.push(parseFloat(maleFee));
+                      if (femaleFee) allFees.push(parseFloat(femaleFee));
+                    });
+                    
+                    const uniqueFees = [...new Set(allFees)];
+                    const allSame = uniqueFees.length === 1 && allFees.length > 0;
+                    const sameAmount = allSame ? uniqueFees[0] : null;
+                    
+                    return allSame ? (
+                      <Row
+                        label="Fee Structure / शुल्क संरचना"
+                        value={`₹${sameAmount} (FOR ALL CATEGORIES)`}
+                        valueHi={`₹${sameAmount} (सभी श्रेणियों के लिए)`}
+                        valueClass="text-[#3AB000] font-bold text-sm"
+                      />
+                    ) : (
+                      <div className="col-span-full">
+                        <p className="text-xs text-gray-500 mb-2">Fee Structure / शुल्क संरचना</p>
+                        <div className="bg-[#fff9e6] border-2 border-[#ffc107] rounded-lg p-3 sm:p-4 overflow-x-auto">
+                          <div className="text-sm font-bold text-[#856404] mb-3 flex items-center gap-2">
+                            <span>💰</span>
+                            <span>Fee Structure / शुल्क संरचना</span>
+                          </div>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs sm:text-sm border-collapse">
+                              <thead>
+                                <tr className="bg-[#ffc107] text-gray-800">
+                                  <th className="px-2 sm:px-3 py-2 text-left border border-[#ffc107] font-bold">Category / श्रेणी</th>
+                                  <th className="px-2 sm:px-3 py-2 text-center border border-[#ffc107] font-bold">Male / पुरुष</th>
+                                  <th className="px-2 sm:px-3 py-2 text-center border border-[#ffc107] font-bold">Female / महिला</th>
                                 </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                              </thead>
+                              <tbody>
+                                {[
+                                  { key: "general", label: "General / सामान्य" },
+                                  { key: "obc", label: "OBC" },
+                                  { key: "sc", label: "SC" },
+                                  { key: "st", label: "ST" },
+                                  { key: "ews", label: "EWS" },
+                                ].map((cat, idx) => {
+                                  const maleFee = posting.feeStructure[`male_${cat.key}`];
+                                  const femaleFee = posting.feeStructure[`female_${cat.key}`];
+                                  if (!maleFee && !femaleFee) return null;
+                                  return (
+                                    <tr
+                                      key={cat.key}
+                                      className={idx % 2 === 0 ? "bg-white" : "bg-[#fffbf0]"}
+                                    >
+                                      <td className="px-2 sm:px-3 py-2 border border-gray-300 font-semibold">
+                                        {cat.label}
+                                      </td>
+                                      <td className="px-2 sm:px-3 py-2 border border-gray-300 text-center text-[#3AB000] font-bold">
+                                        {maleFee ? `₹${maleFee}` : "—"}
+                                      </td>
+                                      <td className="px-2 sm:px-3 py-2 border border-gray-300 text-center text-[#3AB000] font-bold">
+                                        {femaleFee ? `₹${femaleFee}` : "—"}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ) : (
+                    );
+                  })()
+                : (
                   <Row
                     label="Fee Structure / शुल्क संरचना"
                     value={posting.fee?.en || ""}
