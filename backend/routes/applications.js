@@ -6,7 +6,7 @@ import User from "../models/User.js";
 import { authenticate } from "../middleware/auth.js";
 import { generateToken } from "../utils/jwt.js";
 import { normalizePhone } from "../utils/validation.js";
-import { sendApplicationEmail } from "../utils/email.js";
+// import { sendApplicationEmail } from "../utils/email.js"; // REMOVED: Email will be sent only after payment verification
 
 const router = express.Router();
 
@@ -161,20 +161,8 @@ router.post(
         password: defaultPassword,
       };
 
-      // Send email with application details (async, don't wait for it)
-      if (email) {
-        sendApplicationEmail(
-          {
-            ...applicationData,
-            applicationNumber: generatedApplicationNumber,
-            email: email,
-          },
-          loginCredentials
-        ).catch((err) => {
-          console.error("Failed to send application email:", err);
-          // Don't fail the request if email fails
-        });
-      }
+      // Email will be sent only after payment verification (in payments route)
+      // Removed sendApplicationEmail call - email sent after payment success
 
       res.status(201).json({
         success: true,
