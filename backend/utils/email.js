@@ -1033,7 +1033,7 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
       <!-- Header -->
       <div class="header-section">
         <div class="logo-circle">
-          <div>JSSA</div>
+          <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; color: #0aca00;">JSSA</div>
         </div>
         <div class="header-text">
           <div class="header-title">जन स्वास्थ्य सहायता अभियान</div>
@@ -1211,6 +1211,22 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
       </div>
     </div>
 
+    <!-- PDF Download Notice -->
+    <div style="text-align: center; margin: 30px 0; padding: 20px; background: #f0f8ff; border-radius: 8px; border: 2px solid #0aca00;">
+      <div style="font-size: 18px; font-weight: 700; color: #0aca00; margin-bottom: 12px;">
+        📥 PDF Download Available
+      </div>
+      <p style="font-size: 14px; color: #333; line-height: 1.6; margin-bottom: 8px;">
+        Your Application Slip PDF is attached to this email.
+      </p>
+      <p style="font-size: 13px; color: #666;">
+        Please check the email attachments to download the PDF file.
+      </p>
+      <p style="font-size: 12px; color: #999; margin-top: 12px;">
+        File Name: <strong>Application_Slip_${applicationData.applicationNumber || 'JSSA'}.pdf</strong>
+      </p>
+    </div>
+
     <div class="email-footer">
       <p><strong>Thank you for applying!</strong></p>
       <p>आवेदन करने के लिए धन्यवाद!</p>
@@ -1291,13 +1307,10 @@ Thank you for applying!
 आवेदन करने के लिए धन्यवाद!
     `;
 
-    // Generate PDF from application slip HTML (optional, non-blocking)
-    // TEMPORARILY DISABLED TO TEST EMAIL SENDING - PDF might be blocking
+    // Generate PDF from application slip HTML
     let pdfBuffer = null;
-    console.log("📧 PDF generation temporarily disabled for testing email sending");
+    console.log("📧 Starting PDF generation...");
     
-    // Skip PDF generation for now to test email
-    /*
     const pdfGenerationPromise = (async () => {
       try {
         console.log("📧 Starting PDF generation...");
@@ -1792,15 +1805,12 @@ Thank you for applying!
         return null;
       }
     })();
-    */
 
-    // Wait for PDF with timeout (max 10 seconds), then send email
-    // TEMPORARILY DISABLED - PDF generation is commented out
-    /*
+    // Wait for PDF with timeout (max 15 seconds), then send email
     try {
       pdfBuffer = await Promise.race([
         pdfGenerationPromise,
-        new Promise((resolve) => setTimeout(() => resolve(null), 10000)), // 10 second timeout
+        new Promise((resolve) => setTimeout(() => resolve(null), 15000)), // 15 second timeout
       ]);
       if (pdfBuffer) {
         console.log("✅ PDF ready for attachment");
@@ -1811,7 +1821,6 @@ Thank you for applying!
       console.error("⚠️ PDF generation timeout:", pdfTimeoutError);
       pdfBuffer = null;
     }
-    */
 
     // Prepare email attachments
     const attachments = [];
