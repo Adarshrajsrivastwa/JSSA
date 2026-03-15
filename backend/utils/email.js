@@ -1292,7 +1292,12 @@ Thank you for applying!
     `;
 
     // Generate PDF from application slip HTML (optional, non-blocking)
+    // TEMPORARILY DISABLED TO TEST EMAIL SENDING - PDF might be blocking
     let pdfBuffer = null;
+    console.log("📧 PDF generation temporarily disabled for testing email sending");
+    
+    // Skip PDF generation for now to test email
+    /*
     const pdfGenerationPromise = (async () => {
       try {
         console.log("📧 Starting PDF generation...");
@@ -1787,8 +1792,11 @@ Thank you for applying!
         return null;
       }
     })();
+    */
 
     // Wait for PDF with timeout (max 10 seconds), then send email
+    // TEMPORARILY DISABLED - PDF generation is commented out
+    /*
     try {
       pdfBuffer = await Promise.race([
         pdfGenerationPromise,
@@ -1803,6 +1811,7 @@ Thank you for applying!
       console.error("⚠️ PDF generation timeout:", pdfTimeoutError);
       pdfBuffer = null;
     }
+    */
 
     // Prepare email attachments
     const attachments = [];
