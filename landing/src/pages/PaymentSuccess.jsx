@@ -18,10 +18,12 @@ function PaymentSuccess() {
   useEffect(() => {
     const loadData = async () => {
       try {
+        console.log("📄 PaymentSuccess page loading data...");
         // Get data from sessionStorage or URL params
         const pendingData = sessionStorage.getItem("pendingApplication");
         const orderId = searchParams.get("orderId");
         const applicationId = searchParams.get("applicationId");
+        console.log("PaymentSuccess - orderId:", orderId, "applicationId:", applicationId, "pendingData exists:", !!pendingData);
 
         if (pendingData) {
           const data = JSON.parse(pendingData);

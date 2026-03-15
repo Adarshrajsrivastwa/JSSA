@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { jobPostingsAPI, paymentsAPI } from "../utils/api.js";
 import logo from "../assets/img0.png";
 import logo1 from "../assets/jss.png";
@@ -2015,6 +2015,7 @@ export default function JobDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
 
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -2033,6 +2034,7 @@ export default function JobDetail() {
   const [agreed1, setAgreed1] = useState(false);
   const [agreed2, setAgreed2] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const paymentRedirectProcessed = useRef(false);
   const [formData, setFormData] = useState({
     applicationNumber: "",
     candidateName: "",
@@ -2155,12 +2157,24 @@ export default function JobDetail() {
 
   // Handle Cashfree payment redirect
   useEffect(() => {
+    // Don't run this logic if we're already on payment-success page
+    if (location.pathname === "/payment-success") {
+      return;
+    }
+
+    // Prevent multiple redirects
+    if (paymentRedirectProcessed.current) {
+      return;
+    }
+
     const payment = searchParams.get("payment");
     const orderId = searchParams.get("orderId");
     const applicationId = searchParams.get("applicationId");
 
     // Check if we're returning from Cashfree payment
-    if (payment === "success" || orderId || applicationId) {
+    // Only process if we have payment parameters AND we're on JobDetail page
+    if ((payment === "success" || orderId || applicationId) && location.pathname.includes("/job-postings/view/")) {
+      paymentRedirectProcessed.current = true;
       const pendingData = sessionStorage.getItem("pendingApplication");
 
       if (pendingData) {
@@ -2230,12 +2244,15 @@ export default function JobDetail() {
               )
               .then((verifyResponse) => {
                 if (verifyResponse.success) {
-                  // Redirect to payment success page
+                  console.log("✅ Payment verified successfully, redirecting to payment-success page");
+                  // Redirect to payment success page - use replace to prevent back navigation
                   navigate(
                     `/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`,
+                    { replace: true }
                   );
                   // Clean up will happen on success page
                 } else {
+                  console.error("❌ Payment verification failed:", verifyResponse);
                   alert(
                     `Payment verification failed: ${verifyResponse.message || "Please contact support."}`,
                   );
@@ -2267,29 +2284,38 @@ export default function JobDetail() {
                 .then((result) => {
                   console.log("Payment status check result:", result);
                   if (result.success && result.data.paymentStatus === "paid") {
-                    // Redirect to payment success page
+                    console.log("✅ Payment status is paid, redirecting to payment-success page");
+                    // Redirect to payment success page - use replace to prevent back navigation
                     navigate(
                       `/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`,
+                      { replace: true }
                     );
                   } else {
+                    console.log("⚠️ Payment status not confirmed, but showing success page anyway");
                     // Show success page anyway if payment=success in URL
                     navigate(
                       `/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId}`,
+                      { replace: true }
                     );
                   }
                 })
-                .catch(() => {
+                .catch((err) => {
+                  console.error("Error checking payment status:", err);
                   // If API call fails, still show success page if payment=success
                   if (payment === "success") {
+                    console.log("⚠️ API call failed, but payment=success in URL, redirecting to payment-success page");
                     navigate(
                       `/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId}`,
+                      { replace: true }
                     );
                   }
                 });
             } else if (payment === "success") {
               // If we have payment=success but no orderId, still show success
+              console.log("✅ Payment=success in URL, redirecting to payment-success page");
               navigate(
                 `/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId || ""}`,
+                { replace: true }
               );
             }
           }
@@ -2313,7 +2339,8 @@ export default function JobDetail() {
                   if (app.paymentStatus === "paid") {
                     // Get form data from somewhere or show success with available data
                     // Redirect to payment success page
-                    navigate(`/payment-success?applicationId=${applicationId}`);
+                    console.log("✅ Application payment status is paid, redirecting to payment-success page");
+                    navigate(`/payment-success?applicationId=${applicationId}`, { replace: true });
                   }
                 }
               })
@@ -2324,7 +2351,7 @@ export default function JobDetail() {
         }
       }
     }
-  }, [searchParams]);
+  }, [searchParams, location.pathname, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
