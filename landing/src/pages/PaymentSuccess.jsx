@@ -1070,6 +1070,7 @@ function PaymentSuccess() {
               tableLayout: "fixed",
               minWidth: "100%",
               maxWidth: "100%",
+              boxSizing: "border-box",
             }}
           >
             <thead>
@@ -1083,6 +1084,9 @@ function PaymentSuccess() {
                     fontSize: 13,
                     width: "20%",
                     wordBreak: "break-word",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
                   }}
                 >
                   Application No.
@@ -1096,6 +1100,9 @@ function PaymentSuccess() {
                     fontSize: 13,
                     width: "30%",
                     wordBreak: "break-word",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
                   }}
                 >
                   Email
@@ -1109,6 +1116,9 @@ function PaymentSuccess() {
                     fontSize: 13,
                     width: "20%",
                     wordBreak: "break-word",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
                   }}
                 >
                   Payment Status
@@ -1122,6 +1132,9 @@ function PaymentSuccess() {
                     fontSize: 13,
                     width: "30%",
                     wordBreak: "break-word",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
                   }}
                 >
                   Date
@@ -1139,6 +1152,9 @@ function PaymentSuccess() {
                     wordBreak: "break-word",
                     overflowWrap: "break-word",
                     maxWidth: "0",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
                   }}
                 >
                   {applicationNumber}
@@ -1152,6 +1168,9 @@ function PaymentSuccess() {
                     wordBreak: "break-word",
                     overflowWrap: "break-word",
                     maxWidth: "0",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
                   }}
                 >
                   {finalFormData.email || ""}
@@ -1166,6 +1185,9 @@ function PaymentSuccess() {
                     wordBreak: "break-word",
                     overflowWrap: "break-word",
                     maxWidth: "0",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
                   }}
                 >
                   Complete
