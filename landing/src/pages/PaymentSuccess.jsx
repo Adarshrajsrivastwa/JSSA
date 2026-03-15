@@ -476,7 +476,7 @@ function PaymentSuccess() {
           }}
         >
           <div
-            style={{ fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}
+            style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}
           >
             Advt. No.: {job?.advtNo || ""}
           </div>
@@ -491,7 +491,7 @@ function PaymentSuccess() {
           >
             Application Slip
           </div>
-          <div style={{ fontSize: 11, whiteSpace: "nowrap" }}>
+          <div style={{ fontSize: 13, whiteSpace: "nowrap" }}>
             Date:{" "}
             {new Date().toLocaleString("en-US", {
               month: "numeric",
@@ -525,7 +525,7 @@ function PaymentSuccess() {
         <div style={{ padding: "15px 20px", background: "#fff", position: "relative" }}>
           <h3
             style={{
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: 900,
               color: "#000",
               marginBottom: 12,
@@ -574,8 +574,8 @@ function PaymentSuccess() {
           {/* Personal details - one field per line */}
           <div
             style={{
-              fontSize: 13,
-              lineHeight: 2,
+              fontSize: 15,
+              lineHeight: 2.2,
               marginRight: photoPreview ? "130px" : "0",
             }}
           >
@@ -683,7 +683,7 @@ function PaymentSuccess() {
         >
           <h3
             style={{
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: 900,
               color: "#000",
               marginBottom: 12,
@@ -696,8 +696,8 @@ function PaymentSuccess() {
           {/* Educational details - one field per line (same format as Personal Details) */}
           <div
             style={{
-              fontSize: 13,
-              lineHeight: 2,
+              fontSize: 15,
+              lineHeight: 2.2,
               marginRight: signaturePreview ? "220px" : "0",
             }}
           >
@@ -760,7 +760,7 @@ function PaymentSuccess() {
                 />
                 <div
                   style={{
-                    fontSize: 11,
+                    fontSize: 13,
                     fontWeight: 600,
                     color: "#000",
                     textAlign: "center",
@@ -822,7 +822,7 @@ function PaymentSuccess() {
             style={{
               width: "100%",
               borderCollapse: "collapse",
-              fontSize: 11,
+              fontSize: 13,
               border: "1px solid #e0e0e0",
             }}
           >
@@ -834,7 +834,7 @@ function PaymentSuccess() {
                     textAlign: "left",
                     fontWeight: 700,
                     border: "1px solid #1a2a4a",
-                    fontSize: 11,
+                    fontSize: 13,
                   }}
                 >
                   Application No.
@@ -845,7 +845,7 @@ function PaymentSuccess() {
                     textAlign: "left",
                     fontWeight: 700,
                     border: "1px solid #1a2a4a",
-                    fontSize: 11,
+                    fontSize: 13,
                   }}
                 >
                   Email
@@ -856,7 +856,7 @@ function PaymentSuccess() {
                     textAlign: "left",
                     fontWeight: 700,
                     border: "1px solid #1a2a4a",
-                    fontSize: 11,
+                    fontSize: 13,
                   }}
                 >
                   Payment Status
@@ -867,7 +867,7 @@ function PaymentSuccess() {
                     textAlign: "left",
                     fontWeight: 700,
                     border: "1px solid #1a2a4a",
-                    fontSize: 11,
+                    fontSize: 13,
                   }}
                 >
                   Date
@@ -881,7 +881,7 @@ function PaymentSuccess() {
                     padding: "10px",
                     border: "1px solid #e0e0e0",
                     color: "#000",
-                    fontSize: 11,
+                    fontSize: 13,
                   }}
                 >
                   {applicationNumber}
@@ -891,7 +891,7 @@ function PaymentSuccess() {
                     padding: "10px",
                     border: "1px solid #e0e0e0",
                     color: "#000",
-                    fontSize: 11,
+                    fontSize: 13,
                   }}
                 >
                   {finalFormData.email || ""}
@@ -902,7 +902,7 @@ function PaymentSuccess() {
                     border: "1px solid #e0e0e0",
                     color: GREEN,
                     fontWeight: 700,
-                    fontSize: 11,
+                    fontSize: 13,
                   }}
                 >
                   Complete
@@ -912,7 +912,7 @@ function PaymentSuccess() {
                     padding: "10px",
                     border: "1px solid #e0e0e0",
                     color: "#000",
-                    fontSize: 11,
+                    fontSize: 13,
                   }}
                 >
                   {new Date().toLocaleString("en-US", {
