@@ -607,17 +607,26 @@ This is an automated email. Please do not reply.
  */
 export async function sendPaymentSuccessEmail(applicationData, loginCredentials, jobPosting) {
   try {
+    console.log("📧 sendPaymentSuccessEmail called");
+    console.log("📧 Application email:", applicationData.email);
+    console.log("📧 SMTP_USER configured:", !!process.env.SMTP_USER);
+    console.log("📧 SMTP_PASS configured:", !!process.env.SMTP_PASS);
+    
     // Check if email is configured
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.warn("Email not configured. Skipping email send.");
+      console.warn("⚠️ Email not configured. Skipping email send.");
+      console.warn("⚠️ SMTP_USER:", process.env.SMTP_USER ? "Set" : "Not set");
+      console.warn("⚠️ SMTP_PASS:", process.env.SMTP_PASS ? "Set" : "Not set");
       return { success: false, message: "Email not configured" };
     }
 
     // Check if applicant has email
     if (!applicationData.email) {
-      console.warn("Applicant email not provided. Skipping email send.");
+      console.warn("⚠️ Applicant email not provided. Skipping email send.");
       return { success: false, message: "Applicant email not provided" };
     }
+    
+    console.log("📧 Proceeding with email send to:", applicationData.email);
 
     const transporter = createTransporter();
 
@@ -1792,16 +1801,21 @@ Thank you for applying!
       attachments: attachments.length > 0 ? attachments : undefined,
     };
 
+    console.log("📧 Sending email via SMTP...");
     const info = await transporter.sendMail(mailOptions);
-    console.log("Payment success email sent:", info.messageId);
-
+    console.log("✅ Payment success email sent successfully!");
+    console.log("✅ Message ID:", info.messageId);
+    console.log("✅ Email sent to:", applicationData.email);
+    console.log("✅ PDF attached:", pdfBuffer !== null);
     return {
       success: true,
       messageId: info.messageId,
       pdfAttached: pdfBuffer !== null,
     };
   } catch (error) {
-    console.error("Error sending payment success email:", error);
+    console.error("❌ Error sending payment success email:", error);
+    console.error("❌ Error message:", error.message);
+    console.error("❌ Error stack:", error.stack);
     return {
       success: false,
       error: error.message,

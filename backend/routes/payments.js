@@ -375,18 +375,43 @@ router.post(
 
       // Send payment success email (async, don't wait for it)
       try {
-        // Get user data for login credentials
-        const user = await User.findById(application.createdBy);
-        if (user && application.email) {
-          // Get job posting data
-          const jobPosting = await JobPosting.findById(application.jobPostingId);
+        console.log("📧 Preparing to send payment success email...");
+        console.log("📧 Application email:", application.email);
+        console.log("📧 Application createdBy:", application.createdBy);
+        
+        // Check if application has email
+        if (!application.email) {
+          console.warn("⚠️ Application email not found. Skipping email send.");
+        } else {
+          // Get user data for login credentials
+          let user = null;
+          if (application.createdBy) {
+            try {
+              user = await User.findById(application.createdBy);
+              console.log("📧 User found:", user ? "Yes" : "No");
+            } catch (userErr) {
+              console.error("Error fetching user:", userErr);
+            }
+          }
           
-          // Prepare login credentials
+          // Get job posting data
+          let jobPosting = null;
+          if (application.jobPostingId) {
+            try {
+              jobPosting = await JobPosting.findById(application.jobPostingId);
+              console.log("📧 Job posting found:", jobPosting ? "Yes" : "No");
+            } catch (jobErr) {
+              console.error("Error fetching job posting:", jobErr);
+            }
+          }
+          
+          // Prepare login credentials - use user email/phone if available, otherwise use application email
           const defaultPassword = "JSSA@123";
           const loginCredentials = {
-            identifier: user.email || user.phone,
+            identifier: user?.email || user?.phone || application.email,
             password: defaultPassword,
           };
+          console.log("📧 Login credentials prepared:", loginCredentials.identifier);
 
           // Prepare application data for email (include all fields)
           const applicationDataForEmail = {
@@ -417,18 +442,29 @@ router.post(
             signature: application.signature,
           };
 
+          console.log("📧 Sending payment success email to:", application.email);
+          
           // Send email (don't wait for it)
           sendPaymentSuccessEmail(
             applicationDataForEmail,
             loginCredentials,
             jobPosting
-          ).catch((err) => {
-            console.error("Failed to send payment success email:", err);
-            // Don't fail the request if email fails
-          });
+          )
+            .then((result) => {
+              if (result.success) {
+                console.log("✅ Payment success email sent successfully to:", application.email);
+              } else {
+                console.error("❌ Payment success email failed:", result.message || result.error);
+              }
+            })
+            .catch((err) => {
+              console.error("❌ Failed to send payment success email:", err);
+              console.error("❌ Error details:", err.message, err.stack);
+            });
         }
       } catch (emailError) {
-        console.error("Error preparing payment success email:", emailError);
+        console.error("❌ Error preparing payment success email:", emailError);
+        console.error("❌ Error stack:", emailError.stack);
         // Don't fail the request if email preparation fails
       }
 
