@@ -535,12 +535,12 @@ function PaymentSuccess() {
           >
             Personal Details
           </h3>
-          {/* Photo in top right - below header */}
+          {/* Photo in top right - below header with padding from top */}
           {photoPreview ? (
             <div
               style={{ 
                 position: "absolute",
-                top: "50px", // Below "Personal Details" header
+                top: "70px", // More padding from top
                 right: "20px",
                 width: 110,
                 textAlign: "center",
@@ -678,6 +678,7 @@ function PaymentSuccess() {
             padding: "15px 20px",
             background: "#fff",
             borderTop: "1px solid #e0e0e0",
+            position: "relative",
           }}
         >
           <h3
@@ -697,6 +698,7 @@ function PaymentSuccess() {
             style={{
               fontSize: 13,
               lineHeight: 2,
+              marginRight: signaturePreview ? "220px" : "0",
             }}
           >
             <div style={{ marginBottom: 4 }}>
@@ -716,50 +718,7 @@ function PaymentSuccess() {
               <span>{finalFormData.markPercentage || ""}</span>
             </div>
           </div>
-        </div>
-        <div
-          style={{
-            padding: "15px 20px",
-            background: "#fff",
-            borderTop: "1px solid #e0e0e0",
-            position: "relative",
-          }}
-        >
-          <div
-            style={{
-              marginBottom: 12,
-              fontSize: 11,
-              lineHeight: 1.6,
-              marginRight: signaturePreview ? "200px" : "0",
-            }}
-          >
-            <div style={{ marginBottom: 12 }}>
-              <input
-                type="checkbox"
-                checked
-                readOnly
-                style={{ marginRight: 8, cursor: "default" }}
-              />
-              <span>I have read and agree to the Terms and Conditions.</span>
-            </div>
-            <div>
-              <input
-                type="checkbox"
-                checked
-                readOnly
-                style={{ marginRight: 8, cursor: "default" }}
-              />
-              <span>
-                I declare that all the information given in this application form
-                is correct to the best of my knowledge and belief. If any
-                information provided is found false, my candidature may be
-                rejected at any point of time. I have read and understood the
-                conditions which I would abide by. Thus, I have given the above
-                declaration in my full consciousness without any pressure.
-              </span>
-            </div>
-          </div>
-          {/* Signature in bottom right */}
+          {/* Signature in bottom right of Educational Details section */}
           {signaturePreview ? (
             <div
               style={{
@@ -814,6 +773,49 @@ function PaymentSuccess() {
           ) : (
             console.log("⚠️ No signaturePreview available")
           )}
+        </div>
+        <div
+          style={{
+            padding: "15px 20px",
+            background: "#fff",
+            borderTop: "1px solid #e0e0e0",
+            position: "relative",
+          }}
+        >
+          <div
+            style={{
+              marginBottom: 12,
+              fontSize: 11,
+              lineHeight: 1.6,
+            }}
+          >
+            <div style={{ marginBottom: 12 }}>
+              <input
+                type="checkbox"
+                checked
+                readOnly
+                style={{ marginRight: 8, cursor: "default" }}
+              />
+              <span>I have read and agree to the Terms and Conditions.</span>
+            </div>
+            <div>
+              <input
+                type="checkbox"
+                checked
+                readOnly
+                style={{ marginRight: 8, cursor: "default" }}
+              />
+              <span>
+                I declare that all the information given in this application form
+                is correct to the best of my knowledge and belief. If any
+                information provided is found false, my candidature may be
+                rejected at any point of time. I have read and understood the
+                conditions which I would abide by. Thus, I have given the above
+                declaration in my full consciousness without any pressure.
+              </span>
+            </div>
+          </div>
+          {/* Signature moved to Educational Details section - removed from here */}
         </div>
         <div style={{ marginTop: 12, padding: "0 20px 15px" }}>
           <table
