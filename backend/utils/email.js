@@ -1,5 +1,11 @@
 import nodemailer from "nodemailer";
 import puppeteer from "puppeteer";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Create nodemailer transporter
@@ -605,10 +611,11 @@ This is an automated email. Please do not reply.
  * Send payment success email with application slip format
  * Matches the PDF design from PaymentSuccess page
  */
-export async function sendPaymentSuccessEmail(applicationData, loginCredentials, jobPosting) {
+export async function sendPaymentSuccessEmail(applicationData, loginCredentials, jobPosting, pdfFilePath = null) {
   try {
     console.log("📧 sendPaymentSuccessEmail called");
     console.log("📧 Application email:", applicationData.email);
+    console.log("📧 PDF file path provided:", pdfFilePath || "None (will generate on-the-fly)");
     console.log("📧 SMTP_USER configured:", !!process.env.SMTP_USER);
     console.log("📧 SMTP_PASS configured:", !!process.env.SMTP_PASS);
     
@@ -1212,33 +1219,39 @@ Thank you for applying!
 आवेदन करने के लिए धन्यवाद!
     `;
 
-    // Generate PDF from application slip HTML
+    // Use saved PDF if provided, otherwise generate on-the-fly
     let pdfBuffer = null;
-    console.log("📧 Starting PDF generation...");
+    let pdfFileName = `Application_Slip_${applicationData.applicationNumber || 'JSSA'}.pdf`;
     
-    const pdfGenerationPromise = (async () => {
-      try {
-        console.log("📧 Starting PDF generation...");
-        console.log("📧 Photo available:", !!photoSrc);
-        console.log("📧 Signature available:", !!signatureSrc);
-        
-        // Try to read logo file for PDF (fallback to URL if file not found)
-        let logoForPdf = logoUrl;
+    if (pdfFilePath && fs.existsSync(pdfFilePath)) {
+      // Use saved PDF file
+      console.log("📧 Using saved PDF file:", pdfFilePath);
+      pdfBuffer = fs.readFileSync(pdfFilePath);
+      pdfFileName = path.basename(pdfFilePath);
+      console.log("✅ PDF loaded from file");
+    } else {
+      // Generate PDF on-the-fly (fallback)
+      console.log("📧 PDF file not found, generating on-the-fly...");
+      console.log("📧 Photo available:", !!photoSrc);
+      console.log("📧 Signature available:", !!signatureSrc);
+      
+      const pdfGenerationPromise = (async () => {
         try {
-          const fs = await import('fs');
-          const path = await import('path');
-          const logoPath = path.resolve(process.cwd(), 'landing/src/assets/jss.png');
-          if (fs.existsSync(logoPath)) {
-            const logoBuffer = fs.readFileSync(logoPath);
-            const logoBase64 = logoBuffer.toString('base64');
-            logoForPdf = `data:image/png;base64,${logoBase64}`;
-            console.log("📧 Logo loaded from file for PDF");
-          } else {
-            console.log("📧 Logo file not found, using URL");
+          // Try to read logo file for PDF (fallback to URL if file not found)
+          let logoForPdf = logoUrl;
+          try {
+            const logoPath = path.resolve(process.cwd(), 'landing/src/assets/jss.png');
+            if (fs.existsSync(logoPath)) {
+              const logoBuffer = fs.readFileSync(logoPath);
+              const logoBase64 = logoBuffer.toString('base64');
+              logoForPdf = `data:image/png;base64,${logoBase64}`;
+              console.log("📧 Logo loaded from file for PDF");
+            } else {
+              console.log("📧 Logo file not found, using URL");
+            }
+          } catch (logoErr) {
+            console.log("📧 Could not load logo file, using URL:", logoErr.message);
           }
-        } catch (logoErr) {
-          console.log("📧 Could not load logo file, using URL:", logoErr.message);
-        }
         
         // Create HTML for PDF (only application slip, no email banner/credentials)
       const pdfHtmlContent = `
@@ -1663,7 +1676,7 @@ Thank you for applying!
           <tr>
             <td>${applicationData.applicationNumber || "N/A"}</td>
             <td>${applicationData.email || ""}</td>
-            <td class="status-complete">Complete</td>
+            <td class="${applicationData.paymentStatus === 'paid' ? 'status-complete' : ''}" style="${applicationData.paymentStatus === 'paid' ? 'color: #0aca00; font-weight: 700;' : 'color: #ff9800; font-weight: 700;'}">${applicationData.paymentStatus === 'paid' ? 'Complete' : 'Pending'}</td>
             <td>${new Date().toLocaleString("en-US", {
               month: "numeric",
               day: "numeric",
@@ -1766,13 +1779,13 @@ Thank you for applying!
     const attachments = [];
     if (pdfBuffer) {
       attachments.push({
-        filename: `Application_Slip_${applicationData.applicationNumber || 'JSSA'}.pdf`,
+        filename: pdfFileName,
         content: pdfBuffer,
         contentType: 'application/pdf',
       });
-      console.log("✅ PDF attachment prepared");
+      console.log("✅ PDF attachment prepared:", pdfFileName);
     } else {
-      console.log("⚠️ No PDF attachment (generation failed or timed out)");
+      console.log("⚠️ No PDF attachment (file not found or generation failed)");
     }
 
     // Send email (even without PDF)
