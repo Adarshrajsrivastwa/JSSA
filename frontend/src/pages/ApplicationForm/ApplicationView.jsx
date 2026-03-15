@@ -412,7 +412,7 @@ const ApplicationView = () => {
           <div style="margin-top:15px;margin-bottom:20px;">
             <div style="font-size:15px;font-weight:700;color:#000;margin-bottom:10px;">
               Educational Details
-            </div>
+              </div>
             <table style="width:100%;border-collapse:collapse;font-size:13px;">
               <tbody>
                 ${educationDetailsRows.map(([label, value]) => `
@@ -449,8 +449,8 @@ const ApplicationView = () => {
                 <div style="font-size:11px;font-weight:700;color:#000;margin-bottom:4px;">Candidate's Signature</div>
                 <div style="background:#e5e5e5;border:1px solid #ccc;padding:6px;width:200px;height:60px;display:flex;align-items:center;justify-content:center;border-radius:2px;">
                   <img src="${application.signature}" style="width:180px;height:50px;object-fit:contain;background:transparent;" />
-                </div>
-              ` : ""}
+            </div>
+          ` : ""}
             </div>
 
             <!-- Application Summary Table -->

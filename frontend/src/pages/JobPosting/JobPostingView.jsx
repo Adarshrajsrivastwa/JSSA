@@ -524,9 +524,9 @@ const JobPostingView = () => {
 
   return (
     <DashboardLayout activePath="/job-postings">
-      <div className="ml-6 space-y-4 pb-8">
+      <div className="ml-6 space-y-3 pb-6">
         {/* ── Breadcrumb + Actions ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-sm">
             <button
               onClick={() => navigate("/job-postings")}
@@ -560,8 +560,8 @@ const JobPostingView = () => {
         </div>
 
         {/* ── Bilingual Display Notice ── */}
-        <div className="flex justify-end mb-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+        <div className="flex justify-end mb-2">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5">
             <p className="text-xs text-blue-700 font-medium">
               Displaying in English and Hindi / अंग्रेजी और हिंदी में प्रदर्शित
             </p>
@@ -571,8 +571,8 @@ const JobPostingView = () => {
         {/* ── Hero Card ── */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
           {/* Green Header */}
-          <div className="bg-[#3AB000] px-6 py-5">
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+          <div className="bg-[#3AB000] px-6 py-4">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <p className="text-green-100 text-xs font-semibold tracking-wider uppercase mb-1">
                   {posting.advtNo} · Date: {posting.date}
@@ -616,7 +616,7 @@ const JobPostingView = () => {
           </div>
 
           {/* Download Bar + Apply Button */}
-          <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-2.5 bg-[#f0fae8] border-b border-[#d4edcc]">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-2 bg-[#f0fae8] border-b border-[#d4edcc]">
             <div className="flex flex-wrap items-center gap-4">
               {posting.advertisementFile && (
                 <>
@@ -738,9 +738,9 @@ const JobPostingView = () => {
         </div>
 
         {/* ── Body Grid ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Left column */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-3">
             {/* Job Location */}
             <DetailCard
               icon={<MapPin className="w-4 h-4 text-[#3AB000]" />}
@@ -821,94 +821,6 @@ const JobPostingView = () => {
                   </div>
                 )}
               </div>
-            </DetailCard>
-
-            {/* Full Detail Table */}
-            <DetailCard
-              icon={<FileText className="w-4 h-4 text-[#3AB000]" />}
-              title="Full Posting Details / पूर्ण पोस्टिंग विवरण"
-            >
-              <table className="w-full text-sm mt-2">
-                <tbody>
-                  {[
-                    ["Advertisement No. / विज्ञापन संख्या", posting.advtNo, null],
-                    ["Post Name / पद का नाम", posting.post?.en || "", posting.post?.hi || ""],
-                    ["Education Qualification / शैक्षणिक योग्यता", posting.education?.en || "", posting.education?.hi || ""],
-                    ["Monthly Income / मासिक आय", posting.income?.en || "", posting.income?.hi || ""],
-                    ["Age Limit / आयु सीमा", posting.ageLimit?.en || "19 – 40 Years", posting.ageLimit?.hi || "19 – 40 वर्ष"],
-                    ["Age As On / आयु की तिथि", posting.ageAsOn || "—", null],
-                    ["Fee Structure / शुल्क संरचना", 
-                      posting.feeStructure && Object.keys(posting.feeStructure).length > 0 
-                        ? "See Table Below" 
-                        : posting.fee?.en || "", 
-                      posting.feeStructure && Object.keys(posting.feeStructure).length > 0 
-                        ? "नीचे तालिका देखें" 
-                        : posting.fee?.hi || ""
-                    ],
-                    ["Selection Process / चयन प्रक्रिया", posting.selectionProcess?.en || "—", posting.selectionProcess?.hi || "—"],
-                    ["Status / स्थिति", posting.status, null],
-                  ].map(([key, valEn, valHi]) => {
-                    // Special handling for Fee Structure
-                    if (key.includes("Fee Structure") && posting.feeStructure && 
-                        Object.keys(posting.feeStructure).length > 0 && 
-                        Object.values(posting.feeStructure).some(val => val && val.toString().trim() !== "")) {
-                      return (
-                        <tr key={key} className="border-b border-gray-50 last:border-0">
-                          <td className="py-2.5 pr-4 text-gray-500 font-medium w-2/5">
-                            {key}
-                          </td>
-                          <td className="py-2.5" colSpan={1}>
-                            <div className="text-xs sm:text-sm text-[#3AB000] font-semibold">
-                              See detailed table below / नीचे विस्तृत तालिका देखें
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    }
-                    
-                    return (
-                      <tr
-                        key={key}
-                        className="border-b border-gray-50 last:border-0"
-                      >
-                        <td className="py-2.5 pr-4 text-gray-500 font-medium w-2/5">
-                          {key}
-                        </td>
-                        <td className="py-2.5">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {valEn && (
-                              <p className={`font-semibold ${
-                                key.includes("Status")
-                                  ? isActive
-                                    ? "text-[#3AB000]"
-                                    : "text-gray-500"
-                                  : key.includes("Fee Structure")
-                                    ? "text-[#3AB000]"
-                                    : "text-gray-800"
-                              }`}>
-                                {valEn}
-                              </p>
-                            )}
-                            {valHi && (
-                              <p className={`text-sm ${
-                                key.includes("Status")
-                                  ? isActive
-                                    ? "text-[#3AB000]"
-                                    : "text-gray-500"
-                                  : key.includes("Fee Structure")
-                                    ? "text-[#3AB000]"
-                                    : "text-gray-600"
-                              }`}>
-                                {valHi}
-                              </p>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
             </DetailCard>
 
             {/* Fee Structure Table */}
@@ -996,9 +908,9 @@ const JobPostingView = () => {
           </div>
 
           {/* Right column – Dates */}
-          <div className="space-y-4">
-            <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
-              <p className="text-xs font-bold text-[#3AB000] uppercase tracking-wider mb-3 pb-2 border-b border-gray-100 flex items-center gap-1.5">
+          <div className="space-y-3">
+            <div className="bg-white rounded-lg border border-gray-200 p-3 shadow-sm">
+              <p className="text-xs font-bold text-[#3AB000] uppercase tracking-wider mb-2 pb-1.5 border-b border-gray-100 flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5" />
                 Important Dates
               </p>
@@ -1032,7 +944,7 @@ const JobPostingView = () => {
                     textClass: "text-gray-700",
                   },
                 ].map((item, i) => (
-                  <div key={i} className="relative mb-4 last:mb-0">
+                  <div key={i} className="relative mb-3 last:mb-0">
                     <div
                       className={`absolute -left-5 top-1 w-3 h-3 rounded-full border-2 border-white ${item.color}`}
                     />
@@ -1048,11 +960,11 @@ const JobPostingView = () => {
             </div>
 
             {/* Eligibility */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
-              <p className="text-xs font-bold text-[#3AB000] uppercase tracking-wider mb-3 pb-2 border-b border-gray-100">
+            <div className="bg-white rounded-lg border border-gray-200 p-3 shadow-sm">
+              <p className="text-xs font-bold text-[#3AB000] uppercase tracking-wider mb-2 pb-1.5 border-b border-gray-100">
                 Eligibility / योग्यता
               </p>
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 <Row
                   label="Age Limit / आयु सीमा"
                   value={posting.ageLimit?.en || "19 – 40 Years"}
@@ -1179,13 +1091,13 @@ const QuickInfo = ({
   valueHi,
   valueClass = "text-gray-800 font-semibold",
 }) => (
-  <div className="flex items-start gap-3 px-5 py-4">
-    <div className="w-8 h-8 rounded-lg bg-[#e8f5e2] flex items-center justify-center flex-shrink-0 text-[#3AB000] mt-0.5">
+  <div className="flex items-start gap-2.5 px-4 py-3">
+    <div className="w-7 h-7 rounded-lg bg-[#e8f5e2] flex items-center justify-center flex-shrink-0 text-[#3AB000] mt-0.5">
       {icon}
     </div>
     <div className="min-w-0 flex-1">
       <p className="text-xs text-gray-400 font-medium">{label}</p>
-      <div className="grid grid-cols-2 gap-2 mt-0.5">
+      <div className="grid grid-cols-2 gap-1.5 mt-0.5">
         {value && (
           <p className={`text-sm truncate ${valueClass}`}>{value}</p>
         )}
@@ -1198,8 +1110,8 @@ const QuickInfo = ({
 );
 
 const DetailCard = ({ icon, title, children }) => (
-  <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
-    <div className="flex items-center gap-2 pb-2 border-b border-gray-100 mb-1">
+  <div className="bg-white rounded-lg border border-gray-200 p-3 shadow-sm">
+    <div className="flex items-center gap-2 pb-1.5 border-b border-gray-100 mb-1">
       {icon}
       <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">
         {title}

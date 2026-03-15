@@ -21,6 +21,10 @@ import Scroller from "./pages/Scroller/Scroller";
 import Notifications from "./pages/Notifications/Notifications";
 import Logout from "./pages/Logout";
 
+// Landing pages
+import LandingDashboard from "./pages/Landing/LandingDashboard";
+import JobDetail from "./pages/Landing/JobDetail";
+
 import { AuthProvider } from "./auth/AuthProvider";
 import { RequireAuth, RequireRole } from "./auth/RequireAuth";
 
@@ -29,8 +33,19 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Login page - always accessible, shows first on app start */}
-          <Route path="/" element={<Login />} />
+          {/* Landing/Public pages - accessible without authentication */}
+          <Route path="/" element={<LandingDashboard />} />
+          <Route path="/about" element={<LandingDashboard />} />
+          <Route path="/membership" element={<LandingDashboard />} />
+          <Route path="/services" element={<LandingDashboard />} />
+          <Route path="/jobs" element={<LandingDashboard />} />
+          <Route path="/notifications" element={<LandingDashboard />} />
+          <Route path="/gallery" element={<LandingDashboard />} />
+          <Route path="/verification" element={<LandingDashboard />} />
+          <Route path="/contacts" element={<LandingDashboard />} />
+          <Route path="/job-postings/view/:id" element={<JobDetail />} />
+
+          {/* Login page - always accessible */}
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/student-register" element={<StudentRegistration />} />
@@ -104,7 +119,7 @@ function App() {
             />
 
             {/* Top bar demo pages */}
-            <Route path="/notifications" element={<TopBarNotification />} />
+            <Route path="/notifications-demo" element={<TopBarNotification />} />
             <Route path="/mail" element={<TopBarMail />} />
 
             <Route path="/logout" element={<Logout />} />

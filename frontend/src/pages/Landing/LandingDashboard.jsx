@@ -7732,43 +7732,43 @@
 //   );
 // }
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import myGovLogo from "../assets/jss1.png";
-import unicefLogo from "../assets/jss2.png";
-import nitiAayogLogo from "../assets/jss3.jpeg";
-import msmeLogo from "../assets/jss4.png";
-import logo from "../assets/img0.png";
-import swachhBharat from "../assets/Swachh.png";
-import appImg1 from "../assets/img2b.png";
-import appImg2 from "../assets/img1.png";
-import appImg3 from "../assets/img3a.png";
-import logo1 from "../assets/jss.png";
-import cert1 from "../assets/cer1.jpeg";
-import cert2 from "../assets/cer4.jpeg";
-import cert3 from "../assets/cer5.jpeg";
-import cert4 from "../assets/cer4.jpeg";
-import cert5 from "../assets/cer5.jpeg";
-import cert6 from "../assets/cer6.jpeg";
-import cert7 from "../assets/cer7.jpeg";
-import cert8 from "../assets/cer8.jpeg";
-import cert9 from "../assets/cer9.jpeg";
-import cert10 from "../assets/cer10.jpeg";
-import cert11 from "../assets/cer1.jpeg";
-import cert12 from "../assets/cer7.jpeg";
-import cert13 from "../assets/cer9.jpeg";
-import cert14 from "../assets/cer1.jpeg";
-import cert15 from "../assets/cer10.jpeg";
-import cardImg1 from "../assets/jss.jpeg";
-import AboutPage from "../pages/Aboutpage";
-import MembershipPage from "../pages/Membershippage";
-import ServicesPage from "../pages/Servicespage";
-import JobsPage from "../pages/Jobspage";
-import NotificationsPage from "../pages/Notificationspage";
-import GalleryPage from "../pages/Gallerypage";
-import VerificationPage from "../pages/Verificationpage";
-import ContactsPage from "../pages/Contactspage";
-import { jobPostingsAPI, scrollerAPI, notificationsAPI } from "../utils/api.js";
-import brochurePDF from "../assets/broucher.pdf";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import myGovLogo from "../../assets/jss1.png";
+import unicefLogo from "../../assets/jss2.png";
+import nitiAayogLogo from "../../assets/jss3.jpeg";
+import msmeLogo from "../../assets/jss4.png";
+import logo from "../../assets/img0.png";
+import swachhBharat from "../../assets/Swachh.png";
+import appImg1 from "../../assets/img2b.png";
+import appImg2 from "../../assets/img1.png";
+import appImg3 from "../../assets/img3a.png";
+import logo1 from "../../assets/jss.png";
+import cert1 from "../../assets/cer1.jpeg";
+import cert2 from "../../assets/cer4.jpeg";
+import cert3 from "../../assets/cer5.jpeg";
+import cert4 from "../../assets/cer4.jpeg";
+import cert5 from "../../assets/cer5.jpeg";
+import cert6 from "../../assets/cer6.jpeg";
+import cert7 from "../../assets/cer7.jpeg";
+import cert8 from "../../assets/cer8.jpeg";
+import cert9 from "../../assets/cer9.jpeg";
+import cert10 from "../../assets/cer10.jpeg";
+import cert11 from "../../assets/cer1.jpeg";
+import cert12 from "../../assets/cer7.jpeg";
+import cert13 from "../../assets/cer9.jpeg";
+import cert14 from "../../assets/cer1.jpeg";
+import cert15 from "../../assets/cer10.jpeg";
+import cardImg1 from "../../assets/jss.jpeg";
+import AboutPage from "./Aboutpage";
+import MembershipPage from "./Membershippage";
+import ServicesPage from "./Servicespage";
+import JobsPage from "./Jobspage";
+import NotificationsPage from "./Notificationspage";
+import GalleryPage from "./Gallerypage";
+import VerificationPage from "./Verificationpage";
+import ContactsPage from "./Contactspage";
+import { jobPostingsAPI, scrollerAPI, notificationsAPI } from "../../utils/api.js";
+import brochurePDF from "../../assets/broucher.pdf";
 
 const GREEN = "#0aca00";
 const BLUE_TEXT = "#1a56c4";
@@ -8170,7 +8170,10 @@ function VacanciesBand({ items = [] }) {
 }
 
 function ResultsBand({ items = [] }) {
-  const displayItems = items;
+  const displayItems =
+    items.length === 0
+      ? [{ english: "Coming Soon", hindi: "जल्द ही आ रहा है", link: "#" }]
+      : items;
   return (
     <MarqueeBand
       labelLine1="Latest"
@@ -8278,7 +8281,7 @@ function NotificationTicker({
         style={{
           color: "#fff",
           fontWeight: 900,
-          fontSize: isMobile ? 12 : 28,
+          fontSize: isMobile ? 12 : 22,
           marginBottom: isMobile ? 8 : 14,
           flexShrink: 0,
         }}
@@ -9285,33 +9288,16 @@ function HomePage({ onNavigate }) {
     @media (max-width:768px){
 
       .intro-container{
-        padding:0 14px;
-      }
-
-      .intro-inner{
-        flex-direction: column !important;
-        gap: 20px !important;
-      }
-
-      .intro-col{
-        width: 100% !important;
+        padding:0 20px;
       }
 
       .intro-heading{
-        font-size: 14px !important;
-        margin-bottom: 12px !important;
-        line-height: 1.4 !important;
+        font-size:12px;
       }
 
       .body-text{
-        font-size: 12px !important;
-        line-height: 1.7 !important;
-        margin-bottom: 16px !important;
-      }
-
-      .read-btn{
-        font-size: 12px !important;
-        text-decoration: underline !important;
+        font-size:10px;
+        line-height:1.6;
       }
 
     }
@@ -9778,8 +9764,8 @@ export default function JSSAbhiyan() {
               marginTop: -8,
             }}
           >
-            <a
-              href="https://frontend.jssabhiyan.com/"
+            <Link
+              to="/login"
               className="login-blink"
               style={{
                 background: "#e53e3e",
@@ -9796,7 +9782,7 @@ export default function JSSAbhiyan() {
               }}
             >
               LOGIN
-            </a>
+            </Link>
             <a
               href={brochurePDF}
               target="_blank"
@@ -9867,8 +9853,8 @@ export default function JSSAbhiyan() {
           flexDirection: "column",
           background: "#fff",
           borderBottom: "1px solid #eee",
-          padding: "8px 10px",
-          gap: 8,
+          padding: "1px 8px",
+          gap: 1,
         }}
       >
         <div
@@ -9876,8 +9862,7 @@ export default function JSSAbhiyan() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: 8,
-            width: "100%",
+            gap: 6,
           }}
         >
           <button
@@ -9888,36 +9873,35 @@ export default function JSSAbhiyan() {
               cursor: "pointer",
               padding: 0,
               flexShrink: 0,
-              display: "flex",
-              alignItems: "center",
+              marginLeft: "4%",
             }}
           >
             <img
               src={logo}
               alt="JSS Logo"
               style={{
-                height: 50,
+                height: 48,
                 width: "auto",
                 objectFit: "contain",
                 display: "block",
               }}
             />
           </button>
-          <div style={{ display: "flex", gap: 6, flexShrink: 0, alignItems: "center" }}>
-            <a
-              href="https://frontend.jssabhiyan.com/"
+          <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
+            <Link
+              to="/login"
               style={{
                 background: "#e53e3e",
                 color: "#fff",
-                fontWeight: 700,
-                fontSize: 11,
-                padding: "6px 12px",
-                borderRadius: 4,
+                fontWeight: 500,
+                fontSize: 20,
+                padding: "5px 10px",
+                borderRadius: 3,
                 textDecoration: "none",
                 display: "inline-block",
                 whiteSpace: "nowrap",
-                lineHeight: 1.3,
-                letterSpacing: "0.02em",
+                lineHeight: 1.35,
+                letterSpacing: "0.01em",
               }}
             >
               LOGIN
@@ -9929,16 +9913,14 @@ export default function JSSAbhiyan() {
               style={{
                 background: GREEN,
                 color: "#000",
-                fontWeight: 700,
+                fontWeight: 900,
                 fontSize: 11,
-                padding: "6px 12px",
-                borderRadius: 4,
+                padding: "5px 10px",
+                borderRadius: 3,
                 cursor: "pointer",
                 textDecoration: "none",
                 display: "inline-block",
                 whiteSpace: "nowrap",
-                lineHeight: 1.3,
-                letterSpacing: "0.02em",
               }}
             >
               BROUCHERS
@@ -9950,16 +9932,15 @@ export default function JSSAbhiyan() {
             display: "flex",
             alignItems: "center",
             justifyContent: "flex-end",
-            gap: 8,
-            width: "100%",
+            gap: 6,
           }}
         >
           <img
             src={swachhBharat}
             alt="Swachh Bharat"
-            style={{ height: 28, width: "auto", objectFit: "contain", flexShrink: 0 }}
+            style={{ height: 24, width: "auto", objectFit: "contain" }}
           />
-          <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 3 }}>
             {socialLinks.map((s, i) => (
               <a
                 key={i}
@@ -9968,9 +9949,9 @@ export default function JSSAbhiyan() {
                 rel="noopener noreferrer"
                 style={{
                   background: s.bg,
-                  borderRadius: 5,
-                  width: 26,
-                  height: 26,
+                  borderRadius: 4,
+                  width: 22,
+                  height: 22,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -9978,7 +9959,7 @@ export default function JSSAbhiyan() {
                   flexShrink: 0,
                 }}
               >
-                <span style={{ transform: "scale(0.75)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ transform: "scale(0.7)", display: "flex" }}>
                   {s.content}
                 </span>
               </a>
@@ -10259,56 +10240,18 @@ export default function JSSAbhiyan() {
 
         @media (max-width: 768px) {
           .hdr-desktop { display: none !important; }
-          .hdr-mobile  { display: flex !important; flex-direction: column !important; padding: 8px 10px !important; min-height: unset !important; gap: 8px !important; }
-          
-          /* Mobile header logo and buttons */
-          .hdr-mobile > div:first-child { align-items: center !important; }
-          .hdr-mobile img[alt="JSS Logo"] { height: 50px !important; }
-          .hdr-mobile > div:first-child > div a { font-size: 11px !important; padding: 6px 12px !important; }
-          .hdr-mobile img[alt="Swachh Bharat"] { height: 28px !important; }
-          .hdr-mobile > div:last-child > div a { width: 26px !important; height: 26px !important; }
+          .hdr-mobile  { display: flex !important; flex-direction: column !important; padding: 4px 8px !important; min-height: unset !important; }
 
-          .tb-topbar { flex-wrap: nowrap !important; padding-top: 4px !important; padding-bottom: 4px !important; padding-left: 8px !important; padding-right: 8px !important; gap: 6px !important; justify-content: space-between !important; align-items: center !important; height: auto !important; min-height: 40px !important; position: relative !important; width: 100% !important; box-sizing: border-box !important; border-top: 1px solid #2a2a2a !important; border-bottom: 1px solid #ffffff !important; }
-          .tb-left   { display: flex !important; gap: 5px !important; flex-shrink: 1 !important; min-width: 0 !important; align-items: center !important; overflow: hidden !important; max-width: 45% !important; }
-          .tb-phone  { display: flex !important; font-size: 8px !important; gap: 2px !important; white-space: nowrap !important; flex-shrink: 0 !important; font-weight: 500 !important; color: #000000 !important; align-items: center !important; }
-          .tb-phone svg { width: 9px !important; height: 9px !important; stroke: black !important; fill: none !important; flex-shrink: 0 !important; }
-          .tb-email  { display: flex !important; font-size: 7px !important; gap: 2px !important; white-space: nowrap !important; flex-shrink: 1 !important; min-width: 0 !important; font-weight: 500 !important; color: #000000 !important; align-items: center !important; overflow: hidden !important; text-overflow: ellipsis !important; }
-          .tb-email svg { width: 9px !important; height: 9px !important; flex-shrink: 0 !important; stroke: black !important; fill: none !important; }
-          .tb-search { position: absolute !important; left: 50% !important; transform: translateX(-50%) !important; display: flex !important; align-items: center !important; z-index: 10 !important; }
-          .tb-search input { width: 110px !important; max-width: 110px !important; font-size: 8px !important; padding: 4px 22px 4px 7px !important; height: 24px !important; font-weight: 500 !important; border: 1px solid #000000 !important; border-radius: 4px !important; }
-          .tb-search svg { width: 11px !important; height: 11px !important; right: 5px !important; position: absolute !important; pointer-events: none !important; }
-          .tb-dl-btn { font-size: 7px !important; padding: 4px 7px !important; white-space: nowrap !important; flex-shrink: 0 !important; height: 24px !important; font-weight: 700 !important; border-radius: 4px !important; }
-          
-          /* Slightly larger mobile screens - adjust sizes */
-          @media (min-width: 480px) and (max-width: 768px) {
-            .tb-left { max-width: 50% !important; gap: 6px !important; }
-            .tb-phone { font-size: 9px !important; gap: 3px !important; }
-            .tb-phone svg { width: 10px !important; height: 10px !important; }
-            .tb-email { font-size: 8px !important; gap: 3px !important; }
-            .tb-email svg { width: 10px !important; height: 10px !important; }
-            .tb-search input { width: 120px !important; max-width: 120px !important; font-size: 9px !important; height: 26px !important; }
-            .tb-search svg { width: 12px !important; height: 12px !important; }
-            .tb-dl-btn { font-size: 8px !important; padding: 4px 8px !important; height: 26px !important; }
-          }
-          
-          /* Very small screens (below 360px) */
-          @media (max-width: 360px) {
-            .tb-topbar { padding-left: 4px !important; padding-right: 4px !important; gap: 4px !important; }
-            .tb-left { max-width: 40% !important; gap: 4px !important; }
-            .tb-phone { font-size: 7px !important; gap: 2px !important; }
-            .tb-phone svg { width: 8px !important; height: 8px !important; }
-            .tb-email { font-size: 6px !important; gap: 2px !important; }
-            .tb-email svg { width: 8px !important; height: 8px !important; }
-            .tb-search input { width: 85px !important; max-width: 85px !important; font-size: 7px !important; padding: 3px 18px 3px 6px !important; height: 22px !important; }
-            .tb-search svg { width: 10px !important; height: 10px !important; }
-            .tb-dl-btn { font-size: 6px !important; padding: 3px 5px !important; height: 22px !important; }
-            .hdr-mobile { padding: 6px 8px !important; gap: 6px !important; }
-            .hdr-mobile img[alt="JSS Logo"] { height: 45px !important; }
-            .hdr-mobile > div:first-child > div a { font-size: 10px !important; padding: 5px 10px !important; }
-            .hdr-mobile img[alt="Swachh Bharat"] { height: 24px !important; }
-            .hdr-mobile > div:last-child > div a { width: 24px !important; height: 24px !important; }
-            .nav-btn { font-size: 5.5px !important; padding: 5px 1px !important; }
-          }
+          .tb-topbar { flex-wrap: nowrap !important; padding-top: 0 !important; padding-bottom: 0 !important; padding-left: 6px !important; padding-right: 6px !important; gap: 4px !important; justify-content: space-between !important; height: 36px !important; position: relative !important; width: 100% !important; box-sizing: border-box !important; border-top: 1px solid #2a2a2a !important; border-bottom: 1px solid #ffffff !important; }
+          .tb-left   { display: flex !important; gap: 8px !important; flex-shrink: 0 !important; min-width: 0 !important; align-items: center !important; }
+          .tb-phone  { display: flex !important; font-size: 8px !important; gap: 3px !important; white-space: nowrap !important; flex-shrink: 0 !important; font-weight: 400 !important; color: #000000 !important; }
+          .tb-phone svg { width: 8px !important; height: 8px !important; stroke: black !important; fill: none !important; }
+          .tb-email  { display: flex !important; font-size: 8px !important; gap: 3px !important; white-space: nowrap !important; flex-shrink: 0 !important; font-weight: 400 !important; color: #000000 !important; }
+          .tb-email svg { width: 8px !important; height: 8px !important; flex-shrink: 0 !important; stroke: black !important; fill: none !important; }
+          .tb-search { position: absolute !important; left: 50% !important; transform: translateX(-50%) !important; display: flex !important; }
+          .tb-search input { width: 104px !important; font-size: 8px !important; padding: 2px 18px 2px 5px !important; height: 22px !important; font-weight: 600 !important; border: 1px solid #000000 !important; }
+          .tb-search svg { width: 10px !important; height: 10px !important; right: 4px !important; }
+          .tb-dl-btn { font-size: 8px !important; padding: 0 8px !important; white-space: nowrap !important; flex-shrink: 0 !important; height: 22px !important; font-weight: 900 !important; }
 
           .slider-stats-wrap { display: flex !important; flex-direction: row !important; min-height: unset !important; align-items: stretch !important; justify-content: flex-start !important; padding: 0 !important; gap: 0 !important; width: 100% !important; overflow: hidden !important; }
           .slider-area { flex: 0 0 55% !important; width: 55% !important; height: 200px !important; min-height: 200px !important; max-height: 200px !important; border-radius: 0 !important; }
@@ -10317,9 +10260,9 @@ export default function JSSAbhiyan() {
           .stat-cell:nth-child(2), .stat-cell:nth-child(4) { border-right: none !important; }
           .stat-cell:nth-child(3), .stat-cell:nth-child(4) { border-bottom: none !important; }
 
-          .nav-list { width: 100% !important; flex-wrap: nowrap !important; display: flex !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
-          .nav-item  { flex: 1 1 0 !important; min-width: fit-content !important; }
-          .nav-btn   { font-size: 6px !important; padding: 6px 2px !important; width: 100% !important; text-align: center !important; letter-spacing: 0 !important; white-space: nowrap !important; color: #000 !important; font-weight: 700 !important; }
+          .nav-list { width: 100% !important; flex-wrap: nowrap !important; display: flex !important; }
+          .nav-item  { flex: 1 1 0 !important; }
+          .nav-btn   { font-size: 5.5px !important; padding: 4px 1px !important; width: 100% !important; text-align: center !important; letter-spacing: 0 !important; white-space: nowrap !important; color: #000 !important; }
 
           .notif-cards-desktop { display: none !important; }
           /* FIX: align-items: stretch so notification and card match height on mobile */
@@ -10352,13 +10295,10 @@ export default function JSSAbhiyan() {
           .accred-label    { font-size: 9px; }
           .accred-logo     { height: 44px; }
 
-          .intro-inner { flex-direction: column !important; gap: 20px !important; }
-          .intro-section { padding: 20px 0 !important; }
-          .intro-container { padding: 0 14px !important; }
-          .intro-col { width: 100% !important; }
-          .intro-heading { font-size: 14px !important; margin-bottom: 12px !important; line-height: 1.4 !important; }
-          .intro-section .body-text { font-size: 12px !important; line-height: 1.7 !important; margin-bottom: 16px !important; }
-          .intro-section .read-btn { font-size: 12px !important; text-decoration: underline !important; }
+          .intro-inner { flex-direction: row !important; gap: 10px !important; }
+          .intro-section { padding: 16px 0 !important; }
+          .intro-section > div { padding: 0 12px !important; }
+          .intro-heading { font-size: 9px !important; margin-bottom: 5px !important; }
 
           .cert-section { padding: 16px 10px !important; }
           .cert-btn-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 4px !important; }

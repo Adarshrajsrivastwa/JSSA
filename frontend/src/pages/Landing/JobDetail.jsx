@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { jobPostingsAPI, paymentsAPI } from "../utils/api.js";
-import logo from "../assets/img0.png";
-import logo1 from "../assets/jss.png";
-import swachhBharat from "../assets/Swachh.png";
-import brochurePDF from "../assets/broucher.pdf";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { jobPostingsAPI, paymentsAPI } from "../../utils/api.js";
+import logo from "../../assets/img0.png";
+import logo1 from "../../assets/jss.png";
+import swachhBharat from "../../assets/Swachh.png";
+import brochurePDF from "../../assets/broucher.pdf";
 
 const GREEN = "#3AB000";
 
@@ -46,7 +46,6 @@ const indianStates = [
    CSS — exact match to screenshot design
    ══════════════════════════════════════════════ */
 const jobsCSS = `
-  html, body, #root { margin: 0 !important; padding: 0 !important; }
   * { box-sizing: border-box; }
 
   .jobs-section-heading {
@@ -175,15 +174,15 @@ const jobsCSS = `
     .hdr-desktop { display: none !important; }
     .hdr-mobile  { display: flex !important; flex-direction: column !important; padding: 4px 8px !important; }
 
-    .tb-topbar { flex-wrap: nowrap !important; padding: 0 4px !important; gap: 3px !important; justify-content: space-between !important; height: 32px !important; position: relative !important; }
-    .tb-left   { display: flex !important; gap: 4px !important; flex-shrink: 0 !important; margin-left: 1% !important; }
-    .tb-phone  { font-size: 7px !important; gap: 2px !important; }
-    .tb-phone svg { width: 7px !important; height: 7px !important; }
-    .tb-email  { font-size: 7px !important; gap: 2px !important; }
-    .tb-email svg { width: 7px !important; height: 7px !important; }
-    .tb-search { position: absolute !important; left: 50% !important; transform: translateX(-50%) !important; }
-    .tb-search input { width: 70px !important; font-size: 7px !important; height: 20px !important; padding: 2px 18px 2px 6px !important; }
-    .tb-dl-btn { font-size: 7px !important; height: 20px !important; padding: 0 6px !important; margin-right: 1% !important; }
+    .tb-topbar { flex-wrap: nowrap !important; padding: 0 6px !important; gap: 4px !important; justify-content: space-between !important; height: 36px !important; position: relative !important; }
+    .tb-left   { display: flex !important; gap: 8px !important; flex-shrink: 0 !important; margin-left: 2% !important; }
+    .tb-phone  { font-size: 8px !important; gap: 3px !important; }
+    .tb-phone svg { width: 8px !important; height: 8px !important; }
+    .tb-email  { font-size: 8px !important; gap: 3px !important; }
+    .tb-email svg { width: 8px !important; height: 8px !important; }
+    .tb-search { position: absolute !important; left: 55% !important; transform: translateX(-50%) !important; }
+    .tb-search input { width: 80px !important; font-size: 8px !important; height: 22px !important; }
+    .tb-dl-btn { font-size: 8px !important; height: 22px !important; padding: 0 8px !important; margin-right: 2% !important; }
 
     .nav-list { flex-wrap: nowrap !important; }
     .nav-item  { flex: 1 1 0 !important; }
@@ -424,8 +423,6 @@ function SharedLayout({ children, navigate, activePath = "/jobs" }) {
         background: "#fff",
         fontFamily: "'Segoe UI','Noto Sans Devanagari','Noto Sans',sans-serif",
         minHeight: "100vh",
-        margin: 0,
-        padding: 0,
       }}
     >
       {/* Top Bar */}
@@ -500,7 +497,7 @@ function SharedLayout({ children, navigate, activePath = "/jobs" }) {
               <rect x="2" y="4" width="20" height="16" rx="2" />
               <path d="M2 7l10 7 10-7" />
             </svg>
-            support@jssabhiyan-nac.in
+            support@jssabhiyan.com
           </span>
         </div>
         <div
@@ -600,8 +597,8 @@ function SharedLayout({ children, navigate, activePath = "/jobs" }) {
           }}
         >
           <div style={{ display: "flex", gap: 14, marginTop: -8 }}>
-            <a
-              href="https://frontend.jssabhiyan.com/"
+            <Link
+              to="/login"
               style={{
                 background: "#e53e3e",
                 color: "#fff",
@@ -614,7 +611,7 @@ function SharedLayout({ children, navigate, activePath = "/jobs" }) {
               }}
             >
               LOGIN
-            </a>
+            </Link>
             <a
               href={brochurePDF}
               target="_blank"
@@ -709,8 +706,8 @@ function SharedLayout({ children, navigate, activePath = "/jobs" }) {
             />
           </button>
           <div style={{ display: "flex", gap: 5 }}>
-            <a
-              href="https://frontend.jssabhiyan.com/"
+            <Link
+              to="/login"
               style={{
                 background: "#e53e3e",
                 color: "#fff",
@@ -723,7 +720,7 @@ function SharedLayout({ children, navigate, activePath = "/jobs" }) {
               }}
             >
               LOGIN
-            </a>
+            </Link>
             <a
               href={brochurePDF}
               target="_blank"
@@ -2738,7 +2735,7 @@ export default function JobDetail() {
   return (
     <SharedLayout navigate={navigate} activePath="/jobs">
       <div
-        style={{ maxWidth: 1200, margin: "0 auto 40px", padding: "0 2%" }}
+        style={{ maxWidth: 1200, margin: "20px auto 40px", padding: "0 2%" }}
       >
         {formStep !== "review" && (
           <div
@@ -3121,9 +3118,9 @@ export default function JobDetail() {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: "8px 20px",
+                padding: "12px 20px",
                 background: "#fff",
-                borderBottom: "none",
+                borderBottom: "1px solid #e0e0e0",
               }}
             >
               <div style={{ fontSize: 12, color: "#666" }}>
@@ -3138,7 +3135,7 @@ export default function JobDetail() {
               </div>
               <div
                 style={{
-                  fontSize: 14,
+                  fontSize: 16,
                   fontWeight: 700,
                   color: "#000",
                   textAlign: "center",
@@ -3148,54 +3145,58 @@ export default function JobDetail() {
               </div>
             </div>
 
-            {/* Green Banner with Logo and Organization Section */}
+            {/* Logo and Organization Section */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 20,
+                gap: 16,
                 padding: "20px",
-                background: GREEN,
-                borderBottom: "none",
+                background: "#fff",
+                borderBottom: "1px solid #e0e0e0",
               }}
             >
-              {/* Circular Logo with Image */}
+              {/* Circular Logo */}
               <div
                 style={{
-                  width: 100,
-                  height: 100,
+                  width: 80,
+                  height: 80,
                   borderRadius: "50%",
-                  background: "#fff",
+                  background: `linear-gradient(135deg, ${GREEN} 0%, #2d7a4d 100%)`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  color: "#fff",
+                  fontSize: 24,
+                  fontWeight: 900,
                   flexShrink: 0,
                   border: "3px solid #fff",
                   boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                   position: "relative",
-                  overflow: "hidden",
                 }}
               >
-                <img
-                  src={logo1}
-                  alt="JSSA Logo"
+                <div
                   style={{
+                    position: "absolute",
                     width: "100%",
                     height: "100%",
-                    objectFit: "contain",
-                    padding: "8px",
+                    borderRadius: "50%",
+                    border: "2px solid #fff",
                   }}
                 />
+                <div style={{ zIndex: 1, textAlign: "center", lineHeight: 1.1 }}>
+                  JSSA
+                </div>
               </div>
 
               {/* Organization Text */}
               <div style={{ flex: 1 }}>
                 <div
                   style={{
-                    fontSize: 28,
+                    fontSize: 24,
                     fontWeight: 900,
-                    color: "#fff",
-                    marginBottom: 8,
+                    color: GREEN,
+                    marginBottom: 6,
                     lineHeight: 1.2,
                   }}
                 >
@@ -3203,40 +3204,39 @@ export default function JobDetail() {
                 </div>
                 <div
                   style={{
-                    fontSize: 14,
-                    color: "#fff",
+                    fontSize: 13,
+                    color: "#000",
                     marginBottom: 4,
                     fontWeight: 600,
                   }}
                 >
                   A Project Of Healthcare Research & Development Board
                 </div>
-                <div style={{ fontSize: 11, color: "#fff", marginBottom: 6 }}>
+                <div style={{ fontSize: 11, color: "#666", marginBottom: 6 }}>
                   (HRDB is Division of social welfare organization "NAC India")
                 </div>
                 <div
                   style={{
                     fontSize: 14,
                     fontWeight: 700,
-                    color: "#fff",
+                    color: GREEN,
                   }}
                 >
-                  Registration No. : 053083
+                  Registration No.: 053083
                 </div>
               </div>
             </div>
 
-            {/* White Recruitment Title Bar */}
+            {/* Black Recruitment Title Bar */}
             <div
               style={{
-                background: "#fff",
-                color: "#000",
+                background: "#000",
+                color: "#fff",
                 padding: "12px 20px",
                 textAlign: "center",
                 fontWeight: 700,
-                fontSize: 16,
+                fontSize: 15,
                 letterSpacing: 0.5,
-                borderBottom: "1px solid #e0e0e0",
               }}
             >
               {job?.postTitle?.en || job?.post?.en || ""} Recruitment
@@ -3247,15 +3247,13 @@ export default function JobDetail() {
               style={{
                 background: "#000",
                 color: "#fff",
-                padding: "12px 20px",
+                padding: "10px 20px",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                borderTop: "1px solid #fff",
-                borderBottom: "1px solid #fff",
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>
                 Advt. No.: {job?.advtNo || ""}
               </div>
               <div
@@ -3268,7 +3266,7 @@ export default function JobDetail() {
               >
                 Application Slip
               </div>
-              <div style={{ fontSize: 12, whiteSpace: "nowrap" }}>
+              <div style={{ fontSize: 12 }}>
                 Date: {new Date().toLocaleString("en-US", {
                   month: "numeric",
                   day: "numeric",
@@ -3883,7 +3881,7 @@ export default function JobDetail() {
               </button>
               <button
                 onClick={() => {
-                  window.location.href = "https://frontend.jssabhiyan.com/";
+                  navigate("/login");
                 }}
                 style={{
                   background: "#1a2a4a",

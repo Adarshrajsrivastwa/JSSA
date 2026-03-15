@@ -72,21 +72,25 @@ router.post(
       const normalizedPhone = normalizePhone(mobile);
 
       // Generate application number if not provided
-      // Format: First 4 letters of name + Month (2 digits) + Year (4 digits)
+      // Format: Random 9-digit number
       let generatedApplicationNumber = applicationNumber;
-      if (!generatedApplicationNumber && candidateName) {
-        const now = new Date();
-        const month = String(now.getMonth() + 1).padStart(2, "0"); // 01-12
-        const year = now.getFullYear(); // 2024
+      if (!generatedApplicationNumber) {
+        // Generate random 9-digit number (100000000 to 999999999)
+        generatedApplicationNumber = String(Math.floor(100000000 + Math.random() * 900000000));
         
-        // Get first 4 letters of candidate name (uppercase, remove spaces)
-        const namePart = candidateName
-          .replace(/\s+/g, "")
-          .substring(0, 4)
-          .toUpperCase()
-          .padEnd(4, "X"); // If name is less than 4 chars, pad with X
-        
-        generatedApplicationNumber = `${namePart}${month}${year}`;
+        // Ensure uniqueness by checking if it already exists
+        let isUnique = false;
+        let attempts = 0;
+        while (!isUnique && attempts < 10) {
+          const existing = await Application.findOne({ applicationNumber: generatedApplicationNumber });
+          if (!existing) {
+            isUnique = true;
+          } else {
+            // Generate a new number if duplicate found
+            generatedApplicationNumber = String(Math.floor(100000000 + Math.random() * 900000000));
+            attempts++;
+          }
+        }
       }
 
       // Check if user exists by phone or email
