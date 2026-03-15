@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { jobPostingsAPI } from "../utils/api.js";
+import { jobPostingsAPI } from "../../utils/api.js";
 
 const GREEN = "#3AB000";
 
