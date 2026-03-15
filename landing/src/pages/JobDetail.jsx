@@ -55,8 +55,10 @@ const jobsCSS = `
     font-size: 15px; padding: 12px 40px;
     border: none; cursor: pointer; border-radius: 4px;
   }
-  .jobs-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .jobs-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .jobs-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  .jobs-grid-2 > div { display: flex; flex-direction: column; }
+  .jobs-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: start; }
+  .jobs-grid-3 > div { display: flex; flex-direction: column; }
 
   .jobs-detail-title-row {
     background: #c2fbd7;
@@ -130,6 +132,9 @@ const jobsCSS = `
   .jobs-detail-val {
     padding: 12px 12px; font-size: 14px; color: #000000; line-height: 1.6;
     background: #c2fbd7;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .review-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -186,50 +191,63 @@ const jobsCSS = `
     .nav-item  { flex: 1 1 0 !important; }
     .nav-btn   { font-size: 8px !important; padding: 6px 2px !important; }
 
-    .jobs-detail-title-row { font-size: 11px !important; padding: 10px 8px !important; line-height: 1.5 !important; }
-    .jobs-detail-download-row { grid-template-columns: 1fr !important; }
-    .jobs-detail-download-cell { padding: 12px 8px !important; border-right: none !important; border-bottom: 1px solid ${GREEN}55 !important; }
-    .jobs-detail-download-cell:last-child { border-bottom: none !important; }
-    .jobs-detail-download-cell .advt-label { font-size: 13px !important; margin-bottom: 4px !important; }
-    .jobs-detail-download-cell .advt-date  { font-size: 12px !important; margin-bottom: 8px !important; }
-    .jobs-detail-download-cell .dl-link    { font-size: 11px !important; gap: 4px !important; }
-    .jobs-detail-download-cell .new-badge  { font-size: 8px !important; padding: 2px 4px !important; }
+    .job-detail-container { padding: 0 2% !important; }
+    .jobs-detail-title-row { font-size: 10px !important; padding: 8px 6px !important; line-height: 1.4 !important; }
+    .jobs-detail-download-row { grid-template-columns: 1fr 1fr !important; }
+    .jobs-detail-download-cell { padding: 10px 8px !important; }
+    .jobs-detail-download-cell .advt-label { font-size: 12px !important; margin-bottom: 3px !important; }
+    .jobs-detail-download-cell .advt-date  { font-size: 11px !important; margin-bottom: 6px !important; }
+    .jobs-detail-download-cell .dl-link    { font-size: 10px !important; gap: 3px !important; }
+    .jobs-detail-download-cell .dl-link svg { width: 20px !important; height: 24px !important; }
+    .jobs-detail-download-cell .new-badge  { font-size: 7px !important; padding: 1px 3px !important; }
 
-    .jobs-detail-row { grid-template-columns: 1fr !important; }
-    .jobs-detail-lang-cell { grid-template-columns: 1fr !important; }
-    .jobs-detail-key   { font-size: 12px !important; padding: 10px 8px !important; line-height: 1.5 !important; border-right: none !important; border-bottom: 1px solid #5cb87a !important; }
-    .jobs-detail-colon { display: none !important; }
-    .jobs-detail-val   { font-size: 12px !important; padding: 10px 8px !important; line-height: 1.5 !important; }
+    .jobs-detail-row { grid-template-columns: 1fr 1fr !important; }
+    .jobs-detail-lang-cell { grid-template-columns: 120px 20px 1fr !important; }
+    .jobs-detail-key   { font-size: 11px !important; padding: 8px 6px !important; line-height: 1.4 !important; }
+    .jobs-detail-colon { display: flex !important; font-size: 11px !important; padding: 8px 0 !important; }
+    .jobs-detail-val   { font-size: 11px !important; padding: 8px 6px !important; line-height: 1.4 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
 
-    .jobs-grid-2 { grid-template-columns: 1fr !important; gap: 12px !important; }
-    .jobs-grid-3 { grid-template-columns: 1fr !important; gap: 12px !important; }
-    .jobs-section-heading { font-size: 14px !important; margin: 16px 0 12px !important; }
-    .jobs-submit-btn { font-size: 14px !important; padding: 12px 24px !important; width: 100% !important; }
-    .review-table { font-size: 12px !important; }
-    .review-table td { font-size: 12px !important; padding: 10px 8px !important; display: block !important; width: 100% !important; border-bottom: 1px solid #e0e0e0 !important; }
-    .review-table td:first-child { width: 100% !important; border-bottom: 2px solid #ccc !important; margin-bottom: 4px !important; }
+    .jobs-grid-2 { grid-template-columns: 1fr 1fr !important; gap: 10px !important; align-items: start !important; }
+    .jobs-grid-2 > div { display: flex !important; flex-direction: column !important; }
+    .jobs-grid-3 { grid-template-columns: 1fr 1fr 1fr !important; gap: 10px !important; align-items: start !important; }
+    .jobs-grid-3 > div { display: flex !important; flex-direction: column !important; }
+    .jobs-section-heading { font-size: 12px !important; margin: 14px 0 10px !important; }
+    .jobs-submit-btn { font-size: 12px !important; padding: 10px 20px !important; }
+    .review-table { font-size: 11px !important; }
+    .review-table td { font-size: 11px !important; padding: 8px 6px !important; }
+    .review-table td:first-child { font-size: 11px !important; }
 
-    footer { padding: 12px 8px 0 !important; }
-    .footer-inner   { flex-direction: column !important; gap: 12px !important; padding: 0 !important; }
-    .ft-heading     { font-size: 12px !important; margin-bottom: 8px !important; }
-    .ft-list        { gap: 6px !important; }
-    .ft-link        { font-size: 11px !important; }
-    .ft-logo-wrap   { padding: 0 8px !important; }
-    .ft-logo-img    { width: 120px !important; }
-    .ft-contact     { gap: 6px !important; align-items: flex-start !important; }
-    .ft-contact-item { font-size: 11px !important; }
-    .ft-contact-link { font-size: 11px !important; margin-top: 4px !important; }
-    .ft-copyright   { font-size: 10px !important; padding: 12px 0 !important; margin-top: 16px !important; }
+    footer { padding: 10px 6px 0 !important; }
+    .footer-inner   { flex-direction: row !important; gap: 6px !important; align-items: flex-start !important; padding: 0 !important; }
+    .ft-heading     { font-size: 8px !important; margin-bottom: 6px !important; letter-spacing: 0.02em !important; }
+    .ft-list        { gap: 3px !important; }
+    .ft-link        { font-size: 7px !important; font-weight: 500 !important; }
+    .ft-logo-wrap   { padding: 0 4px !important; width: auto !important; justify-content: center !important; }
+    .ft-logo-img    { width: 60px !important; }
+    .ft-contact     { gap: 3px !important; align-items: flex-end !important; }
+    .ft-contact-item { font-size: 7px !important; }
+    .ft-contact-link { font-size: 7px !important; text-align: left !important; margin-top: 2px !important; }
+    .ft-copyright   { font-size: 7px !important; padding: 8px 0 !important; margin-top: 10px !important; }
   }
 
   @media (max-width: 480px) {
-    .jobs-detail-title-row { font-size: 10px !important; padding: 8px 6px !important; }
-    .jobs-detail-download-cell .advt-label { font-size: 12px !important; }
-    .jobs-detail-download-cell .advt-date  { font-size: 11px !important; }
-    .jobs-detail-key   { font-size: 11px !important; padding: 8px 6px !important; }
-    .jobs-detail-val   { font-size: 11px !important; padding: 8px 6px !important; }
-    .jobs-section-heading { font-size: 13px !important; }
-    .jobs-submit-btn { font-size: 13px !important; padding: 10px 20px !important; }
+    .job-detail-container { padding: 0 1.5% !important; }
+    .jobs-detail-title-row { font-size: 9px !important; padding: 7px 5px !important; line-height: 1.3 !important; }
+    .jobs-detail-download-row { grid-template-columns: 1fr 1fr !important; }
+    .jobs-detail-download-cell { padding: 8px 6px !important; }
+    .jobs-detail-download-cell .advt-label { font-size: 11px !important; }
+    .jobs-detail-download-cell .advt-date  { font-size: 10px !important; }
+    .jobs-detail-download-cell .dl-link    { font-size: 9px !important; }
+    .jobs-detail-download-cell .dl-link svg { width: 18px !important; height: 22px !important; }
+    .jobs-detail-row { grid-template-columns: 1fr 1fr !important; }
+    .jobs-detail-lang-cell { grid-template-columns: 100px 18px 1fr !important; }
+    .jobs-detail-key   { font-size: 10px !important; padding: 7px 5px !important; }
+    .jobs-detail-colon { font-size: 10px !important; padding: 7px 0 !important; }
+    .jobs-detail-val   { font-size: 10px !important; padding: 7px 5px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+    .jobs-section-heading { font-size: 11px !important; }
+    .jobs-submit-btn { font-size: 11px !important; padding: 9px 18px !important; }
+    .review-table { font-size: 10px !important; }
+    .review-table td { font-size: 10px !important; padding: 7px 5px !important; }
   }
 `;
 
@@ -3192,7 +3210,7 @@ export default function JobDetail() {
                     <div className="jobs-detail-colon">:</div>
                     <div
                       className="jobs-detail-val"
-                      style={isFee ? { whiteSpace: "pre-line" } : {}}
+                      title={rowsEn[i]?.[1] || ""}
                     >
                       {rowsEn[i]?.[1] || ""}
                     </div>
@@ -3204,7 +3222,7 @@ export default function JobDetail() {
                     <div className="jobs-detail-colon">:</div>
                     <div
                       className="jobs-detail-val"
-                      style={isFee ? { whiteSpace: "pre-line" } : {}}
+                      title={rowsHi[i]?.[1] || ""}
                     >
                       {rowsHi[i]?.[1] || ""}
                     </div>
