@@ -522,8 +522,8 @@ function PaymentSuccess() {
           {/* Personal details - one field per line */}
           <div
             style={{
-              fontSize: 11,
-              lineHeight: 1.8,
+              fontSize: 13,
+              lineHeight: 2,
               marginRight: photoPreview ? "130px" : "0",
             }}
           >
@@ -640,28 +640,26 @@ function PaymentSuccess() {
           >
             Educational Details
           </h3>
+          {/* Educational details - one field per line (same format as Personal Details) */}
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "10px 16px",
-              fontSize: 11,
-              lineHeight: 1.6,
+              fontSize: 13,
+              lineHeight: 2,
             }}
           >
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>Higher Education:</strong>{" "}
               <span>{finalFormData.higherEducation || ""}</span>
             </div>
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>Board/University:</strong>{" "}
               <span>{finalFormData.board || ""}</span>
             </div>
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>Total Marks:</strong>{" "}
               <span>{finalFormData.marks || ""}</span>
             </div>
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>Marks in Percentage:</strong>{" "}
               <span>{finalFormData.markPercentage || ""}</span>
             </div>
@@ -947,7 +945,7 @@ function PaymentSuccess() {
                     container.clientWidth,
                   );
                   const canvas = await window.html2canvas(container, {
-                    scale: 2,
+                    scale: 2.5, // Higher scale for better quality with larger fonts
                     useCORS: true,
                     logging: false,
                     backgroundColor: "#ffffff",
