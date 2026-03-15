@@ -9082,22 +9082,27 @@ function HomePage({ onNavigate }) {
       {/* ── Notification — Desktop ── */}
       <div
         className="notif-cards-desktop"
-        style={{ background: "#fff", padding: "40px 0", marginTop: 24 }}
+        style={{ background: "#fff", padding: "24px 0", marginTop: 0 }}
       >
         <div
           style={{
-            padding: "0 175px 0 175px",
+            maxWidth: "100%",
+            margin: "0 auto",
+            padding: "0 90px 0 105px",
             display: "flex",
             gap: 20,
             alignItems: "stretch",
+            justifyContent: "center",
           }}
         >
           <div
             style={{
               flex: "1 1 0",
               minWidth: 0,
+              maxWidth: "50%",
               display: "flex",
               flexDirection: "column",
+              justifyContent: "center",
             }}
           >
             <NotificationTicker
@@ -9110,6 +9115,7 @@ function HomePage({ onNavigate }) {
             style={{
               flex: "1 1 0",
               minWidth: 0,
+              maxWidth: "50%",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -9121,7 +9127,7 @@ function HomePage({ onNavigate }) {
             <img
               src={cardImg1}
               alt="JSS Card"
-              style={{ width: "100%", height: "auto", display: "block" }}
+              style={{ width: "100%", height: "auto", display: "block", maxWidth: "100%" }}
             />
           </div>
         </div>
@@ -9134,7 +9140,7 @@ function HomePage({ onNavigate }) {
         style={{
           display: "none",
           gap: 10,
-          padding: "0 12px",
+          padding: "20px 14px",
           background: "#fff",
           alignItems: "stretch",
         }}
@@ -10323,7 +10329,7 @@ export default function JSSAbhiyan() {
 
           .notif-cards-desktop { display: none !important; }
           /* FIX: align-items: stretch so notification and card match height on mobile */
-          .notif-cards-mobile  { display: flex !important; flex-direction: row !important; padding: 0 12px !important; width: 100% !important; box-sizing: border-box !important; align-items: stretch !important; }
+          .notif-cards-mobile  { display: flex !important; flex-direction: row !important; padding: 20px 14px !important; width: 100% !important; box-sizing: border-box !important; align-items: stretch !important; margin-top: 0 !important; }
 
           .stat-num          { font-size: 10px !important; }
           .stat-icon-desktop { display: none !important; }
