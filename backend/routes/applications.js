@@ -3,10 +3,11 @@ import bcrypt from "bcryptjs";
 import { body, validationResult } from "express-validator";
 import Application from "../models/Application.js";
 import User from "../models/User.js";
+import JobPosting from "../models/JobPosting.js";
 import { authenticate } from "../middleware/auth.js";
 import { generateToken } from "../utils/jwt.js";
 import { normalizePhone } from "../utils/validation.js";
-// import { sendApplicationEmail } from "../utils/email.js"; // REMOVED: Email will be sent only after payment verification
+import { sendPaymentSuccessEmail } from "../utils/email.js"; // Email sent on form submission (before payment)
 
 const router = express.Router();
 
@@ -161,8 +162,69 @@ router.post(
         password: defaultPassword,
       };
 
-      // Email will be sent only after payment verification (in payments route)
-      // Removed sendApplicationEmail call - email sent after payment success
+      // Send email with application details (async, don't wait for it)
+      if (email) {
+        console.log("📧 Sending application email on form submission...");
+        console.log("📧 Application email:", email);
+        
+        // Get job posting data for email
+        let jobPosting = null;
+        if (jobPostingId) {
+          try {
+            jobPosting = await JobPosting.findById(jobPostingId);
+            console.log("📧 Job posting found for email:", jobPosting ? "Yes" : "No");
+          } catch (jobErr) {
+            console.error("Error fetching job posting for email:", jobErr);
+          }
+        }
+        
+        // Prepare login credentials
+        const loginCredentials = {
+          identifier: user.email || user.phone,
+          password: defaultPassword,
+        };
+
+        // Prepare application data for email (include all fields)
+        const applicationDataForEmail = {
+          ...application.toObject(),
+          applicationNumber: generatedApplicationNumber,
+          candidateName: candidateName,
+          fatherName: fatherName,
+          motherName: motherName || null,
+          dob: dob || null,
+          gender: gender || null,
+          nationality: nationality || null,
+          category: category || null,
+          aadhar: aadhar || null,
+          pan: pan || null,
+          mobile: normalizedPhone,
+          email: email,
+          address: address || null,
+          state: state || null,
+          district: district,
+          block: block || null,
+          panchayat: panchayat || null,
+          pincode: pincode || null,
+          higherEducation: higherEducation,
+          board: board || null,
+          marks: marks || null,
+          markPercentage: markPercentage || null,
+          photo: photo || null,
+          signature: signature || null,
+        };
+
+        // Send email using payment success email function (same format)
+        sendPaymentSuccessEmail(
+          applicationDataForEmail,
+          loginCredentials,
+          jobPosting
+        ).catch((err) => {
+          console.error("Failed to send application email:", err);
+          // Don't fail the request if email fails
+        });
+      } else {
+        console.log("⚠️ No email provided, skipping email send");
+      }
 
       res.status(201).json({
         success: true,
