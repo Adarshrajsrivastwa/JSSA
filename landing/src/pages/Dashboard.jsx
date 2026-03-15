@@ -2750,6 +2750,10 @@ import NotificationsPage from "../pages/Notificationspage";
 import GalleryPage from "../pages/Gallerypage";
 import VerificationPage from "../pages/Verificationpage";
 import ContactsPage from "../pages/Contactspage";
+import PrivacyPolicy from "../pages/Policypage";
+import RefundPage from "../pages/Refundpage";
+import TermsPage from "../pages/Termspage";
+import EnquiryPage from "../pages/Enquirypage";
 import { jobPostingsAPI, scrollerAPI, notificationsAPI } from "../utils/api.js";
 import brochurePDF from "../assets/broucher.pdf";
 
@@ -2773,6 +2777,10 @@ const PATH_TO_PAGE = {
   "/gallery": "gallery",
   "/verification": "verification",
   "/contacts": "contacts",
+  "/privacy-policy": "privacy",
+  "/refund": "refund",
+  "/terms": "terms",
+  "/enquiry": "enquiry",
 };
 
 const PAGE_TO_PATH = {
@@ -2785,6 +2793,10 @@ const PAGE_TO_PATH = {
   gallery: "/gallery",
   verification: "/verification",
   contacts: "/contacts",
+  privacy: "/privacy-policy",
+  refund: "/refund",
+  terms: "/terms",
+  enquiry: "/enquiry",
 };
 
 const navLinks = [
@@ -2797,6 +2809,7 @@ const navLinks = [
   { label: "GALLERY", page: "gallery" },
   { label: "VERIFICATION", page: "verification" },
   { label: "CONTACTS", page: "contacts" },
+  { label: "PRIVACY POLICY", page: "privacy" },
 ];
 
 /* ─── Animated Counter ─── */
@@ -3910,13 +3923,14 @@ function HomePage({ onNavigate }) {
             style={{ display: "flex", gap: 20, marginBottom: 32 }}
           >
             {[
-              "Online Test & Interview",
-              "Online Mou & Consent Form",
-              "Authorized Login",
+              { label: "Online Test & Interview", page: null },
+              { label: "Online Mou & Consent Form", page: null },
+              { label: "Authorized Login", page: null },
             ].map((btn, i) => (
               <button
                 key={i}
                 className="action-btn"
+                onClick={() => btn.page && onNavigate(btn.page)}
                 style={{
                   flex: 1,
                   background: "#2ecc1a",
@@ -3925,7 +3939,7 @@ function HomePage({ onNavigate }) {
                   padding: "18px 6px",
                   borderRadius: 5,
                   border: "none",
-                  cursor: "pointer",
+                  cursor: btn.page ? "pointer" : "default",
                   lineHeight: 1.3,
                   fontSize: 15,
                   boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
@@ -3934,7 +3948,7 @@ function HomePage({ onNavigate }) {
                   textOverflow: "ellipsis",
                 }}
               >
-                {btn}
+                {btn.label}
               </button>
             ))}
           </div>
@@ -4260,7 +4274,7 @@ function HomePage({ onNavigate }) {
           className="cert-btn-grid"
         >
           {[
-            { label: "Enquiry", page: null },
+            { label: "Enquiry", page: "enquiry" },
             { label: "Broucher", page: null, pdf: brochurePDF },
             { label: "Membership", page: "membership" },
             { label: "Services", page: "services" },
@@ -4387,6 +4401,14 @@ export default function JSSAbhiyan() {
         return <VerificationPage />;
       case "contacts":
         return <ContactsPage />;
+      case "privacy":
+        return <PrivacyPolicy />;
+      case "refund":
+        return <RefundPage />;
+      case "terms":
+        return <TermsPage />;
+      case "enquiry":
+        return <EnquiryPage />;
       default:
         return <HomePage onNavigate={navigate} />;
     }
@@ -5000,9 +5022,9 @@ export default function JSSAbhiyan() {
                 { label: "MemberShip & Benifits", page: "membership" },
                 { label: "View Jobs & Carrier", page: "jobs" },
                 { label: "View Our Services", page: "services" },
-                { label: "Our Privacy Policy", page: "home" },
-                { label: "Refund & Cancellation", page: "home" },
-                { label: "Terms & Condition", page: "home" },
+                { label: "Our Privacy Policy", page: "privacy" },
+                { label: "Refund & Cancellation", page: "refund" },
+                { label: "Terms & Condition", page: "terms" },
               ].map((l, i) => (
                 <li key={i}>
                   <button

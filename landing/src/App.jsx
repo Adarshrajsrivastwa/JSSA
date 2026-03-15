@@ -25,6 +25,8 @@ function App() {
       <Route path="/gallery" element={<Dashboard />} />
       <Route path="/verification" element={<Dashboard />} />
       <Route path="/contacts" element={<Dashboard />} />
+      <Route path="/privacy-policy" element={<Dashboard />} />
+      <Route path="/terms-of-service" element={<Dashboard />} />
 
       {/* Fallback */}
       <Route path="*" element={<Dashboard />} />
