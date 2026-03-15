@@ -86,15 +86,39 @@ function PaymentSuccess() {
           try {
             const data = JSON.parse(finalPendingData);
             console.log("✅ Found pending application data in sessionStorage");
+            console.log("📦 Full formData keys:", Object.keys(data.formData || {}));
+            console.log("📸 Photo exists:", !!data.formData?.photo, "Type:", typeof data.formData?.photo);
+            console.log("✍️ Signature exists:", !!data.formData?.signature, "Type:", typeof data.formData?.signature);
+            
             setApplicationData(data.applicationData);
             setFormData(data.formData || {});
             
             // Load photo and signature if available
+            
             if (data.formData?.photo) {
-              setPhotoPreview(data.formData.photo);
+              // Ensure it's a valid base64 or URL string
+              const photoSrc = data.formData.photo;
+              if (typeof photoSrc === 'string' && (photoSrc.startsWith('data:') || photoSrc.startsWith('http'))) {
+                setPhotoPreview(photoSrc);
+                console.log("✅ Photo loaded successfully");
+              } else if (typeof photoSrc === 'string') {
+                // If it's base64 without data URI prefix, add it
+                setPhotoPreview(`data:image/jpeg;base64,${photoSrc}`);
+                console.log("✅ Photo loaded (added data URI prefix)");
+              }
             }
+            
             if (data.formData?.signature) {
-              setSignaturePreview(data.formData.signature);
+              // Ensure it's a valid base64 or URL string
+              const signatureSrc = data.formData.signature;
+              if (typeof signatureSrc === 'string' && (signatureSrc.startsWith('data:') || signatureSrc.startsWith('http'))) {
+                setSignaturePreview(signatureSrc);
+                console.log("✅ Signature loaded successfully");
+              } else if (typeof signatureSrc === 'string') {
+                // If it's base64 without data URI prefix, add it
+                setSignaturePreview(`data:image/png;base64,${signatureSrc}`);
+                console.log("✅ Signature loaded (added data URI prefix)");
+              }
             }
 
             // Load job details
@@ -156,8 +180,25 @@ function PaymentSuccess() {
             const data = JSON.parse(retryPendingData);
             setApplicationData(data.applicationData);
             setFormData(data.formData || {});
-            if (data.formData?.photo) setPhotoPreview(data.formData.photo);
-            if (data.formData?.signature) setSignaturePreview(data.formData.signature);
+            
+            // Load photo and signature in retry
+            if (data.formData?.photo) {
+              const photoSrc = data.formData.photo;
+              if (typeof photoSrc === 'string' && (photoSrc.startsWith('data:') || photoSrc.startsWith('http'))) {
+                setPhotoPreview(photoSrc);
+              } else if (typeof photoSrc === 'string') {
+                setPhotoPreview(`data:image/jpeg;base64,${photoSrc}`);
+              }
+            }
+            
+            if (data.formData?.signature) {
+              const signatureSrc = data.formData.signature;
+              if (typeof signatureSrc === 'string' && (signatureSrc.startsWith('data:') || signatureSrc.startsWith('http'))) {
+                setSignaturePreview(signatureSrc);
+              } else if (typeof signatureSrc === 'string') {
+                setSignaturePreview(`data:image/png;base64,${signatureSrc}`);
+              }
+            }
             if (data.applicationData?.jobPostingId) {
               const jobResponse = await jobPostingsAPI.getById(data.applicationData.jobPostingId);
               if (jobResponse.success && jobResponse.data.posting) {
@@ -495,7 +536,7 @@ function PaymentSuccess() {
             Personal Details
           </h3>
           {/* Photo in top right - below header */}
-          {photoPreview && (
+          {photoPreview ? (
             <div
               style={{ 
                 position: "absolute",
@@ -509,6 +550,13 @@ function PaymentSuccess() {
               <img
                 src={photoPreview}
                 alt="Applicant Photo"
+                onError={(e) => {
+                  console.error("❌ Photo failed to load:", photoPreview);
+                  e.target.style.display = "none";
+                }}
+                onLoad={() => {
+                  console.log("✅ Photo loaded successfully");
+                }}
                 style={{
                   width: "100%",
                   height: 130,
@@ -520,6 +568,8 @@ function PaymentSuccess() {
                 }}
               />
             </div>
+          ) : (
+            console.log("⚠️ No photoPreview available")
           )}
           {/* Personal details - one field per line */}
           <div
@@ -710,7 +760,7 @@ function PaymentSuccess() {
             </div>
           </div>
           {/* Signature in bottom right */}
-          {signaturePreview && (
+          {signaturePreview ? (
             <div
               style={{
                 position: "absolute",
@@ -733,6 +783,13 @@ function PaymentSuccess() {
                 <img
                   src={signaturePreview}
                   alt="Signature"
+                  onError={(e) => {
+                    console.error("❌ Signature failed to load:", signaturePreview);
+                    e.target.style.display = "none";
+                  }}
+                  onLoad={() => {
+                    console.log("✅ Signature loaded successfully");
+                  }}
                   style={{
                     width: 180,
                     height: 70,
@@ -754,6 +811,8 @@ function PaymentSuccess() {
                 </div>
               </div>
             </div>
+          ) : (
+            console.log("⚠️ No signaturePreview available")
           )}
         </div>
         <div style={{ marginTop: 12, padding: "0 20px 15px" }}>

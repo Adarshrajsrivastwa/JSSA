@@ -2572,6 +2572,13 @@ export default function JobDetail() {
 
       if (feeAmount <= 0) {
         // No payment required, redirect to success page
+        // Include photo and signature in formData for PDF generation
+        const formDataWithImages = {
+          ...formData,
+          photo: photoBase64, // Add photo base64
+          signature: signatureBase64, // Add signature base64
+        };
+        
         sessionStorage.setItem(
           "pendingApplication",
           JSON.stringify({
@@ -2582,7 +2589,7 @@ export default function JobDetail() {
               applyData.data.application.applicationNumber ||
               formData.applicationNumber,
             token: applyData.data.token,
-            formData: formData,
+            formData: formDataWithImages, // Store form data with images
           }),
         );
         navigate(
@@ -2610,6 +2617,13 @@ export default function JobDetail() {
       console.log("💰 Payment order created, orderId:", orderId, "applicationId:", applicationId);
 
       // Store application data in sessionStorage for after payment redirect
+      // Include photo and signature in formData for PDF generation
+      const formDataWithImages = {
+        ...formData,
+        photo: photoBase64, // Add photo base64
+        signature: signatureBase64, // Add signature base64
+      };
+      
       sessionStorage.setItem(
         "pendingApplication",
         JSON.stringify({
@@ -2620,7 +2634,7 @@ export default function JobDetail() {
             applyData.data.application.applicationNumber ||
             formData.applicationNumber,
           token: token,
-          formData: formData, // Store form data for PDF
+          formData: formDataWithImages, // Store form data with images for PDF
         }),
       );
 
