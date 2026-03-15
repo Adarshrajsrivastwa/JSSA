@@ -5,6 +5,47 @@ import logo1 from "../assets/jss.png";
 
 const GREEN = "#0aca00";
 
+// Add responsive styles
+const responsiveStyles = `
+  @media (max-width: 768px) {
+    .payment-success-container {
+      padding: 5px !important;
+    }
+    #application-slip-pdf {
+      font-size: 11px !important;
+    }
+    #application-slip-pdf h3 {
+      font-size: 13px !important;
+    }
+    #application-slip-pdf table {
+      font-size: 10px !important;
+    }
+    #application-slip-pdf th,
+    #application-slip-pdf td {
+      padding: 8px !important;
+    }
+  }
+  @media (max-width: 480px) {
+    #application-slip-pdf {
+      font-size: 10px !important;
+    }
+    #application-slip-pdf .personal-details-grid {
+      grid-template-columns: 1fr !important;
+    }
+    #application-slip-pdf .educational-details-grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+`;
+
+// Inject styles
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement("style");
+  styleSheet.type = "text/css";
+  styleSheet.innerText = responsiveStyles;
+  document.head.appendChild(styleSheet);
+}
+
 function PaymentSuccess() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -280,10 +321,11 @@ function PaymentSuccess() {
 
   return (
     <div
+      className="payment-success-container"
       style={{
         minHeight: "100vh",
         background: "#f5f5f5",
-        padding: "20px",
+        padding: "10px",
       }}
     >
       <div
@@ -298,59 +340,31 @@ function PaymentSuccess() {
           position: "relative",
           fontFamily: "Arial, sans-serif",
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          fontSize: "12px", // Smaller base font for single page PDF
+          lineHeight: "1.4",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: "8px 20px",
-            background: "#fff",
-          }}
-        >
-          <div style={{ fontSize: 12, color: "#666" }}>
-            {new Date().toLocaleString("en-US", {
-              month: "numeric",
-              day: "numeric",
-              year: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-              hour12: true,
-            })}
-          </div>
-          <div
-            style={{
-              fontSize: 14,
-              fontWeight: 700,
-              color: "#000",
-              textAlign: "center",
-            }}
-          >
-            Application Slip - {job?.postTitle?.en || job?.post?.en || ""}{" "}
-            Recruitment 2024
-          </div>
-        </div>
+        {/* Remove top timestamp - not in image format */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 20,
-            padding: "20px",
+            gap: 15,
+            padding: "15px 20px",
             background: GREEN,
           }}
         >
           <div
             style={{
-              width: 100,
-              height: 100,
+              width: 80,
+              height: 80,
               borderRadius: "50%",
               background: "#fff",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
-              border: "3px solid #fff",
+              border: "2px solid #fff",
               overflow: "hidden",
             }}
           >
@@ -361,17 +375,17 @@ function PaymentSuccess() {
                 width: "100%",
                 height: "100%",
                 objectFit: "contain",
-                padding: "8px",
+                padding: "6px",
               }}
             />
           </div>
           <div style={{ flex: 1 }}>
             <div
               style={{
-                fontSize: 28,
+                fontSize: 22,
                 fontWeight: 900,
                 color: "#fff",
-                marginBottom: 8,
+                marginBottom: 4,
                 lineHeight: 1.2,
               }}
             >
@@ -379,18 +393,18 @@ function PaymentSuccess() {
             </div>
             <div
               style={{
-                fontSize: 14,
+                fontSize: 12,
                 color: "#fff",
-                marginBottom: 4,
+                marginBottom: 2,
                 fontWeight: 600,
               }}
             >
               A Project Of Healthcare Research & Development Board
             </div>
-            <div style={{ fontSize: 11, color: "#fff", marginBottom: 6 }}>
+            <div style={{ fontSize: 10, color: "#fff", marginBottom: 4 }}>
               (HRDB is Division of social welfare organization "NAC India")
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>
               Registration No. : 053083
             </div>
           </div>
@@ -399,10 +413,10 @@ function PaymentSuccess() {
           style={{
             background: "#fff",
             color: "#000",
-            padding: "12px 20px",
+            padding: "10px 20px",
             textAlign: "center",
             fontWeight: 700,
-            fontSize: 16,
+            fontSize: 14,
             borderBottom: "1px solid #e0e0e0",
           }}
         >
@@ -412,28 +426,31 @@ function PaymentSuccess() {
           style={{
             background: "#000",
             color: "#fff",
-            padding: "12px 20px",
+            padding: "10px 20px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            flexWrap: "wrap",
+            gap: "8px",
           }}
         >
           <div
-            style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}
+            style={{ fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}
           >
             Advt. No.: {job?.advtNo || ""}
           </div>
           <div
             style={{
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: 700,
               textAlign: "center",
               flex: 1,
+              minWidth: "150px",
             }}
           >
             Application Slip
           </div>
-          <div style={{ fontSize: 12, whiteSpace: "nowrap" }}>
+          <div style={{ fontSize: 11, whiteSpace: "nowrap" }}>
             Date:{" "}
             {new Date().toLocaleString("en-US", {
               month: "numeric",
@@ -450,40 +467,43 @@ function PaymentSuccess() {
           style={{
             display: "flex",
             justifyContent: "space-between",
-            padding: "16px 20px",
+            padding: "12px 20px",
             background: "#f9f9f9",
             borderBottom: "1px solid #e0e0e0",
+            flexWrap: "wrap",
+            gap: "8px",
           }}
         >
-          <div style={{ fontSize: 13, fontWeight: 600 }}>
+          <div style={{ fontSize: 12, fontWeight: 600 }}>
             Post Applied for: {job?.postTitle?.en || job?.post?.en || ""}
           </div>
-          <div style={{ fontSize: 13, fontWeight: 700 }}>
+          <div style={{ fontSize: 12, fontWeight: 700 }}>
             Application No.: {applicationNumber}
           </div>
         </div>
-        <div style={{ padding: "20px", background: "#fff" }}>
+        <div style={{ padding: "15px 20px", background: "#fff" }}>
           <h3
             style={{
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: 900,
               color: "#000",
-              marginBottom: 16,
-              paddingBottom: 8,
+              marginBottom: 12,
+              paddingBottom: 6,
               borderBottom: "2px solid #e0e0e0",
             }}
           >
             Personal Details
           </h3>
-          <div style={{ display: "flex", gap: 24 }}>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
             <div
               style={{
                 flex: 1,
+                minWidth: "300px",
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
-                gap: "14px 24px",
-                fontSize: 13,
-                lineHeight: 1.8,
+                gap: "10px 16px",
+                fontSize: 11,
+                lineHeight: 1.6,
               }}
             >
               <div>
@@ -579,14 +599,23 @@ function PaymentSuccess() {
             </div>
             {photoPreview && (
               <div
-                style={{ width: 140, flexShrink: 0, textAlign: "center" }}
+                style={{ 
+                  width: 120, 
+                  flexShrink: 0, 
+                  textAlign: "center",
+                  "@media (max-width: 768px)": {
+                    width: "100%",
+                    maxWidth: "120px",
+                    margin: "0 auto",
+                  },
+                }}
               >
                 <img
                   src={photoPreview}
                   alt="Applicant Photo"
                   style={{
                     width: "100%",
-                    height: 180,
+                    height: 150,
                     objectFit: "cover",
                     border: "2px solid #000",
                     borderRadius: 4,
@@ -599,18 +628,18 @@ function PaymentSuccess() {
         </div>
         <div
           style={{
-            padding: "20px",
+            padding: "15px 20px",
             background: "#fff",
             borderTop: "1px solid #e0e0e0",
           }}
         >
           <h3
             style={{
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: 900,
               color: "#000",
-              marginBottom: 16,
-              paddingBottom: 8,
+              marginBottom: 12,
+              paddingBottom: 6,
               borderBottom: "2px solid #e0e0e0",
             }}
           >
@@ -620,9 +649,9 @@ function PaymentSuccess() {
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
-              gap: "14px 24px",
-              fontSize: 13,
-              lineHeight: 1.8,
+              gap: "10px 16px",
+              fontSize: 11,
+              lineHeight: 1.6,
             }}
           >
             <div>
@@ -645,16 +674,16 @@ function PaymentSuccess() {
         </div>
         <div
           style={{
-            padding: "20px",
+            padding: "15px 20px",
             background: "#fff",
             borderTop: "1px solid #e0e0e0",
           }}
         >
           <div
             style={{
-              marginBottom: 16,
-              fontSize: 13,
-              lineHeight: 1.8,
+              marginBottom: 12,
+              fontSize: 11,
+              lineHeight: 1.6,
             }}
           >
             <div style={{ marginBottom: 12 }}>
@@ -684,13 +713,13 @@ function PaymentSuccess() {
             </div>
           </div>
           {signaturePreview && (
-            <div style={{ textAlign: "right", marginTop: 20 }}>
+            <div style={{ textAlign: "right", marginTop: 12 }}>
               <div
                 style={{
                   display: "inline-block",
                   border: "1px solid #e0e0e0",
                   background: "#f0f8ff",
-                  padding: "12px 20px",
+                  padding: "10px 16px",
                   borderRadius: 4,
                 }}
               >
@@ -698,16 +727,16 @@ function PaymentSuccess() {
                   src={signaturePreview}
                   alt="Signature"
                   style={{
-                    width: 200,
-                    height: 80,
+                    width: 180,
+                    height: 70,
                     objectFit: "contain",
                     display: "block",
-                    marginBottom: 8,
+                    marginBottom: 6,
                   }}
                 />
                 <div
                   style={{
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 600,
                     color: "#000",
                     textAlign: "center",
@@ -719,12 +748,12 @@ function PaymentSuccess() {
             </div>
           )}
         </div>
-        <div style={{ marginTop: 20, padding: "0 20px 20px" }}>
+        <div style={{ marginTop: 12, padding: "0 20px 15px" }}>
           <table
             style={{
               width: "100%",
               borderCollapse: "collapse",
-              fontSize: 13,
+              fontSize: 11,
               border: "1px solid #e0e0e0",
             }}
           >
@@ -732,40 +761,44 @@ function PaymentSuccess() {
               <tr style={{ background: "#1a2a4a", color: "#fff" }}>
                 <th
                   style={{
-                    padding: "12px",
+                    padding: "10px",
                     textAlign: "left",
                     fontWeight: 700,
                     border: "1px solid #1a2a4a",
+                    fontSize: 11,
                   }}
                 >
                   Application No.
                 </th>
                 <th
                   style={{
-                    padding: "12px",
+                    padding: "10px",
                     textAlign: "left",
                     fontWeight: 700,
                     border: "1px solid #1a2a4a",
+                    fontSize: 11,
                   }}
                 >
                   Email
                 </th>
                 <th
                   style={{
-                    padding: "12px",
+                    padding: "10px",
                     textAlign: "left",
                     fontWeight: 700,
                     border: "1px solid #1a2a4a",
+                    fontSize: 11,
                   }}
                 >
                   Payment Status
                 </th>
                 <th
                   style={{
-                    padding: "12px",
+                    padding: "10px",
                     textAlign: "left",
                     fontWeight: 700,
                     border: "1px solid #1a2a4a",
+                    fontSize: 11,
                   }}
                 >
                   Date
@@ -776,37 +809,41 @@ function PaymentSuccess() {
               <tr style={{ background: "#f9f9f9" }}>
                 <td
                   style={{
-                    padding: "12px",
+                    padding: "10px",
                     border: "1px solid #e0e0e0",
                     color: "#000",
+                    fontSize: 11,
                   }}
                 >
                   {applicationNumber}
                 </td>
                 <td
                   style={{
-                    padding: "12px",
+                    padding: "10px",
                     border: "1px solid #e0e0e0",
                     color: "#000",
+                    fontSize: 11,
                   }}
                 >
                   {finalFormData.email || ""}
                 </td>
                 <td
                   style={{
-                    padding: "12px",
+                    padding: "10px",
                     border: "1px solid #e0e0e0",
                     color: GREEN,
                     fontWeight: 700,
+                    fontSize: 11,
                   }}
                 >
                   Complete
                 </td>
                 <td
                   style={{
-                    padding: "12px",
+                    padding: "10px",
                     border: "1px solid #e0e0e0",
                     color: "#000",
+                    fontSize: 11,
                   }}
                 >
                   {new Date().toLocaleString("en-US", {
@@ -825,17 +862,19 @@ function PaymentSuccess() {
         </div>
         <div
           style={{
-            padding: "16px 20px",
+            padding: "12px 20px",
             borderTop: "1px solid #e0e0e0",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            fontSize: 11,
+            fontSize: 10,
             color: "#666",
             background: "#f9f9f9",
+            flexWrap: "wrap",
+            gap: "8px",
           }}
         >
-          <div style={{ wordBreak: "break-all" }}>
+          <div style={{ wordBreak: "break-all", flex: 1, minWidth: "200px" }}>
             https://www.jssabhiyan-nac.in/fill_application_print?oid=
             {applicationData?._id || applicationData?.id || ""}
           </div>
@@ -845,7 +884,7 @@ function PaymentSuccess() {
           style={{
             display: "flex",
             gap: 12,
-            padding: "20px",
+            padding: "15px 20px",
             justifyContent: "center",
             flexWrap: "wrap",
             background: "#fff",
@@ -920,7 +959,7 @@ function PaymentSuccess() {
                   container.style.maxHeight = originalMaxHeight;
                   container.style.height = "";
                   const { jsPDF } = window.jspdf;
-                  const imgData = canvas.toDataURL("image/png", 1.0);
+                  const imgData = canvas.toDataURL("image/png", 0.95); // Slightly lower quality for smaller file
                   const pdf = new jsPDF({
                     unit: "mm",
                     format: "a4",
@@ -928,10 +967,25 @@ function PaymentSuccess() {
                   });
                   const pdfWidth = pdf.internal.pageSize.getWidth();
                   const pdfHeight = pdf.internal.pageSize.getHeight();
-                  const margin = 10;
+                  const margin = 5; // Smaller margin for more space
                   const imgWidth = pdfWidth - 2 * margin;
-                  const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                  if (imgHeight <= pdfHeight - 2 * margin) {
+                  let imgHeight = (canvas.height * imgWidth) / canvas.width;
+                  
+                  // Scale down if content is too tall to fit on one page
+                  if (imgHeight > pdfHeight - 2 * margin) {
+                    const scaleFactor = (pdfHeight - 2 * margin) / imgHeight;
+                    imgHeight = (pdfHeight - 2 * margin);
+                    const scaledWidth = imgWidth * scaleFactor;
+                    pdf.addImage(
+                      imgData,
+                      "PNG",
+                      margin + (imgWidth - scaledWidth) / 2, // Center horizontally
+                      margin,
+                      scaledWidth,
+                      imgHeight,
+                    );
+                  } else {
+                    // Fit on single page
                     pdf.addImage(
                       imgData,
                       "PNG",
@@ -940,33 +994,6 @@ function PaymentSuccess() {
                       imgWidth,
                       imgHeight,
                     );
-                  } else {
-                    const ratio = canvas.width / imgWidth;
-                    const sliceHeight = (pdfHeight - 2 * margin) * ratio;
-                    let yOffset = 0;
-                    let page = 0;
-                    while (yOffset < canvas.height) {
-                      if (page > 0) pdf.addPage();
-                      const sliceCanvas = document.createElement("canvas");
-                      sliceCanvas.width = canvas.width;
-                      sliceCanvas.height = Math.min(
-                        sliceHeight,
-                        canvas.height - yOffset,
-                      );
-                      sliceCanvas
-                        .getContext("2d")
-                        .drawImage(canvas, 0, -yOffset);
-                      pdf.addImage(
-                        sliceCanvas.toDataURL("image/png", 1.0),
-                        "PNG",
-                        margin,
-                        margin,
-                        imgWidth,
-                        (sliceCanvas.height * imgWidth) / canvas.width,
-                      );
-                      yOffset += sliceHeight;
-                      page++;
-                    }
                   }
                   pdf.save(`Application_Slip_${applicationNumber}.pdf`);
                 } finally {
