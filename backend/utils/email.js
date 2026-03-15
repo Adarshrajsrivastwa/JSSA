@@ -19,6 +19,9 @@ function createTransporter() {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
+    tls: {
+      rejectUnauthorized: false, // Allow self-signed certificates
+    },
   });
 }
 
@@ -1794,7 +1797,7 @@ Thank you for applying!
     const mailOptions = {
       from: `"JSSA" <${process.env.SMTP_USER}>`,
       to: applicationData.email,
-      subject: `Payment Successful - Application ${applicationData.applicationNumber || "JSSA"}`,
+      subject: `Application Submitted - ${applicationData.applicationNumber || "JSSA"}`,
       text: textContent,
       html: htmlContent,
       attachments: attachments.length > 0 ? attachments : undefined,
@@ -1806,9 +1809,10 @@ Thank you for applying!
     console.log("📧 SMTP Host:", process.env.SMTP_HOST || "smtp.gmail.com");
     console.log("📧 SMTP Port:", process.env.SMTP_PORT || "587");
     console.log("📧 Has attachments:", attachments.length > 0);
+    console.log("📧 Email subject:", mailOptions.subject);
     
     const info = await transporter.sendMail(mailOptions);
-    console.log("✅ Payment success email sent successfully!");
+    console.log("✅ Email sent successfully!");
     console.log("✅ Message ID:", info.messageId);
     console.log("✅ Email sent to:", applicationData.email);
     console.log("✅ Response:", info.response || "No response");
@@ -1823,6 +1827,9 @@ Thank you for applying!
   } catch (error) {
     console.error("❌ Error sending payment success email:", error);
     console.error("❌ Error message:", error.message);
+    console.error("❌ Error code:", error.code);
+    console.error("❌ Error command:", error.command);
+    console.error("❌ Error response:", error.response);
     console.error("❌ Error stack:", error.stack);
     return {
       success: false,
