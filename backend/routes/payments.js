@@ -607,6 +607,81 @@ router.post(
 */
 
 /**
+ * POST /api/payments/test-email
+ * Test email sending (for debugging)
+ * Admin only
+ */
+router.post(
+  "/test-email",
+  authenticate,
+  async (req, res) => {
+    try {
+      // Only admin can test email
+      if (req.user.role !== "admin") {
+        return res.status(403).json({
+          error: "Access denied",
+          message: "Only admin can test email",
+        });
+      }
+
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({
+          error: "Email is required",
+        });
+      }
+
+      console.log("📧 TEST EMAIL REQUEST");
+      console.log("📧 Test email to:", email);
+      console.log("📧 SMTP_USER:", process.env.SMTP_USER ? "Set" : "Not set");
+      console.log("📧 SMTP_PASS:", process.env.SMTP_PASS ? "Set" : "Not set");
+
+      // Import email function
+      const { sendPaymentSuccessEmail } = await import("../utils/email.js");
+
+      // Create test data
+      const testApplicationData = {
+        applicationNumber: "TEST123",
+        candidateName: "Test User",
+        email: email,
+        mobile: "1234567890",
+      };
+
+      const testLoginCredentials = {
+        identifier: email,
+        password: "JSSA@123",
+      };
+
+      const result = await sendPaymentSuccessEmail(
+        testApplicationData,
+        testLoginCredentials,
+        null
+      );
+
+      if (result.success) {
+        res.json({
+          success: true,
+          message: "Test email sent successfully",
+          data: result,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: "Failed to send test email",
+          message: result.message || result.error,
+        });
+      }
+    } catch (error) {
+      console.error("Test email error:", error);
+      res.status(500).json({
+        error: "Failed to send test email",
+        message: error.message,
+      });
+    }
+  }
+);
+
+/**
  * GET /api/payments/status
  * Get payment status by orderId and applicationId
  * Optional authentication
