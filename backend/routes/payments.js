@@ -5,6 +5,8 @@ import { authenticate } from "../middleware/auth.js";
 import { createCashfreeOrder, getCashfreeAppId, verifyCashfreePayment, verifyCashfreeSignature } from "../utils/cashfree.js";
 import JobPosting from "../models/JobPosting.js";
 import Application from "../models/Application.js";
+import User from "../models/User.js";
+import { sendPaymentSuccessEmail } from "../utils/email.js";
 import crypto from "crypto";
 
 const router = express.Router();
@@ -370,6 +372,65 @@ router.post(
       application.paymentId = paymentId;
       application.orderId = orderId;
       await application.save();
+
+      // Send payment success email (async, don't wait for it)
+      try {
+        // Get user data for login credentials
+        const user = await User.findById(application.createdBy);
+        if (user && application.email) {
+          // Get job posting data
+          const jobPosting = await JobPosting.findById(application.jobPostingId);
+          
+          // Prepare login credentials
+          const defaultPassword = "JSSA@123";
+          const loginCredentials = {
+            identifier: user.email || user.phone,
+            password: defaultPassword,
+          };
+
+          // Prepare application data for email (include all fields)
+          const applicationDataForEmail = {
+            ...application.toObject(),
+            applicationNumber: application.applicationNumber,
+            candidateName: application.candidateName,
+            fatherName: application.fatherName,
+            motherName: application.motherName,
+            dob: application.dob,
+            gender: application.gender,
+            nationality: application.nationality,
+            category: application.category,
+            aadhar: application.aadhar,
+            pan: application.pan,
+            mobile: application.mobile,
+            email: application.email,
+            address: application.address,
+            state: application.state,
+            district: application.district,
+            block: application.block,
+            panchayat: application.panchayat,
+            pincode: application.pincode,
+            higherEducation: application.higherEducation,
+            board: application.board,
+            marks: application.marks,
+            markPercentage: application.markPercentage,
+            photo: application.photo,
+            signature: application.signature,
+          };
+
+          // Send email (don't wait for it)
+          sendPaymentSuccessEmail(
+            applicationDataForEmail,
+            loginCredentials,
+            jobPosting
+          ).catch((err) => {
+            console.error("Failed to send payment success email:", err);
+            // Don't fail the request if email fails
+          });
+        }
+      } catch (emailError) {
+        console.error("Error preparing payment success email:", emailError);
+        // Don't fail the request if email preparation fails
+      }
 
       res.json({
         success: true,

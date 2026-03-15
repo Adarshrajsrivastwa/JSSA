@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import puppeteer from "puppeteer";
 
 /**
  * Create nodemailer transporter
@@ -593,6 +594,1214 @@ This is an automated email. Please do not reply.
     };
   } catch (error) {
     console.error("Error sending OTP email:", error);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+}
+
+/**
+ * Send payment success email with application slip format
+ * Matches the PDF design from PaymentSuccess page
+ */
+export async function sendPaymentSuccessEmail(applicationData, loginCredentials, jobPosting) {
+  try {
+    // Check if email is configured
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.warn("Email not configured. Skipping email send.");
+      return { success: false, message: "Email not configured" };
+    }
+
+    // Check if applicant has email
+    if (!applicationData.email) {
+      console.warn("Applicant email not provided. Skipping email send.");
+      return { success: false, message: "Applicant email not provided" };
+    }
+
+    const transporter = createTransporter();
+
+    // Format date
+    const formatDate = (dateString) => {
+      if (!dateString) return "N/A";
+      try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+      } catch {
+        return dateString;
+      }
+    };
+
+    // Format category
+    const formatCategory = (cat) => {
+      if (!cat) return "N/A";
+      return cat.toUpperCase();
+    };
+
+    // Format gender
+    const formatGender = (gender) => {
+      if (!gender) return "N/A";
+      return gender.charAt(0).toUpperCase() + gender.slice(1);
+    };
+
+    // Format nationality
+    const formatNationality = (nat) => {
+      if (!nat) return "N/A";
+      return nat.charAt(0).toUpperCase() + nat.slice(1);
+    };
+
+    // Get photo and signature as base64 (if available)
+    const photoBase64 = applicationData.photo || "";
+    const signatureBase64 = applicationData.signature || "";
+    const photoSrc = photoBase64 
+      ? (photoBase64.startsWith('data:') ? photoBase64 : `data:image/jpeg;base64,${photoBase64}`)
+      : "";
+    const signatureSrc = signatureBase64
+      ? (signatureBase64.startsWith('data:') ? signatureBase64 : `data:image/png;base64,${signatureBase64}`)
+      : "";
+
+    // Email HTML template - matching PDF design
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.5;
+      color: #333;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 10px;
+      background-color: #f5f5f5;
+    }
+    .email-container {
+      background: #fff;
+      border-radius: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .success-banner {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .success-title {
+      font-size: 32px;
+      font-weight: 900;
+      color: #0aca00;
+      margin-bottom: 12px;
+    }
+    .success-subtitle {
+      font-size: 18px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    .app-number {
+      font-size: 16px;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 16px;
+    }
+    .app-number strong {
+      color: #0aca00;
+      font-size: 18px;
+    }
+    .credentials-box {
+      background-color: #fff3cd;
+      border: 2px solid #ffc107;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .credentials-box h3 {
+      color: #856404;
+      margin-top: 0;
+      font-size: 18px;
+    }
+    .credentials-item {
+      padding: 8px 0;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .credentials-item strong {
+      color: #856404;
+    }
+    .application-slip {
+      background: #fff;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .header-section {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 15px 20px;
+      background: #0aca00;
+      color: white;
+    }
+    .logo-circle {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 2px solid #fff;
+      overflow: hidden;
+    }
+    .logo-circle div {
+      width: 100%;
+      height: 100%;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 900;
+      color: #0aca00;
+    }
+    .header-text {
+      flex: 1;
+    }
+    .header-title {
+      font-size: 22px;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 4px;
+      line-height: 1.2;
+    }
+    .header-subtitle {
+      font-size: 12px;
+      color: #fff;
+      margin-bottom: 2px;
+      font-weight: 600;
+    }
+    .header-note {
+      font-size: 10px;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .header-reg {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .recruitment-title {
+      background: #fff;
+      color: #000;
+      padding: 10px 20px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 14px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .advt-section {
+      background: #000;
+      color: #fff;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .advt-text {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .app-slip-title {
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+      flex: 1;
+      min-width: 150px;
+    }
+    .date-text {
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .post-section {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: #f9f9f9;
+      border-bottom: 1px solid #e0e0e0;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .post-text {
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .app-no-text {
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .details-section {
+      padding: 15px 20px;
+      background: #fff;
+      position: relative;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 900;
+      color: #000;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e0e0e0;
+    }
+    .detail-item {
+      font-size: 15px;
+      line-height: 2.2;
+      margin-bottom: 4px;
+    }
+    .detail-item strong {
+      color: #333;
+    }
+    .detail-value {
+      color: #000;
+      font-weight: 700;
+    }
+    .photo-container {
+      position: absolute;
+      top: 70px;
+      right: 20px;
+      width: 110px;
+      text-align: center;
+      z-index: 10;
+    }
+    .photo-container img {
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      border: 2px solid #000;
+      border-radius: 4px;
+      display: block;
+      background: #fff;
+    }
+    .signature-container {
+      position: absolute;
+      bottom: 15px;
+      right: 20px;
+      text-align: right;
+      z-index: 10;
+    }
+    .signature-box {
+      display: inline-block;
+      border: 1px solid #e0e0e0;
+      background: #f0f8ff;
+      padding: 10px 16px;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .signature-box img {
+      width: 180px;
+      height: 70px;
+      object-fit: contain;
+      display: block;
+      margin-bottom: 6px;
+      background: #fff;
+    }
+    .signature-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #000;
+      text-align: center;
+    }
+    .declarations-section {
+      padding: 15px 20px;
+      background: #fff;
+      border-top: 1px solid #e0e0e0;
+    }
+    .declaration-item {
+      margin-bottom: 12px;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+    .payment-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      border: 1px solid #e0e0e0;
+      margin-top: 12px;
+    }
+    .payment-table th {
+      padding: 10px;
+      text-align: left;
+      font-weight: 700;
+      border: 1px solid #1a2a4a;
+      background: #1a2a4a;
+      color: #fff;
+      font-size: 13px;
+    }
+    .payment-table td {
+      padding: 10px;
+      border: 1px solid #e0e0e0;
+      color: #000;
+      font-size: 13px;
+    }
+    .payment-table tr {
+      background: #f9f9f9;
+    }
+    .status-complete {
+      color: #0aca00;
+      font-weight: 700;
+    }
+    .footer-section {
+      padding: 12px 20px;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      color: #666;
+      background: #f9f9f9;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .footer-url {
+      word-break: break-all;
+      flex: 1;
+      min-width: 200px;
+    }
+    .footer-page {
+      white-space: nowrap;
+    }
+    .email-footer {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid #e0e0e0;
+      color: #666;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <!-- Payment Success Banner -->
+    <div class="success-banner">
+      <div class="success-title">✅ Payment Successful!</div>
+      <div class="success-subtitle">Your application has been submitted successfully</div>
+      <div class="app-number">
+        Application Number: <strong>${applicationData.applicationNumber || "N/A"}</strong>
+      </div>
+      <div style="font-size: 14px; color: #666; line-height: 1.6;">
+        Please find your application slip below. Keep this application number for future reference.
+      </div>
+    </div>
+
+    <!-- Login Credentials Box -->
+    <div class="credentials-box">
+      <h3>🔐 Login Credentials / लॉगिन क्रेडेंशियल</h3>
+      <div class="credentials-item">
+        <strong>Login ID:</strong> ${loginCredentials.identifier}
+      </div>
+      <div class="credentials-item">
+        <strong>Password:</strong> ${loginCredentials.password}
+      </div>
+      <div style="margin-top: 10px; font-size: 13px; color: #856404;">
+        ⚠️ Please save these credentials for future login
+      </div>
+    </div>
+
+    <!-- Application Slip (PDF Format) -->
+    <div class="application-slip">
+      <!-- Header -->
+      <div class="header-section">
+        <div class="logo-circle">
+          <div>JSSA</div>
+        </div>
+        <div class="header-text">
+          <div class="header-title">जन स्वास्थ्य सहायता अभियान</div>
+          <div class="header-subtitle">A Project Of Healthcare Research & Development Board</div>
+          <div class="header-note">(HRDB is Division of social welfare organization "NAC India")</div>
+          <div class="header-reg">Registration No. : 053083</div>
+        </div>
+      </div>
+
+      <!-- Recruitment Title -->
+      <div class="recruitment-title">
+        ${jobPosting?.postTitle?.en || jobPosting?.post?.en || ""} Recruitment
+      </div>
+
+      <!-- Advertisement Section -->
+      <div class="advt-section">
+        <div class="advt-text">Advt. No.: ${jobPosting?.advtNo || ""}</div>
+        <div class="app-slip-title">Application Slip</div>
+        <div class="date-text">
+          Date: ${new Date().toLocaleString("en-US", {
+            month: "numeric",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true,
+          })}
+        </div>
+      </div>
+
+      <!-- Post Applied Section -->
+      <div class="post-section">
+        <div class="post-text">Post Applied for: ${jobPosting?.postTitle?.en || jobPosting?.post?.en || ""}</div>
+        <div class="app-no-text">Application No.: ${applicationData.applicationNumber || "N/A"}</div>
+      </div>
+
+      <!-- Personal Details -->
+      <div class="details-section" style="margin-right: ${photoSrc ? '130px' : '0'};">
+        <div class="section-title">Personal Details</div>
+        ${photoSrc ? `
+        <div class="photo-container">
+          <img src="${photoSrc}" alt="Applicant Photo" />
+        </div>
+        ` : ''}
+        <div class="detail-item">
+          <strong>Name:</strong> <span class="detail-value">${(applicationData.candidateName || "").toUpperCase()}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Application No.:</strong> <span>${applicationData.applicationNumber || "N/A"}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Father's Name:</strong> <span>${(applicationData.fatherName || "").toUpperCase()}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Mother's Name:</strong> <span>${(applicationData.motherName || "").toUpperCase()}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Date of Birth:</strong> <span>${formatDate(applicationData.dob)}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Gender:</strong> <span>${formatGender(applicationData.gender)}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Nationality:</strong> <span>${formatNationality(applicationData.nationality)}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Category:</strong> <span>${formatCategory(applicationData.category)}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Aadhar Number:</strong> <span>${applicationData.aadhar || ""}</span>
+        </div>
+        <div class="detail-item">
+          <strong>PAN Number:</strong> <span>${(applicationData.pan || "").toUpperCase()}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Mobile Number:</strong> <span>${applicationData.mobile || ""}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Email ID:</strong> <span>${applicationData.email || ""}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Permanent Address:</strong> <span>${(applicationData.address || "").toUpperCase()}</span>
+        </div>
+        <div class="detail-item">
+          <strong>State:</strong> <span>${applicationData.state || ""}</span>
+        </div>
+        <div class="detail-item">
+          <strong>District:</strong> <span>${applicationData.district || ""}</span>
+        </div>
+        ${applicationData.block ? `
+        <div class="detail-item">
+          <strong>Block:</strong> <span>${applicationData.block}</span>
+        </div>
+        ` : ''}
+        ${applicationData.panchayat ? `
+        <div class="detail-item">
+          <strong>Panchayat:</strong> <span>${applicationData.panchayat}</span>
+        </div>
+        ` : ''}
+        <div class="detail-item">
+          <strong>Pin Code:</strong> <span>${applicationData.pincode || ""}</span>
+        </div>
+      </div>
+
+      <!-- Educational Details -->
+      <div class="details-section" style="margin-right: ${signatureSrc ? '220px' : '0'}; position: relative;">
+        <div class="section-title">Educational Details</div>
+        ${signatureSrc ? `
+        <div class="signature-container">
+          <div class="signature-box">
+            <img src="${signatureSrc}" alt="Signature" />
+            <div class="signature-label">Candidate's Signature</div>
+          </div>
+        </div>
+        ` : ''}
+        <div class="detail-item">
+          <strong>Higher Education:</strong> <span>${applicationData.higherEducation || ""}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Board/University:</strong> <span>${applicationData.board || ""}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Total Marks:</strong> <span>${applicationData.marks || ""}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Marks in Percentage:</strong> <span>${applicationData.markPercentage || ""}</span>
+        </div>
+      </div>
+
+      <!-- Declarations -->
+      <div class="declarations-section">
+        <div class="declaration-item">
+          <input type="checkbox" checked readonly style="margin-right: 8px;" /> I have read and agree to the Terms and Conditions.
+        </div>
+        <div class="declaration-item">
+          <input type="checkbox" checked readonly style="margin-right: 8px;" /> I declare that all the information given in this application form is correct to the best of my knowledge and belief. If any information provided is found false, my candidature may be rejected at any point of time. I have read and understood the conditions which I would abide by. Thus, I have given the above declaration in my full consciousness without any pressure.
+        </div>
+      </div>
+
+      <!-- Payment Status Table -->
+      <div style="margin-top: 12px; padding: 0 20px 15px;">
+        <table class="payment-table">
+          <thead>
+            <tr>
+              <th>Application No.</th>
+              <th>Email</th>
+              <th>Payment Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>${applicationData.applicationNumber || "N/A"}</td>
+              <td>${applicationData.email || ""}</td>
+              <td class="status-complete">Complete</td>
+              <td>${new Date().toLocaleString("en-US", {
+                month: "numeric",
+                day: "numeric",
+                year: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: true,
+              })}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer-section">
+        <div class="footer-url">https://www.jssabhiyan-nac.in/fill_application_print?oid=${applicationData._id || applicationData.id || ""}</div>
+        <div class="footer-page">1/1</div>
+      </div>
+    </div>
+
+    <div class="email-footer">
+      <p><strong>Thank you for applying!</strong></p>
+      <p>आवेदन करने के लिए धन्यवाद!</p>
+      <p style="margin-top: 15px; font-size: 12px; color: #999;">
+        This is an automated email. Please do not reply to this email.<br>
+        यह एक स्वचालित ईमेल है। कृपया इस ईमेल का जवाब न दें।
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    // Plain text version
+    const textContent = `
+Payment Successful - JSSA
+========================
+
+✅ Payment Successful!
+Your application has been submitted successfully
+
+Application Number: ${applicationData.applicationNumber || "N/A"}
+
+LOGIN CREDENTIALS:
+------------------
+Login ID: ${loginCredentials.identifier}
+Password: ${loginCredentials.password}
+
+Please save these credentials for future login.
+
+APPLICATION SLIP:
+-----------------
+Application Number: ${applicationData.applicationNumber || "N/A"}
+Post Applied for: ${jobPosting?.postTitle?.en || jobPosting?.post?.en || ""}
+Advt. No.: ${jobPosting?.advtNo || ""}
+
+PERSONAL DETAILS:
+-----------------
+Name: ${(applicationData.candidateName || "").toUpperCase()}
+Father's Name: ${(applicationData.fatherName || "").toUpperCase()}
+Mother's Name: ${(applicationData.motherName || "").toUpperCase()}
+Date of Birth: ${formatDate(applicationData.dob)}
+Gender: ${formatGender(applicationData.gender)}
+Nationality: ${formatNationality(applicationData.nationality)}
+Category: ${formatCategory(applicationData.category)}
+Aadhar Number: ${applicationData.aadhar || ""}
+PAN Number: ${(applicationData.pan || "").toUpperCase()}
+Mobile Number: ${applicationData.mobile || ""}
+Email ID: ${applicationData.email || ""}
+Permanent Address: ${(applicationData.address || "").toUpperCase()}
+State: ${applicationData.state || ""}
+District: ${applicationData.district || ""}
+${applicationData.block ? `Block: ${applicationData.block}` : ''}
+${applicationData.panchayat ? `Panchayat: ${applicationData.panchayat}` : ''}
+Pin Code: ${applicationData.pincode || ""}
+
+EDUCATIONAL DETAILS:
+--------------------
+Higher Education: ${applicationData.higherEducation || ""}
+Board/University: ${applicationData.board || ""}
+Total Marks: ${applicationData.marks || ""}
+Marks in Percentage: ${applicationData.markPercentage || ""}
+
+PAYMENT STATUS:
+--------------
+Status: Complete
+Date: ${new Date().toLocaleString("en-US", {
+  month: "numeric",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: true,
+})}
+
+Thank you for applying!
+आवेदन करने के लिए धन्यवाद!
+    `;
+
+    // Generate PDF from application slip HTML
+    let pdfBuffer = null;
+    try {
+      // Create HTML for PDF (only application slip, no email banner/credentials)
+      const pdfHtmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.5;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      background-color: #fff;
+    }
+    .application-slip {
+      background: #fff;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .header-section {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 15px 20px;
+      background: #0aca00;
+      color: white;
+    }
+    .logo-circle {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 2px solid #fff;
+      overflow: hidden;
+    }
+    .logo-circle div {
+      width: 100%;
+      height: 100%;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 900;
+      color: #0aca00;
+    }
+    .header-text {
+      flex: 1;
+    }
+    .header-title {
+      font-size: 22px;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 4px;
+      line-height: 1.2;
+    }
+    .header-subtitle {
+      font-size: 12px;
+      color: #fff;
+      margin-bottom: 2px;
+      font-weight: 600;
+    }
+    .header-note {
+      font-size: 10px;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .header-reg {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .recruitment-title {
+      background: #fff;
+      color: #000;
+      padding: 10px 20px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 14px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .advt-section {
+      background: #000;
+      color: #fff;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .advt-text {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .app-slip-title {
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+      flex: 1;
+      min-width: 150px;
+    }
+    .date-text {
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .post-section {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: #f9f9f9;
+      border-bottom: 1px solid #e0e0e0;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .post-text {
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .app-no-text {
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .details-section {
+      padding: 15px 20px;
+      background: #fff;
+      position: relative;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 900;
+      color: #000;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e0e0e0;
+    }
+    .detail-item {
+      font-size: 15px;
+      line-height: 2.2;
+      margin-bottom: 4px;
+    }
+    .detail-item strong {
+      color: #333;
+    }
+    .detail-value {
+      color: #000;
+      font-weight: 700;
+    }
+    .photo-container {
+      position: absolute;
+      top: 70px;
+      right: 20px;
+      width: 110px;
+      text-align: center;
+      z-index: 10;
+    }
+    .photo-container img {
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      border: 2px solid #000;
+      border-radius: 4px;
+      display: block;
+      background: #fff;
+    }
+    .signature-container {
+      position: absolute;
+      bottom: 15px;
+      right: 20px;
+      text-align: right;
+      z-index: 10;
+    }
+    .signature-box {
+      display: inline-block;
+      border: 1px solid #e0e0e0;
+      background: #f0f8ff;
+      padding: 10px 16px;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .signature-box img {
+      width: 180px;
+      height: 70px;
+      object-fit: contain;
+      display: block;
+      margin-bottom: 6px;
+      background: #fff;
+    }
+    .signature-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #000;
+      text-align: center;
+    }
+    .declarations-section {
+      padding: 15px 20px;
+      background: #fff;
+      border-top: 1px solid #e0e0e0;
+    }
+    .declaration-item {
+      margin-bottom: 12px;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+    .payment-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      border: 1px solid #e0e0e0;
+      margin-top: 12px;
+    }
+    .payment-table th {
+      padding: 10px;
+      text-align: left;
+      font-weight: 700;
+      border: 1px solid #1a2a4a;
+      background: #1a2a4a;
+      color: #fff;
+      font-size: 13px;
+    }
+    .payment-table td {
+      padding: 10px;
+      border: 1px solid #e0e0e0;
+      color: #000;
+      font-size: 13px;
+    }
+    .payment-table tr {
+      background: #f9f9f9;
+    }
+    .status-complete {
+      color: #0aca00;
+      font-weight: 700;
+    }
+    .footer-section {
+      padding: 12px 20px;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      color: #666;
+      background: #f9f9f9;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .footer-url {
+      word-break: break-all;
+      flex: 1;
+      min-width: 200px;
+    }
+    .footer-page {
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="application-slip">
+    <!-- Header -->
+    <div class="header-section">
+      <div class="logo-circle">
+        <div>JSSA</div>
+      </div>
+      <div class="header-text">
+        <div class="header-title">जन स्वास्थ्य सहायता अभियान</div>
+        <div class="header-subtitle">A Project Of Healthcare Research & Development Board</div>
+        <div class="header-note">(HRDB is Division of social welfare organization "NAC India")</div>
+        <div class="header-reg">Registration No. : 053083</div>
+      </div>
+    </div>
+
+    <!-- Recruitment Title -->
+    <div class="recruitment-title">
+      ${jobPosting?.postTitle?.en || jobPosting?.post?.en || ""} Recruitment
+    </div>
+
+    <!-- Advertisement Section -->
+    <div class="advt-section">
+      <div class="advt-text">Advt. No.: ${jobPosting?.advtNo || ""}</div>
+      <div class="app-slip-title">Application Slip</div>
+      <div class="date-text">
+        Date: ${new Date().toLocaleString("en-US", {
+          month: "numeric",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+        })}
+      </div>
+    </div>
+
+    <!-- Post Applied Section -->
+    <div class="post-section">
+      <div class="post-text">Post Applied for: ${jobPosting?.postTitle?.en || jobPosting?.post?.en || ""}</div>
+      <div class="app-no-text">Application No.: ${applicationData.applicationNumber || "N/A"}</div>
+    </div>
+
+    <!-- Personal Details -->
+    <div class="details-section" style="margin-right: ${photoSrc ? '130px' : '0'};">
+      <div class="section-title">Personal Details</div>
+      ${photoSrc ? `
+      <div class="photo-container">
+        <img src="${photoSrc}" alt="Applicant Photo" />
+      </div>
+      ` : ''}
+      <div class="detail-item">
+        <strong>Name:</strong> <span class="detail-value">${(applicationData.candidateName || "").toUpperCase()}</span>
+      </div>
+      <div class="detail-item">
+        <strong>Application No.:</strong> <span>${applicationData.applicationNumber || "N/A"}</span>
+      </div>
+      <div class="detail-item">
+        <strong>Father's Name:</strong> <span>${(applicationData.fatherName || "").toUpperCase()}</span>
+      </div>
+      <div class="detail-item">
+        <strong>Mother's Name:</strong> <span>${(applicationData.motherName || "").toUpperCase()}</span>
+      </div>
+      <div class="detail-item">
+        <strong>Date of Birth:</strong> <span>${formatDate(applicationData.dob)}</span>
+      </div>
+      <div class="detail-item">
+        <strong>Gender:</strong> <span>${formatGender(applicationData.gender)}</span>
+      </div>
+      <div class="detail-item">
+        <strong>Nationality:</strong> <span>${formatNationality(applicationData.nationality)}</span>
+      </div>
+      <div class="detail-item">
+        <strong>Category:</strong> <span>${formatCategory(applicationData.category)}</span>
+      </div>
+      <div class="detail-item">
+        <strong>Aadhar Number:</strong> <span>${applicationData.aadhar || ""}</span>
+      </div>
+      <div class="detail-item">
+        <strong>PAN Number:</strong> <span>${(applicationData.pan || "").toUpperCase()}</span>
+      </div>
+      <div class="detail-item">
+        <strong>Mobile Number:</strong> <span>${applicationData.mobile || ""}</span>
+      </div>
+      <div class="detail-item">
+        <strong>Email ID:</strong> <span>${applicationData.email || ""}</span>
+      </div>
+      <div class="detail-item">
+        <strong>Permanent Address:</strong> <span>${(applicationData.address || "").toUpperCase()}</span>
+      </div>
+      <div class="detail-item">
+        <strong>State:</strong> <span>${applicationData.state || ""}</span>
+      </div>
+      <div class="detail-item">
+        <strong>District:</strong> <span>${applicationData.district || ""}</span>
+      </div>
+      ${applicationData.block ? `
+      <div class="detail-item">
+        <strong>Block:</strong> <span>${applicationData.block}</span>
+      </div>
+      ` : ''}
+      ${applicationData.panchayat ? `
+      <div class="detail-item">
+        <strong>Panchayat:</strong> <span>${applicationData.panchayat}</span>
+      </div>
+      ` : ''}
+      <div class="detail-item">
+        <strong>Pin Code:</strong> <span>${applicationData.pincode || ""}</span>
+      </div>
+    </div>
+
+    <!-- Educational Details -->
+    <div class="details-section" style="margin-right: ${signatureSrc ? '220px' : '0'}; position: relative;">
+      <div class="section-title">Educational Details</div>
+      ${signatureSrc ? `
+      <div class="signature-container">
+        <div class="signature-box">
+          <img src="${signatureSrc}" alt="Signature" />
+          <div class="signature-label">Candidate's Signature</div>
+        </div>
+      </div>
+      ` : ''}
+      <div class="detail-item">
+        <strong>Higher Education:</strong> <span>${applicationData.higherEducation || ""}</span>
+      </div>
+      <div class="detail-item">
+        <strong>Board/University:</strong> <span>${applicationData.board || ""}</span>
+      </div>
+      <div class="detail-item">
+        <strong>Total Marks:</strong> <span>${applicationData.marks || ""}</span>
+      </div>
+      <div class="detail-item">
+        <strong>Marks in Percentage:</strong> <span>${applicationData.markPercentage || ""}</span>
+      </div>
+    </div>
+
+    <!-- Declarations -->
+    <div class="declarations-section">
+      <div class="declaration-item">
+        <input type="checkbox" checked readonly style="margin-right: 8px;" /> I have read and agree to the Terms and Conditions.
+      </div>
+      <div class="declaration-item">
+        <input type="checkbox" checked readonly style="margin-right: 8px;" /> I declare that all the information given in this application form is correct to the best of my knowledge and belief. If any information provided is found false, my candidature may be rejected at any point of time. I have read and understood the conditions which I would abide by. Thus, I have given the above declaration in my full consciousness without any pressure.
+      </div>
+    </div>
+
+    <!-- Payment Status Table -->
+    <div style="margin-top: 12px; padding: 0 20px 15px;">
+      <table class="payment-table">
+        <thead>
+          <tr>
+            <th>Application No.</th>
+            <th>Email</th>
+            <th>Payment Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>${applicationData.applicationNumber || "N/A"}</td>
+            <td>${applicationData.email || ""}</td>
+            <td class="status-complete">Complete</td>
+            <td>${new Date().toLocaleString("en-US", {
+              month: "numeric",
+              day: "numeric",
+              year: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: true,
+            })}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-section">
+      <div class="footer-url">https://www.jssabhiyan-nac.in/fill_application_print?oid=${applicationData._id || applicationData.id || ""}</div>
+      <div class="footer-page">1/1</div>
+    </div>
+  </div>
+</body>
+</html>
+      `;
+
+      // Generate PDF using puppeteer
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      });
+      const page = await browser.newPage();
+      await page.setContent(pdfHtmlContent, { waitUntil: 'networkidle0' });
+      
+      // Wait for images to load
+      await page.evaluateHandle(() => {
+        return Promise.all(
+          Array.from(document.images).map((img) => {
+            if (img.complete) return Promise.resolve();
+            return new Promise((resolve) => {
+              img.onload = resolve;
+              img.onerror = resolve;
+              setTimeout(resolve, 2000);
+            });
+          })
+        );
+      });
+
+      // Generate PDF
+      pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '5mm',
+          right: '5mm',
+          bottom: '5mm',
+          left: '5mm',
+        },
+      });
+
+      await browser.close();
+      console.log("PDF generated successfully");
+    } catch (pdfError) {
+      console.error("Error generating PDF:", pdfError);
+      // Continue without PDF if generation fails
+    }
+
+    // Prepare email attachments
+    const attachments = [];
+    if (pdfBuffer) {
+      attachments.push({
+        filename: `Application_Slip_${applicationData.applicationNumber || 'JSSA'}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf',
+      });
+    }
+
+    // Send email
+    const mailOptions = {
+      from: `"JSSA" <${process.env.SMTP_USER}>`,
+      to: applicationData.email,
+      subject: `Payment Successful - Application ${applicationData.applicationNumber || "JSSA"}`,
+      text: textContent,
+      html: htmlContent,
+      attachments: attachments.length > 0 ? attachments : undefined,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Payment success email sent:", info.messageId);
+
+    return {
+      success: true,
+      messageId: info.messageId,
+      pdfAttached: pdfBuffer !== null,
+    };
+  } catch (error) {
+    console.error("Error sending payment success email:", error);
     return {
       success: false,
       error: error.message,
