@@ -7,7 +7,7 @@ import JobPosting from "../models/JobPosting.js";
 import { authenticate } from "../middleware/auth.js";
 import { generateToken } from "../utils/jwt.js";
 import { normalizePhone } from "../utils/validation.js";
-import { sendPaymentSuccessEmail, generateAndSaveApplicationPDF } from "../utils/email.js"; // Email sent on form submission (before payment)
+import { sendPaymentSuccessEmail } from "../utils/email.js"; // Email sent on form submission (before payment)
 
 const router = express.Router();
 
@@ -213,37 +213,13 @@ router.post(
           signature: signature || null,
         };
 
-        // Generate and save PDF first
-        console.log("📄 ========== PDF GENERATION START (FORM SUBMISSION) ==========");
-        let pdfFilePath = null;
-        try {
-          const pdfResult = await generateAndSaveApplicationPDF(
-            applicationDataForEmail,
-            jobPosting
-          );
-          
-          if (pdfResult && pdfResult.success) {
-            pdfFilePath = pdfResult.filePath;
-            console.log("✅ PDF generated and saved:", pdfFilePath);
-            console.log("✅ PDF file name:", pdfResult.fileName);
-          } else {
-            console.error("❌ PDF generation failed:", pdfResult?.error || "Unknown error");
-          }
-        } catch (pdfErr) {
-          console.error("❌ Exception while generating PDF:", pdfErr);
-          console.error("❌ Error message:", pdfErr.message);
-          console.error("❌ Error stack:", pdfErr.stack);
-          // Continue without PDF if generation fails
-        }
-
-        // Send email using payment success email function (same format)
+        // Send email using payment success email function (same format, no PDF)
         console.log("📧 ========== EMAIL SEND PROCESS START (FORM SUBMISSION) ==========");
         console.log("📧 Preparing to send application email...");
         console.log("📧 Application email:", email);
         console.log("📧 Application Number:", generatedApplicationNumber);
         console.log("📧 User ID:", user._id);
         console.log("📧 Job Posting ID:", jobPostingId);
-        console.log("📧 PDF file path:", pdfFilePath || "Not available");
         console.log("📧 SMTP_USER configured:", !!process.env.SMTP_USER);
         console.log("📧 SMTP_PASS configured:", !!process.env.SMTP_PASS);
         
@@ -252,7 +228,7 @@ router.post(
             applicationDataForEmail,
             loginCredentials,
             jobPosting,
-            pdfFilePath // Pass saved PDF file path
+            null // No PDF file path
           );
           
           if (emailResult && emailResult.success) {
