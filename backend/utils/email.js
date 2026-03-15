@@ -678,7 +678,7 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
     const logoUrl = "https://jssabhiyan.com/assets/jss.png";
     const logoPathForPdf = "./landing/src/assets/jss.png"; // For Puppeteer PDF generation
 
-    // Email HTML template - matching PDF design
+    // Email HTML template - Simple format with basic details only
     const htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -687,60 +687,62 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
   <style>
     body {
       font-family: Arial, sans-serif;
-      line-height: 1.5;
+      line-height: 1.6;
       color: #333;
-      max-width: 900px;
+      max-width: 700px;
       margin: 0 auto;
-      padding: 10px;
+      padding: 20px;
       background-color: #f5f5f5;
     }
     .email-container {
       background: #fff;
-      border-radius: 0;
+      border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 30px;
     }
     .success-banner {
-      background: #fff;
+      background: linear-gradient(135deg, #0aca00 0%, #088a00 100%);
+      color: white;
       border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 20px;
+      padding: 25px;
+      margin-bottom: 25px;
       text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     .success-title {
-      font-size: 32px;
+      font-size: 28px;
       font-weight: 900;
-      color: #0aca00;
-      margin-bottom: 12px;
+      color: #fff;
+      margin-bottom: 10px;
     }
     .success-subtitle {
-      font-size: 18px;
-      font-weight: 700;
-      color: #333;
-      margin-bottom: 8px;
-    }
-    .app-number {
       font-size: 16px;
       font-weight: 600;
-      color: #666;
-      margin-bottom: 16px;
+      color: #fff;
+      margin-bottom: 15px;
     }
-    .app-number strong {
-      color: #0aca00;
+    .app-number {
       font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      background: rgba(255,255,255,0.2);
+      padding: 10px 20px;
+      border-radius: 6px;
+      display: inline-block;
+      margin-top: 10px;
     }
     .credentials-box {
       background-color: #fff3cd;
       border: 2px solid #ffc107;
       border-radius: 8px;
       padding: 20px;
-      margin: 20px 0;
+      margin: 25px 0;
       text-align: center;
     }
     .credentials-box h3 {
       color: #856404;
       margin-top: 0;
       font-size: 18px;
+      margin-bottom: 15px;
     }
     .credentials-item {
       padding: 8px 0;
@@ -750,10 +752,66 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
     .credentials-item strong {
       color: #856404;
     }
-    .application-slip {
-      background: #fff;
+    .details-box {
+      background: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .details-box h3 {
+      color: #0aca00;
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 18px;
+      border-bottom: 2px solid #0aca00;
+      padding-bottom: 8px;
+    }
+    .detail-row {
+      display: flex;
+      padding: 8px 0;
+      border-bottom: 1px solid #e8e8e8;
+    }
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+    .detail-label {
+      font-weight: 600;
+      color: #555;
+      width: 180px;
+      flex-shrink: 0;
+    }
+    .detail-value {
+      color: #333;
+      flex: 1;
+    }
+    .pdf-notice {
+      background: #e3f2fd;
+      border: 2px solid #2196f3;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 25px 0;
+      text-align: center;
+    }
+    .pdf-notice h3 {
+      color: #1976d2;
+      margin-top: 0;
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+    .pdf-notice p {
+      color: #333;
       font-size: 14px;
-      line-height: 1.5;
+      line-height: 1.6;
+      margin: 8px 0;
+    }
+    .email-footer {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid #e0e0e0;
+      color: #666;
+      font-size: 13px;
     }
     .header-section {
       display: flex;
@@ -1008,10 +1066,7 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
       <div class="success-title">✅ Payment Successful!</div>
       <div class="success-subtitle">Your application has been submitted successfully</div>
       <div class="app-number">
-        Application Number: <strong>${applicationData.applicationNumber || "N/A"}</strong>
-      </div>
-      <div style="font-size: 14px; color: #666; line-height: 1.6;">
-        Please find your application slip below. Keep this application number for future reference.
+        Application Number: ${applicationData.applicationNumber || "N/A"}
       </div>
     </div>
 
@@ -1029,204 +1084,73 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
       </div>
     </div>
 
-    <!-- Application Slip (PDF Format) -->
-    <div class="application-slip">
-      <!-- Header -->
-      <div class="header-section">
-        <div class="logo-circle">
-          <img src="https://jssabhiyan.com/assets/jss.png" alt="JSSA Logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\\'width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; color: #0aca00;\\'>JSSA</div>';" />
-        </div>
-        <div class="header-text">
-          <div class="header-title">जन स्वास्थ्य सहायता अभियान</div>
-          <div class="header-subtitle">A Project Of Healthcare Research & Development Board</div>
-          <div class="header-note">(HRDB is Division of social welfare organization "NAC India")</div>
-          <div class="header-reg">Registration No. : 053083</div>
-        </div>
+    <!-- Application Details Summary -->
+    <div class="details-box">
+      <h3>Application Details / आवेदन विवरण</h3>
+      <div class="detail-row">
+        <div class="detail-label">Name / नाम:</div>
+        <div class="detail-value"><strong>${(applicationData.candidateName || "").toUpperCase()}</strong></div>
       </div>
-
-      <!-- Recruitment Title -->
-      <div class="recruitment-title">
-        ${jobPosting?.postTitle?.en || jobPosting?.post?.en || ""} Recruitment
+      <div class="detail-row">
+        <div class="detail-label">Application Number:</div>
+        <div class="detail-value"><strong>${applicationData.applicationNumber || "N/A"}</strong></div>
       </div>
-
-      <!-- Advertisement Section -->
-      <div class="advt-section">
-        <div class="advt-text">Advt. No.: ${jobPosting?.advtNo || ""}</div>
-        <div class="app-slip-title">Application Slip</div>
-        <div class="date-text">
-          Date: ${new Date().toLocaleString("en-US", {
-            month: "numeric",
-            day: "numeric",
-            year: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: true,
-          })}
-        </div>
+      <div class="detail-row">
+        <div class="detail-label">Post Applied For:</div>
+        <div class="detail-value">${jobPosting?.postTitle?.en || jobPosting?.post?.en || "N/A"}</div>
       </div>
-
-      <!-- Post Applied Section -->
-      <div class="post-section">
-        <div class="post-text">Post Applied for: ${jobPosting?.postTitle?.en || jobPosting?.post?.en || ""}</div>
-        <div class="app-no-text">Application No.: ${applicationData.applicationNumber || "N/A"}</div>
+      <div class="detail-row">
+        <div class="detail-label">Advertisement No.:</div>
+        <div class="detail-value">${jobPosting?.advtNo || "N/A"}</div>
       </div>
-
-      <!-- Personal Details -->
-      <div class="details-section" style="position: relative; margin-right: ${photoSrc ? '130px' : '0'};">
-        <div class="section-title">Personal Details</div>
-        ${photoSrc ? `
-        <div class="photo-container" style="position: absolute; top: 70px; right: 20px; width: 110px; text-align: center; z-index: 10;">
-          <img src="${photoSrc}" alt="Applicant Photo" style="width: 100%; height: 130px; object-fit: cover; border: 2px solid #000; border-radius: 4px; display: block; background: #fff;" />
-        </div>
-        ` : ''}
-        <div class="detail-item">
-          <strong>Name:</strong> <span class="detail-value">${(applicationData.candidateName || "").toUpperCase()}</span>
-        </div>
-        <div class="detail-item">
-          <strong>Application No.:</strong> <span>${applicationData.applicationNumber || "N/A"}</span>
-        </div>
-        <div class="detail-item">
-          <strong>Father's Name:</strong> <span>${(applicationData.fatherName || "").toUpperCase()}</span>
-        </div>
-        <div class="detail-item">
-          <strong>Mother's Name:</strong> <span>${(applicationData.motherName || "").toUpperCase()}</span>
-        </div>
-        <div class="detail-item">
-          <strong>Date of Birth:</strong> <span>${formatDate(applicationData.dob)}</span>
-        </div>
-        <div class="detail-item">
-          <strong>Gender:</strong> <span>${formatGender(applicationData.gender)}</span>
-        </div>
-        <div class="detail-item">
-          <strong>Nationality:</strong> <span>${formatNationality(applicationData.nationality)}</span>
-        </div>
-        <div class="detail-item">
-          <strong>Category:</strong> <span>${formatCategory(applicationData.category)}</span>
-        </div>
-        <div class="detail-item">
-          <strong>Aadhar Number:</strong> <span>${applicationData.aadhar || ""}</span>
-        </div>
-        <div class="detail-item">
-          <strong>PAN Number:</strong> <span>${(applicationData.pan || "").toUpperCase()}</span>
-        </div>
-        <div class="detail-item">
-          <strong>Mobile Number:</strong> <span>${applicationData.mobile || ""}</span>
-        </div>
-        <div class="detail-item">
-          <strong>Email ID:</strong> <span>${applicationData.email || ""}</span>
-        </div>
-        <div class="detail-item">
-          <strong>Permanent Address:</strong> <span>${(applicationData.address || "").toUpperCase()}</span>
-        </div>
-        <div class="detail-item">
-          <strong>State:</strong> <span>${applicationData.state || ""}</span>
-        </div>
-        <div class="detail-item">
-          <strong>District:</strong> <span>${applicationData.district || ""}</span>
-        </div>
-        ${applicationData.block ? `
-        <div class="detail-item">
-          <strong>Block:</strong> <span>${applicationData.block}</span>
-        </div>
-        ` : ''}
-        ${applicationData.panchayat ? `
-        <div class="detail-item">
-          <strong>Panchayat:</strong> <span>${applicationData.panchayat}</span>
-        </div>
-        ` : ''}
-        <div class="detail-item">
-          <strong>Pin Code:</strong> <span>${applicationData.pincode || ""}</span>
-        </div>
+      <div class="detail-row">
+        <div class="detail-label">Email ID:</div>
+        <div class="detail-value">${applicationData.email || "N/A"}</div>
       </div>
-
-      <!-- Educational Details -->
-      <div class="details-section" style="position: relative; margin-right: ${signatureSrc ? '220px' : '0'}; padding-bottom: ${signatureSrc ? '100px' : '15px'}; min-height: ${signatureSrc ? '200px' : 'auto'};">
-        <div class="section-title">Educational Details</div>
-        <div style="font-size: 15px; line-height: 2.2; margin-right: ${signatureSrc ? '220px' : '0'}; padding-bottom: ${signatureSrc ? '10px' : '0'};">
-          <div class="detail-item">
-            <strong>Higher Education:</strong> <span>${applicationData.higherEducation || ""}</span>
-          </div>
-          <div class="detail-item">
-            <strong>Board/University:</strong> <span>${applicationData.board || ""}</span>
-          </div>
-          <div class="detail-item">
-            <strong>Total Marks:</strong> <span>${applicationData.marks || ""}</span>
-          </div>
-          <div class="detail-item">
-            <strong>Marks in Percentage:</strong> <span>${applicationData.markPercentage || ""}</span>
-          </div>
-        </div>
-        ${signatureSrc ? `
-        <div class="signature-container" style="position: absolute; bottom: 20px; right: 20px; text-align: right; z-index: 10; pointer-events: none;">
-          <div class="signature-box" style="display: inline-block; border: 1px solid #e0e0e0; background: #f0f8ff; padding: 10px 16px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-            <img src="${signatureSrc}" alt="Signature" style="width: 180px; height: 70px; object-fit: contain; display: block; margin-bottom: 6px; background: #fff;" />
-            <div class="signature-label" style="font-size: 13px; font-weight: 600; color: #000; text-align: center;">Candidate's Signature</div>
-          </div>
-        </div>
-        ` : ''}
+      <div class="detail-row">
+        <div class="detail-label">Mobile Number:</div>
+        <div class="detail-value">${applicationData.mobile || "N/A"}</div>
       </div>
-
-      <!-- Declarations -->
-      <div class="declarations-section">
-        <div class="declaration-item">
-          <input type="checkbox" checked readonly style="margin-right: 8px;" /> I have read and agree to the Terms and Conditions.
-        </div>
-        <div class="declaration-item">
-          <input type="checkbox" checked readonly style="margin-right: 8px;" /> I declare that all the information given in this application form is correct to the best of my knowledge and belief. If any information provided is found false, my candidature may be rejected at any point of time. I have read and understood the conditions which I would abide by. Thus, I have given the above declaration in my full consciousness without any pressure.
-        </div>
+      <div class="detail-row">
+        <div class="detail-label">Date of Birth:</div>
+        <div class="detail-value">${formatDate(applicationData.dob)}</div>
       </div>
-
-      <!-- Payment Status Table -->
-      <div style="margin-top: 12px; padding: 0 20px 15px;">
-        <table class="payment-table">
-          <thead>
-            <tr>
-              <th>Application No.</th>
-              <th>Email</th>
-              <th>Payment Status</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>${applicationData.applicationNumber || "N/A"}</td>
-              <td>${applicationData.email || ""}</td>
-              <td class="status-complete">Complete</td>
-              <td>${new Date().toLocaleString("en-US", {
-                month: "numeric",
-                day: "numeric",
-                year: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: true,
-              })}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="detail-row">
+        <div class="detail-label">Gender:</div>
+        <div class="detail-value">${formatGender(applicationData.gender)}</div>
       </div>
-
-      <!-- Footer -->
-      <div class="footer-section">
-        <div class="footer-url">https://www.jssabhiyan-nac.in/fill_application_print?oid=${applicationData._id || applicationData.id || ""}</div>
-        <div class="footer-page">1/1</div>
+      <div class="detail-row">
+        <div class="detail-label">Category:</div>
+        <div class="detail-value">${formatCategory(applicationData.category)}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Higher Education:</div>
+        <div class="detail-value">${applicationData.higherEducation || "N/A"}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Payment Status:</div>
+        <div class="detail-value" style="color: #0aca00; font-weight: 700;">✅ Complete</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Application Date:</div>
+        <div class="detail-value">${new Date().toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" })}</div>
       </div>
     </div>
 
     <!-- PDF Download Notice -->
-    <div style="text-align: center; margin: 30px 0; padding: 20px; background: #f0f8ff; border-radius: 8px; border: 2px solid #0aca00;">
-      <div style="font-size: 18px; font-weight: 700; color: #0aca00; margin-bottom: 12px;">
-        📥 PDF Download Available
-      </div>
-      <p style="font-size: 14px; color: #333; line-height: 1.6; margin-bottom: 8px;">
-        Your Application Slip PDF is attached to this email.
+    <div class="pdf-notice">
+      <h3>📥 Application Slip PDF</h3>
+      <p style="font-size: 16px; font-weight: 600; color: #1976d2; margin-bottom: 10px;">
+        Your complete Application Slip PDF is attached to this email.
       </p>
-      <p style="font-size: 13px; color: #666;">
-        Please check the email attachments to download the PDF file.
+      <p style="font-size: 14px; color: #333;">
+        The PDF contains all your application details including personal information, educational qualifications, photo, signature, and payment status.
       </p>
-      <p style="font-size: 12px; color: #999; margin-top: 12px;">
-        File Name: <strong>Application_Slip_${applicationData.applicationNumber || 'JSSA'}.pdf</strong>
+      <p style="font-size: 13px; color: #666; margin-top: 12px;">
+        <strong>File Name:</strong> Application_Slip_${applicationData.applicationNumber || 'JSSA'}.pdf
+      </p>
+      <p style="font-size: 12px; color: #999; margin-top: 10px;">
+        Please check the email attachments section to download the PDF file.
       </p>
     </div>
 
@@ -1260,51 +1184,29 @@ Password: ${loginCredentials.password}
 
 Please save these credentials for future login.
 
-APPLICATION SLIP:
------------------
-Application Number: ${applicationData.applicationNumber || "N/A"}
-Post Applied for: ${jobPosting?.postTitle?.en || jobPosting?.post?.en || ""}
-Advt. No.: ${jobPosting?.advtNo || ""}
-
-PERSONAL DETAILS:
------------------
+APPLICATION DETAILS:
+--------------------
 Name: ${(applicationData.candidateName || "").toUpperCase()}
-Father's Name: ${(applicationData.fatherName || "").toUpperCase()}
-Mother's Name: ${(applicationData.motherName || "").toUpperCase()}
+Application Number: ${applicationData.applicationNumber || "N/A"}
+Post Applied For: ${jobPosting?.postTitle?.en || jobPosting?.post?.en || "N/A"}
+Advertisement No.: ${jobPosting?.advtNo || "N/A"}
+Email ID: ${applicationData.email || "N/A"}
+Mobile Number: ${applicationData.mobile || "N/A"}
 Date of Birth: ${formatDate(applicationData.dob)}
 Gender: ${formatGender(applicationData.gender)}
-Nationality: ${formatNationality(applicationData.nationality)}
 Category: ${formatCategory(applicationData.category)}
-Aadhar Number: ${applicationData.aadhar || ""}
-PAN Number: ${(applicationData.pan || "").toUpperCase()}
-Mobile Number: ${applicationData.mobile || ""}
-Email ID: ${applicationData.email || ""}
-Permanent Address: ${(applicationData.address || "").toUpperCase()}
-State: ${applicationData.state || ""}
-District: ${applicationData.district || ""}
-${applicationData.block ? `Block: ${applicationData.block}` : ''}
-${applicationData.panchayat ? `Panchayat: ${applicationData.panchayat}` : ''}
-Pin Code: ${applicationData.pincode || ""}
+Higher Education: ${applicationData.higherEducation || "N/A"}
+Payment Status: Complete
 
-EDUCATIONAL DETAILS:
---------------------
-Higher Education: ${applicationData.higherEducation || ""}
-Board/University: ${applicationData.board || ""}
-Total Marks: ${applicationData.marks || ""}
-Marks in Percentage: ${applicationData.markPercentage || ""}
+PDF ATTACHMENT:
+---------------
+Your complete Application Slip PDF is attached to this email.
+The PDF contains all your application details including personal information, 
+educational qualifications, photo, signature, and payment status.
 
-PAYMENT STATUS:
---------------
-Status: Complete
-Date: ${new Date().toLocaleString("en-US", {
-  month: "numeric",
-  day: "numeric",
-  year: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-  second: "2-digit",
-  hour12: true,
-})}
+File Name: Application_Slip_${applicationData.applicationNumber || 'JSSA'}.pdf
+
+Please check the email attachments section to download the PDF file.
 
 Thank you for applying!
 आवेदन करने के लिए धन्यवाद!
