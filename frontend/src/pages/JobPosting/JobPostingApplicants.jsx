@@ -49,6 +49,7 @@ const JobPostingApplicants = () => {
             district: app.district,
             higherEducation: app.higherEducation,
             status: app.status,
+            paymentStatus: app.paymentStatus,
             createdAt: app.createdAt,
           }));
           setApplicants(transformed);
@@ -72,12 +73,20 @@ const JobPostingApplicants = () => {
       .includes(searchQuery.toLowerCase())
   );
 
-  const statusColors = {
-    Active: "bg-green-50 text-green-700 border-green-200",
-    Inactive: "bg-gray-50 text-gray-700 border-gray-200",
-    Pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
-    Approved: "bg-blue-50 text-blue-700 border-blue-200",
-    Rejected: "bg-red-50 text-red-700 border-red-200",
+  const paymentStatusColors = {
+    paid: "bg-green-50 text-green-700 border-green-200",
+    complete: "bg-green-50 text-green-700 border-green-200",
+    pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  };
+
+  const getPaymentStatusDisplay = (paymentStatus) => {
+    if (paymentStatus === "paid" || paymentStatus === "complete") {
+      return "Paid";
+    }
+    if (paymentStatus === "pending") {
+      return "Pending";
+    }
+    return "Pending"; // Default to Pending if not set
   };
 
   // ── Skeleton ──────────────────────────────────────────────────────────────
@@ -271,7 +280,7 @@ const JobPostingApplicants = () => {
                       Education
                     </th>
                     <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
-                      Status
+                      Payment Status
                     </th>
                     <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
                       Applied On
@@ -322,8 +331,8 @@ const JobPostingApplicants = () => {
                         {app.higherEducation}
                       </td>
                       <td className="px-4 py-4 text-center">
-                        <span className={`inline-block px-2 py-1 rounded text-xs font-semibold border ${statusColors[app.status] || statusColors.Inactive}`}>
-                          {app.status || "Pending"}
+                        <span className={`inline-block px-2 py-1 rounded text-xs font-semibold border ${paymentStatusColors[app.paymentStatus] || paymentStatusColors.pending}`}>
+                          {getPaymentStatusDisplay(app.paymentStatus)}
                         </span>
                       </td>
                       <td className="px-4 py-4 text-center text-gray-700 text-xs">
@@ -388,8 +397,8 @@ const JobPostingApplicants = () => {
                     <div className="text-sm text-gray-600">{app.fatherName}</div>
                   </div>
                   <div>
-                    <span className={`inline-block px-2 py-1 rounded text-xs font-semibold border ${statusColors[app.status] || statusColors.Inactive}`}>
-                      {app.status || "Pending"}
+                    <span className={`inline-block px-2 py-1 rounded text-xs font-semibold border ${paymentStatusColors[app.paymentStatus] || paymentStatusColors.pending}`}>
+                      {getPaymentStatusDisplay(app.paymentStatus)}
                     </span>
                   </div>
                 </div>

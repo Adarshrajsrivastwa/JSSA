@@ -9783,14 +9783,16 @@ export default function JSSAbhiyan() {
               marginTop: -8,
             }}
           >
-            <a
-              href="https://frontend.jssabhiyan.com/"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
               className="login-blink"
               onClick={(e) => {
                 e.preventDefault();
-                window.open("https://frontend.jssabhiyan.com/", "_blank", "noopener,noreferrer");
+                e.stopPropagation();
+                const newWindow = window.open("https://frontend.jssabhiyan.com/", "_blank", "noopener,noreferrer");
+                if (!newWindow) {
+                  window.location.href = "https://frontend.jssabhiyan.com/";
+                }
               }}
               style={{
                 background: "#e53e3e",
@@ -9800,15 +9802,16 @@ export default function JSSAbhiyan() {
                 padding: "12px 50px",
                 borderRadius: 4,
                 cursor: "pointer",
-                textDecoration: "none",
+                border: "none",
                 display: "inline-block",
                 letterSpacing: "0.04em",
                 lineHeight: 1.3,
                 pointerEvents: "auto",
+                userSelect: "none",
               }}
             >
               LOGIN
-            </a>
+            </button>
             <a
               href={brochurePDF}
               target="_blank"
@@ -9916,13 +9919,16 @@ export default function JSSAbhiyan() {
             />
           </button>
           <div style={{ display: "flex", gap: 6, flexShrink: 0, alignItems: "center" }}>
-            <a
-              href="https://frontend.jssabhiyan.com/"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              className="login-blink"
               onClick={(e) => {
                 e.preventDefault();
-                window.open("https://frontend.jssabhiyan.com/", "_blank", "noopener,noreferrer");
+                e.stopPropagation();
+                const newWindow = window.open("https://frontend.jssabhiyan.com/", "_blank", "noopener,noreferrer");
+                if (!newWindow) {
+                  window.location.href = "https://frontend.jssabhiyan.com/";
+                }
               }}
               style={{
                 background: "#e53e3e",
@@ -9931,16 +9937,18 @@ export default function JSSAbhiyan() {
                 fontSize: 11,
                 padding: "6px 12px",
                 borderRadius: 4,
-                textDecoration: "none",
+                border: "none",
+                cursor: "pointer",
                 display: "inline-block",
                 whiteSpace: "nowrap",
                 lineHeight: 1.3,
                 letterSpacing: "0.02em",
                 pointerEvents: "auto",
+                userSelect: "none",
               }}
             >
               LOGIN
-            </a>
+            </button>
             <a
               href={brochurePDF}
               target="_blank"

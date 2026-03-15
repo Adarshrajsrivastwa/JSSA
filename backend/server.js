@@ -93,6 +93,16 @@ app.use(cors({
   exposedHeaders: ['Authorization'],
   maxAge: 86400 // 24 hours
 }));
+
+// Set Permissions-Policy header to prevent accelerometer permission violations
+// This suppresses warnings from third-party scripts trying to access accelerometer
+app.use((req, res, next) => {
+  res.setHeader(
+    'Permissions-Policy',
+    'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()'
+  );
+  next();
+});
 // Increase body parser limit to handle base64 images (10MB)
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));

@@ -25,25 +25,41 @@ import Logout from "./pages/Logout";
 import LandingDashboard from "./pages/Landing/LandingDashboard";
 import JobDetail from "./pages/Landing/JobDetail";
 
-import { AuthProvider } from "./auth/AuthProvider";
+import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { RequireAuth, RequireRole } from "./auth/RequireAuth";
+import { roleHomePath } from "./auth/auth";
+
+// Home redirect component - redirects based on auth status
+function HomeRedirect() {
+  const { isAuthenticated, role } = useAuth();
+  
+  if (isAuthenticated) {
+    return <Navigate to={roleHomePath(role)} replace />;
+  }
+  
+  return <Navigate to="/login" replace />;
+}
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
+          {/* Root path - redirect to login or dashboard based on auth */}
+          <Route path="/" element={<HomeRedirect />} />
+          
           {/* Landing/Public pages - accessible without authentication */}
-          <Route path="/" element={<LandingDashboard />} />
-          <Route path="/about" element={<LandingDashboard />} />
-          <Route path="/membership" element={<LandingDashboard />} />
-          <Route path="/services" element={<LandingDashboard />} />
-          <Route path="/jobs" element={<LandingDashboard />} />
-          <Route path="/notifications" element={<LandingDashboard />} />
-          <Route path="/gallery" element={<LandingDashboard />} />
-          <Route path="/verification" element={<LandingDashboard />} />
-          <Route path="/contacts" element={<LandingDashboard />} />
-          <Route path="/job-postings/view/:id" element={<JobDetail />} />
+          <Route path="/landing" element={<LandingDashboard />} />
+          {/* Public landing pages - moved to /landing prefix to avoid conflicts */}
+          <Route path="/landing/about" element={<LandingDashboard />} />
+          <Route path="/landing/membership" element={<LandingDashboard />} />
+          <Route path="/landing/services" element={<LandingDashboard />} />
+          <Route path="/landing/jobs" element={<LandingDashboard />} />
+          <Route path="/landing/notifications" element={<LandingDashboard />} />
+          <Route path="/landing/gallery" element={<LandingDashboard />} />
+          <Route path="/landing/verification" element={<LandingDashboard />} />
+          <Route path="/landing/contacts" element={<LandingDashboard />} />
+          <Route path="/landing/job-postings/view/:id" element={<JobDetail />} />
 
           {/* Login page - always accessible */}
           <Route path="/login" element={<Login />} />

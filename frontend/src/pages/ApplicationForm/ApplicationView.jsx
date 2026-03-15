@@ -18,7 +18,7 @@ import {
   CreditCard,
   Download,
 } from "lucide-react";
-import { applicationsAPI } from "../../utils/api";
+import { applicationsAPI, paymentsAPI } from "../../utils/api";
 import AddApplicationModal from "../../components/ApplicationForm/Form";
 
 const ApplicationView = () => {
@@ -29,6 +29,7 @@ const ApplicationView = () => {
   const [error, setError] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   useEffect(() => {
     const fetchApplication = async () => {
@@ -65,6 +66,7 @@ const ApplicationView = () => {
             photo: app.photo,
             signature: app.signature,
             status: app.status,
+            paymentStatus: app.paymentStatus,
             createdAt: app.createdAt,
             updatedAt: app.updatedAt,
             createdBy: app.createdBy,
@@ -129,6 +131,7 @@ const ApplicationView = () => {
           photo: app.photo,
           signature: app.signature,
           status: app.status,
+          paymentStatus: app.paymentStatus,
           createdAt: app.createdAt,
           updatedAt: app.updatedAt,
           createdBy: app.createdBy,
@@ -140,6 +143,148 @@ const ApplicationView = () => {
     } catch (err) {
       alert(err.message || "Failed to update application");
       console.error("Update error:", err);
+    }
+  };
+
+  // ── Payment Handler ──────────────────────────────────────────────────────────
+  const handlePayNow = async () => {
+    if (!application || !application.jobPostingId || !application.gender || !application.category) {
+      alert("Application data is incomplete. Cannot proceed with payment.");
+      return;
+    }
+
+    try {
+      setProcessingPayment(true);
+      setError(null);
+
+      // Load Razorpay script if not already loaded
+      if (!window.Razorpay) {
+        await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+        
+        // Wait for Razorpay to be available
+        let retries = 0;
+        while (!window.Razorpay && retries < 10) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          retries++;
+        }
+        
+        if (!window.Razorpay) {
+          throw new Error("Razorpay payment gateway is not loaded. Please refresh and try again.");
+        }
+      }
+
+      // Create Razorpay order
+      const orderResponse = await paymentsAPI.createOrder(
+        application.jobPostingId,
+        application.gender,
+        application.category
+      );
+
+      if (!orderResponse.success || !orderResponse.data) {
+        throw new Error(orderResponse.error || "Failed to create payment order");
+      }
+
+      const { orderId, amount, amountInRupees, keyId } = orderResponse.data;
+
+      // Initialize Razorpay checkout
+      const options = {
+        key: keyId,
+        amount: amount,
+        currency: "INR",
+        name: "JSSA Application Fee",
+        description: `Application Fee - ₹${amountInRupees}`,
+        order_id: orderId,
+        handler: async function (response) {
+          try {
+            // Verify payment
+            const verifyResponse = await paymentsAPI.verifyPayment(
+              response.razorpay_order_id,
+              response.razorpay_payment_id,
+              response.razorpay_signature,
+              application.id
+            );
+
+            if (verifyResponse.success) {
+              alert("Payment successful! Your application payment has been completed.");
+              
+              // Refresh application data
+              const refreshResponse = await applicationsAPI.getById(id);
+              if (refreshResponse.success && refreshResponse.data) {
+                const app = refreshResponse.data.application;
+                setApplication({
+                  id: app._id,
+                  candidateName: app.candidateName,
+                  fatherName: app.fatherName,
+                  motherName: app.motherName,
+                  dob: app.dob,
+                  gender: app.gender,
+                  nationality: app.nationality,
+                  category: app.category,
+                  aadhar: app.aadhar,
+                  pan: app.pan,
+                  mobile: app.mobile,
+                  email: app.email,
+                  address: app.address,
+                  state: app.state,
+                  district: app.district,
+                  block: app.block,
+                  panchayat: app.panchayat,
+                  pincode: app.pincode,
+                  higherEducation: app.higherEducation,
+                  board: app.board,
+                  marks: app.marks,
+                  markPercentage: app.markPercentage,
+                  applicationNumber: app.applicationNumber,
+                  photo: app.photo,
+                  signature: app.signature,
+                  status: app.status,
+                  paymentStatus: app.paymentStatus,
+                  createdAt: app.createdAt,
+                  updatedAt: app.updatedAt,
+                  createdBy: app.createdBy,
+                  jobPostingId: app.jobPostingId,
+                });
+              }
+            } else {
+              alert("Payment verification failed. Please contact support.");
+              setError("Payment verification failed");
+            }
+          } catch (err) {
+            console.error("Payment verification error:", err);
+            alert("Payment verification failed. Please contact support.");
+            setError(err.message || "Payment verification failed");
+          } finally {
+            setProcessingPayment(false);
+          }
+        },
+        prefill: {
+          name: application.candidateName || "",
+          email: application.email || "",
+          contact: application.mobile || "",
+        },
+        theme: {
+          color: "#3AB000",
+        },
+        modal: {
+          ondismiss: function () {
+            setProcessingPayment(false);
+            setError("Payment cancelled");
+          },
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.on("payment.failed", (response) => {
+        alert(`Payment failed: ${response.error.description || "Please try again."}`);
+        setProcessingPayment(false);
+        setError("Payment failed");
+      });
+      razorpay.open();
+    } catch (err) {
+      console.error("Payment error:", err);
+      alert(err.message || "Failed to initiate payment");
+      setError(err.message || "Failed to initiate payment");
+      setProcessingPayment(false);
     }
   };
 
@@ -610,6 +755,30 @@ const ApplicationView = () => {
     Rejected: "bg-red-50 text-red-700 border-red-200",
   };
 
+  // Payment status colors and display
+  const getPaymentStatusDisplay = (paymentStatus) => {
+    if (paymentStatus === "paid" || paymentStatus === "complete") {
+      return "Paid";
+    }
+    if (paymentStatus === "pending") {
+      return "Pending";
+    }
+    return "Pending"; // Default to Pending if not set
+  };
+
+  const getPaymentStatusColors = (paymentStatus) => {
+    if (paymentStatus === "paid" || paymentStatus === "complete") {
+      return "bg-green-50 text-green-700 border-green-200";
+    }
+    if (paymentStatus === "pending") {
+      return "bg-yellow-50 text-yellow-700 border-yellow-200";
+    }
+    return "bg-yellow-50 text-yellow-700 border-yellow-200"; // Default to pending colors
+  };
+
+  const paymentStatus = application.paymentStatus || "pending";
+  const isPaymentPaid = paymentStatus === "paid" || paymentStatus === "complete";
+
   return (
     <DashboardLayout activePath="/application-form">
       <div className="ml-6 space-y-4 pb-8">
@@ -630,14 +799,29 @@ const ApplicationView = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={downloadApplicationPDF}
-              disabled={downloadingPDF}
-              className="flex items-center gap-1.5 bg-white border border-[#3AB000] text-[#3AB000] hover:bg-[#3AB000] hover:text-white px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Download className="w-3.5 h-3.5" />
-              {downloadingPDF ? "Generating..." : "Download PDF"}
-            </button>
+            {/* Show Pay Now button if payment is not done, otherwise show Download PDF */}
+            {(application.paymentStatus === "pending" || 
+              !application.paymentStatus || 
+              (application.paymentStatus !== "paid" && application.paymentStatus !== "complete")) && 
+              application.jobPostingId ? (
+              <button
+                onClick={handlePayNow}
+                disabled={processingPayment}
+                className="flex items-center gap-1.5 bg-[#3AB000] text-white hover:bg-[#2d8a00] px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <CreditCard className="w-3.5 h-3.5" />
+                {processingPayment ? "Processing..." : "Pay Now"}
+              </button>
+            ) : (
+              <button
+                onClick={downloadApplicationPDF}
+                disabled={downloadingPDF}
+                className="flex items-center gap-1.5 bg-white border border-[#3AB000] text-[#3AB000] hover:bg-[#3AB000] hover:text-white px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Download className="w-3.5 h-3.5" />
+                {downloadingPDF ? "Generating..." : "Download PDF"}
+              </button>
+            )}
             <button
               onClick={() => setIsEditModalOpen(true)}
               className="flex items-center gap-1.5 bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded text-sm font-medium transition-colors"
@@ -683,21 +867,21 @@ const ApplicationView = () => {
                     {application.candidateName}
                   </h1>
                   <p className="text-green-100 text-sm">
-                    Application ID: {application.id}
+                    Application No.: {application.applicationNumber || "—"}
                   </p>
                 </div>
               </div>
               <span
                 className={`self-start flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${
-                  statusColors[application.status] || statusColors.Inactive
+                  getPaymentStatusColors(paymentStatus)
                 }`}
               >
-                {isActive ? (
+                {isPaymentPaid ? (
                   <CheckCircle2 className="w-3.5 h-3.5" />
                 ) : (
                   <XCircle className="w-3.5 h-3.5" />
                 )}
-                {application.status}
+                {getPaymentStatusDisplay(paymentStatus)}
               </span>
             </div>
           </div>
@@ -769,8 +953,16 @@ const ApplicationView = () => {
               <table className="w-full text-sm mt-2">
                 <tbody>
                   {[
-                    ["Application ID", application.id],
+                    ["Application Number", application.applicationNumber || "—"],
                     ["Status", application.status],
+                    [
+                      "Payment Status",
+                      application.paymentStatus === "paid" || application.paymentStatus === "complete"
+                        ? "Paid"
+                        : application.paymentStatus === "pending"
+                        ? "Pending"
+                        : application.paymentStatus || "Pending",
+                    ],
                     [
                       "Created At",
                       application.createdAt
@@ -797,6 +989,12 @@ const ApplicationView = () => {
                             ? isActive
                               ? "text-[#3AB000]"
                               : "text-gray-500"
+                            : key === "Payment Status"
+                            ? val === "Paid"
+                              ? "text-green-600"
+                              : val === "Pending"
+                              ? "text-orange-600"
+                              : "text-gray-800"
                             : "text-gray-800"
                         }`}
                       >
