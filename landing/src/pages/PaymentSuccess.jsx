@@ -9,31 +9,121 @@ const GREEN = "#0aca00";
 const responsiveStyles = `
   @media (max-width: 768px) {
     .payment-success-container {
-      padding: 5px !important;
+      padding: 10px !important;
     }
+    
+    .payment-success-banner {
+      padding: 16px !important;
+      margin-bottom: 16px !important;
+    }
+    
+    .payment-success-banner h1 {
+      font-size: 24px !important;
+      margin-bottom: 8px !important;
+    }
+    
+    .payment-success-banner h2 {
+      font-size: 16px !important;
+      margin-bottom: 8px !important;
+    }
+    
+    .payment-success-banner p {
+      font-size: 14px !important;
+    }
+    
+    .payment-success-actions {
+      flex-direction: column !important;
+      gap: 12px !important;
+    }
+    
+    .payment-success-actions button {
+      width: 100% !important;
+      padding: 14px 20px !important;
+      font-size: 15px !important;
+    }
+    
     #application-slip-pdf {
       font-size: 11px !important;
+      padding: 10px !important;
     }
+    
     #application-slip-pdf h3 {
       font-size: 13px !important;
     }
+    
     #application-slip-pdf table {
       font-size: 10px !important;
     }
+    
     #application-slip-pdf th,
     #application-slip-pdf td {
-      padding: 8px !important;
+      padding: 8px 6px !important;
     }
-  }
-  @media (max-width: 480px) {
-    #application-slip-pdf {
+    
+    #application-slip-pdf .header-section {
+      flex-direction: column !important;
+      gap: 10px !important;
+      padding: 12px !important;
+    }
+    
+    #application-slip-pdf .logo-circle {
+      width: 60px !important;
+      height: 60px !important;
+    }
+    
+    #application-slip-pdf .header-title {
+      font-size: 18px !important;
+    }
+    
+    #application-slip-pdf .header-subtitle {
       font-size: 10px !important;
     }
+  }
+  
+  @media (max-width: 480px) {
+    .payment-success-container {
+      padding: 8px !important;
+    }
+    
+    .payment-success-banner {
+      padding: 12px !important;
+    }
+    
+    .payment-success-banner h1 {
+      font-size: 20px !important;
+    }
+    
+    .payment-success-banner h2 {
+      font-size: 14px !important;
+    }
+    
+    .payment-success-banner p {
+      font-size: 12px !important;
+    }
+    
+    #application-slip-pdf {
+      font-size: 10px !important;
+      padding: 8px !important;
+    }
+    
     #application-slip-pdf .personal-details-grid {
       grid-template-columns: 1fr !important;
     }
+    
     #application-slip-pdf .educational-details-grid {
       grid-template-columns: 1fr !important;
+    }
+    
+    #application-slip-pdf .photo-container {
+      position: static !important;
+      margin: 10px auto !important;
+      width: 100% !important;
+    }
+    
+    #application-slip-pdf .signature-container {
+      position: static !important;
+      margin: 10px auto !important;
+      text-align: center !important;
     }
   }
 `;
@@ -371,6 +461,7 @@ function PaymentSuccess() {
     >
       {/* Payment Success Banner */}
       <div
+        className="payment-success-banner"
         style={{
           maxWidth: "900px",
           width: "100%",
@@ -1008,6 +1099,7 @@ function PaymentSuccess() {
           <div>1/1</div>
         </div>
         <div
+          className="payment-success-actions"
           style={{
             display: "flex",
             gap: 12,

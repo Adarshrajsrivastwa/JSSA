@@ -173,50 +173,63 @@ const jobsCSS = `
 
     .tb-topbar { flex-wrap: nowrap !important; padding: 4px 6px !important; gap: 4px !important; justify-content: space-between !important; height: auto !important; min-height: 36px !important; position: relative !important; width: 100% !important; box-sizing: border-box !important; }
     .tb-left   { display: flex !important; gap: 4px !important; flex-shrink: 0 !important; margin-left: 0 !important; align-items: center !important; }
-    .tb-phone  { display: flex !important; font-size: 7px !important; gap: 2px !important; white-space: nowrap !important; font-weight: 600 !important; color: #000000 !important; align-items: center !important; }
-    .tb-phone svg { width: 8px !important; height: 8px !important; }
-    .tb-email  { display: flex !important; font-size: 7px !important; gap: 2px !important; white-space: nowrap !important; font-weight: 600 !important; color: #000000 !important; align-items: center !important; }
-    .tb-email svg { width: 8px !important; height: 8px !important; }
+    .tb-phone  { display: flex !important; font-size: 9px !important; gap: 2px !important; white-space: nowrap !important; font-weight: 600 !important; color: #000000 !important; align-items: center !important; }
+    .tb-phone svg { width: 10px !important; height: 10px !important; }
+    .tb-email  { display: flex !important; font-size: 9px !important; gap: 2px !important; white-space: nowrap !important; font-weight: 600 !important; color: #000000 !important; align-items: center !important; }
+    .tb-email svg { width: 10px !important; height: 10px !important; }
     .tb-search { position: absolute !important; left: 55% !important; transform: translateX(-50%) !important; display: flex !important; align-items: center !important; }
-    .tb-search input { width: 80px !important; font-size: 7px !important; height: 22px !important; padding: 2px 18px 2px 5px !important; border: 1px solid #000 !important; border-radius: 3px !important; }
-    .tb-search svg { width: 10px !important; height: 10px !important; right: 4px !important; position: absolute !important; pointer-events: none !important; }
-    .tb-dl-btn { font-size: 6px !important; padding: 3px 5px !important; white-space: nowrap !important; flex-shrink: 0 !important; height: 22px !important; font-weight: 700 !important; border-radius: 3px !important; margin-right: 0 !important; }
+    .tb-search input { width: 100px !important; font-size: 9px !important; height: 24px !important; padding: 2px 20px 2px 6px !important; border: 1px solid #000 !important; border-radius: 3px !important; }
+    .tb-search svg { width: 12px !important; height: 12px !important; right: 4px !important; position: absolute !important; pointer-events: none !important; }
+    .tb-dl-btn { font-size: 8px !important; padding: 4px 6px !important; white-space: nowrap !important; flex-shrink: 0 !important; height: 24px !important; font-weight: 700 !important; border-radius: 3px !important; margin-right: 0 !important; }
 
     .nav-list { flex-wrap: nowrap !important; }
     .nav-item  { flex: 1 1 0 !important; }
-    .nav-btn   { font-size: 5.5px !important; padding: 4px 1px !important; }
+    .nav-btn   { font-size: 8px !important; padding: 6px 2px !important; }
 
-    .jobs-detail-title-row { font-size: 7px; padding: 6px; line-height: 1.4; }
-    .jobs-detail-download-row { grid-template-columns: 1fr 1fr !important; }
-    .jobs-detail-download-cell { padding: 6px 4px; }
-    .jobs-detail-download-cell .advt-label { font-size: 7px; margin-bottom: 2px; }
-    .jobs-detail-download-cell .advt-date  { font-size: 6px; margin-bottom: 6px; }
-    .jobs-detail-download-cell .dl-link    { font-size: 6px; gap: 2px; }
-    .jobs-detail-download-cell .new-badge  { font-size: 6px; padding: 1px 3px; }
+    .jobs-detail-title-row { font-size: 11px !important; padding: 10px 8px !important; line-height: 1.5 !important; }
+    .jobs-detail-download-row { grid-template-columns: 1fr !important; }
+    .jobs-detail-download-cell { padding: 12px 8px !important; border-right: none !important; border-bottom: 1px solid ${GREEN}55 !important; }
+    .jobs-detail-download-cell:last-child { border-bottom: none !important; }
+    .jobs-detail-download-cell .advt-label { font-size: 13px !important; margin-bottom: 4px !important; }
+    .jobs-detail-download-cell .advt-date  { font-size: 12px !important; margin-bottom: 8px !important; }
+    .jobs-detail-download-cell .dl-link    { font-size: 11px !important; gap: 4px !important; }
+    .jobs-detail-download-cell .new-badge  { font-size: 8px !important; padding: 2px 4px !important; }
 
-    .jobs-detail-row { grid-template-columns: 1fr 1fr !important; }
-    .jobs-detail-lang-cell { grid-template-columns: 52px 10px 1fr !important; }
-    .jobs-detail-key   { font-size: 7px !important; padding: 4px 3px 4px 4px !important; line-height: 1.4 !important; }
-    .jobs-detail-colon { font-size: 7px !important; padding: 4px 0 !important; }
-    .jobs-detail-val   { font-size: 7px !important; padding: 4px 3px !important; line-height: 1.4 !important; }
+    .jobs-detail-row { grid-template-columns: 1fr !important; }
+    .jobs-detail-lang-cell { grid-template-columns: 1fr !important; }
+    .jobs-detail-key   { font-size: 12px !important; padding: 10px 8px !important; line-height: 1.5 !important; border-right: none !important; border-bottom: 1px solid #5cb87a !important; }
+    .jobs-detail-colon { display: none !important; }
+    .jobs-detail-val   { font-size: 12px !important; padding: 10px 8px !important; line-height: 1.5 !important; }
 
-    .jobs-grid-2 { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
-    .jobs-grid-3 { grid-template-columns: 1fr 1fr 1fr !important; gap: 5px !important; }
-    .jobs-section-heading { font-size: 11px; margin: 12px 0 8px; }
-    .jobs-submit-btn { font-size: 11px; padding: 8px 18px; }
-    .review-table td { font-size: 11px; padding: 6px 8px; }
+    .jobs-grid-2 { grid-template-columns: 1fr !important; gap: 12px !important; }
+    .jobs-grid-3 { grid-template-columns: 1fr !important; gap: 12px !important; }
+    .jobs-section-heading { font-size: 14px !important; margin: 16px 0 12px !important; }
+    .jobs-submit-btn { font-size: 14px !important; padding: 12px 24px !important; width: 100% !important; }
+    .review-table { font-size: 12px !important; }
+    .review-table td { font-size: 12px !important; padding: 10px 8px !important; display: block !important; width: 100% !important; border-bottom: 1px solid #e0e0e0 !important; }
+    .review-table td:first-child { width: 100% !important; border-bottom: 2px solid #ccc !important; margin-bottom: 4px !important; }
 
-    footer { padding: 10px 6px 0 !important; }
-    .footer-inner   { flex-direction: row !important; gap: 6px !important; padding: 0 !important; }
-    .ft-heading     { font-size: 8px !important; margin-bottom: 6px !important; }
-    .ft-list        { gap: 3px !important; }
-    .ft-link        { font-size: 7px !important; }
-    .ft-logo-wrap   { padding: 0 4px !important; }
-    .ft-logo-img    { width: 60px !important; }
-    .ft-contact     { gap: 3px !important; align-items: flex-end !important; }
-    .ft-contact-item { font-size: 7px !important; }
-    .ft-contact-link { font-size: 7px !important; margin-top: 2px !important; }
-    .ft-copyright   { font-size: 7px !important; padding: 8px 0 !important; margin-top: 10px !important; }
+    footer { padding: 12px 8px 0 !important; }
+    .footer-inner   { flex-direction: column !important; gap: 12px !important; padding: 0 !important; }
+    .ft-heading     { font-size: 12px !important; margin-bottom: 8px !important; }
+    .ft-list        { gap: 6px !important; }
+    .ft-link        { font-size: 11px !important; }
+    .ft-logo-wrap   { padding: 0 8px !important; }
+    .ft-logo-img    { width: 120px !important; }
+    .ft-contact     { gap: 6px !important; align-items: flex-start !important; }
+    .ft-contact-item { font-size: 11px !important; }
+    .ft-contact-link { font-size: 11px !important; margin-top: 4px !important; }
+    .ft-copyright   { font-size: 10px !important; padding: 12px 0 !important; margin-top: 16px !important; }
+  }
+
+  @media (max-width: 480px) {
+    .jobs-detail-title-row { font-size: 10px !important; padding: 8px 6px !important; }
+    .jobs-detail-download-cell .advt-label { font-size: 12px !important; }
+    .jobs-detail-download-cell .advt-date  { font-size: 11px !important; }
+    .jobs-detail-key   { font-size: 11px !important; padding: 8px 6px !important; }
+    .jobs-detail-val   { font-size: 11px !important; padding: 8px 6px !important; }
+    .jobs-section-heading { font-size: 13px !important; }
+    .jobs-submit-btn { font-size: 13px !important; padding: 10px 20px !important; }
   }
 `;
 
@@ -2903,7 +2916,14 @@ export default function JobDetail() {
     <SharedLayout navigate={navigate}>
       {/* ✅ FIX: margin top 24px added so content doesn't touch header */}
       <div
-        style={{ maxWidth: 1200, margin: "24px auto 40px", padding: "0 2%" }}
+        style={{ 
+          maxWidth: 1200, 
+          margin: "24px auto 40px", 
+          padding: "0 2%",
+          width: "100%",
+          boxSizing: "border-box"
+        }}
+        className="job-detail-container"
       >
         {formStep !== "review" && (
           <div
