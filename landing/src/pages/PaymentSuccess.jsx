@@ -481,7 +481,7 @@ function PaymentSuccess() {
             Application No.: {applicationNumber}
           </div>
         </div>
-        <div style={{ padding: "15px 20px", background: "#fff" }}>
+        <div style={{ padding: "15px 20px", background: "#fff", position: "relative" }}>
           <h3
             style={{
               fontSize: 14,
@@ -494,136 +494,132 @@ function PaymentSuccess() {
           >
             Personal Details
           </h3>
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+          {/* Photo in top right */}
+          {photoPreview && (
             <div
-              style={{
-                flex: 1,
-                minWidth: "300px",
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "10px 16px",
-                fontSize: 11,
-                lineHeight: 1.6,
+              style={{ 
+                position: "absolute",
+                top: "15px",
+                right: "20px",
+                width: 100,
+                textAlign: "center",
               }}
             >
-              <div>
-                <strong style={{ color: "#333" }}>Name:</strong>{" "}
-                <span>{finalFormData.candidateName?.toUpperCase() || ""}</span>
-              </div>
-              <div>
-                <strong style={{ color: "#333" }}>Application No.:</strong>{" "}
-                <span>{applicationNumber}</span>
-              </div>
-              <div>
-                <strong style={{ color: "#333" }}>Father's Name:</strong>{" "}
-                <span>{finalFormData.fatherName?.toUpperCase() || ""}</span>
-              </div>
-              <div>
-                <strong style={{ color: "#333" }}>Mother's Name:</strong>{" "}
-                <span>{finalFormData.motherName?.toUpperCase() || ""}</span>
-              </div>
-              <div>
-                <strong style={{ color: "#333" }}>Date of Birth:</strong>{" "}
-                <span>
-                  {finalFormData.dob
-                    ? new Date(finalFormData.dob).toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                      })
-                    : ""}
-                </span>
-              </div>
-              <div>
-                <strong style={{ color: "#333" }}>Gender:</strong>{" "}
-                <span>
-                  {finalFormData.gender?.charAt(0).toUpperCase() +
-                    finalFormData.gender?.slice(1) || ""}
-                </span>
-              </div>
-              <div>
-                <strong style={{ color: "#333" }}>Nationality:</strong>{" "}
-                <span>
-                  {finalFormData.nationality?.charAt(0).toUpperCase() +
-                    finalFormData.nationality?.slice(1) || ""}
-                </span>
-              </div>
-              <div>
-                <strong style={{ color: "#333" }}>Category:</strong>{" "}
-                <span>{finalFormData.category?.toUpperCase() || ""}</span>
-              </div>
-              <div>
-                <strong style={{ color: "#333" }}>Aadhar Number:</strong>{" "}
-                <span>{finalFormData.aadhar || ""}</span>
-              </div>
-              <div>
-                <strong style={{ color: "#333" }}>PAN Number:</strong>{" "}
-                <span>{finalFormData.pan?.toUpperCase() || ""}</span>
-              </div>
-              <div>
-                <strong style={{ color: "#333" }}>Mobile Number:</strong>{" "}
-                <span>{finalFormData.mobile || ""}</span>
-              </div>
-              <div>
-                <strong style={{ color: "#333" }}>Email ID:</strong>{" "}
-                <span>{finalFormData.email || ""}</span>
-              </div>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <strong style={{ color: "#333" }}>Permanent Address:</strong>{" "}
-                <span>{finalFormData.address?.toUpperCase() || ""}</span>
-              </div>
-              <div>
-                <strong style={{ color: "#333" }}>State:</strong>{" "}
-                <span>{finalFormData.state || ""}</span>
-              </div>
-              <div>
-                <strong style={{ color: "#333" }}>District:</strong>{" "}
-                <span>{finalFormData.district || ""}</span>
-              </div>
-              {finalFormData.block && (
-                <div>
-                  <strong style={{ color: "#333" }}>Block:</strong>{" "}
-                  <span>{finalFormData.block}</span>
-                </div>
-              )}
-              {finalFormData.panchayat && (
-                <div>
-                  <strong style={{ color: "#333" }}>Panchayat:</strong>{" "}
-                  <span>{finalFormData.panchayat}</span>
-                </div>
-              )}
-              <div>
-                <strong style={{ color: "#333" }}>Pin Code:</strong>{" "}
-                <span>{finalFormData.pincode || ""}</span>
-              </div>
-            </div>
-            {photoPreview && (
-              <div
-                style={{ 
-                  width: 120, 
-                  flexShrink: 0, 
-                  textAlign: "center",
-                  "@media (max-width: 768px)": {
-                    width: "100%",
-                    maxWidth: "120px",
-                    margin: "0 auto",
-                  },
+              <img
+                src={photoPreview}
+                alt="Applicant Photo"
+                style={{
+                  width: "100%",
+                  height: 120,
+                  objectFit: "cover",
+                  border: "2px solid #000",
+                  borderRadius: 4,
+                  display: "block",
                 }}
-              >
-                <img
-                  src={photoPreview}
-                  alt="Applicant Photo"
-                  style={{
-                    width: "100%",
-                    height: 150,
-                    objectFit: "cover",
-                    border: "2px solid #000",
-                    borderRadius: 4,
-                    display: "block",
-                  }}
-                />
+              />
+            </div>
+          )}
+          {/* Personal details in single row format */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "8px 20px",
+              fontSize: 11,
+              lineHeight: 1.5,
+              marginRight: photoPreview ? "130px" : "0",
+            }}
+          >
+            <div>
+              <strong style={{ color: "#333" }}>Name:</strong>{" "}
+              <span>{finalFormData.candidateName?.toUpperCase() || ""}</span>
+            </div>
+            <div>
+              <strong style={{ color: "#333" }}>Application No.:</strong>{" "}
+              <span>{applicationNumber}</span>
+            </div>
+            <div>
+              <strong style={{ color: "#333" }}>Father's Name:</strong>{" "}
+              <span>{finalFormData.fatherName?.toUpperCase() || ""}</span>
+            </div>
+            <div>
+              <strong style={{ color: "#333" }}>Mother's Name:</strong>{" "}
+              <span>{finalFormData.motherName?.toUpperCase() || ""}</span>
+            </div>
+            <div>
+              <strong style={{ color: "#333" }}>Date of Birth:</strong>{" "}
+              <span>
+                {finalFormData.dob
+                  ? new Date(finalFormData.dob).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })
+                  : ""}
+              </span>
+            </div>
+            <div>
+              <strong style={{ color: "#333" }}>Gender:</strong>{" "}
+              <span>
+                {finalFormData.gender?.charAt(0).toUpperCase() +
+                  finalFormData.gender?.slice(1) || ""}
+              </span>
+            </div>
+            <div>
+              <strong style={{ color: "#333" }}>Nationality:</strong>{" "}
+              <span>
+                {finalFormData.nationality?.charAt(0).toUpperCase() +
+                  finalFormData.nationality?.slice(1) || ""}
+              </span>
+            </div>
+            <div>
+              <strong style={{ color: "#333" }}>Category:</strong>{" "}
+              <span>{finalFormData.category?.toUpperCase() || ""}</span>
+            </div>
+            <div>
+              <strong style={{ color: "#333" }}>Aadhar Number:</strong>{" "}
+              <span>{finalFormData.aadhar || ""}</span>
+            </div>
+            <div>
+              <strong style={{ color: "#333" }}>PAN Number:</strong>{" "}
+              <span>{finalFormData.pan?.toUpperCase() || ""}</span>
+            </div>
+            <div>
+              <strong style={{ color: "#333" }}>Mobile Number:</strong>{" "}
+              <span>{finalFormData.mobile || ""}</span>
+            </div>
+            <div>
+              <strong style={{ color: "#333" }}>Email ID:</strong>{" "}
+              <span>{finalFormData.email || ""}</span>
+            </div>
+            <div style={{ width: "100%" }}>
+              <strong style={{ color: "#333" }}>Permanent Address:</strong>{" "}
+              <span>{finalFormData.address?.toUpperCase() || ""}</span>
+            </div>
+            <div>
+              <strong style={{ color: "#333" }}>State:</strong>{" "}
+              <span>{finalFormData.state || ""}</span>
+            </div>
+            <div>
+              <strong style={{ color: "#333" }}>District:</strong>{" "}
+              <span>{finalFormData.district || ""}</span>
+            </div>
+            {finalFormData.block && (
+              <div>
+                <strong style={{ color: "#333" }}>Block:</strong>{" "}
+                <span>{finalFormData.block}</span>
               </div>
             )}
+            {finalFormData.panchayat && (
+              <div>
+                <strong style={{ color: "#333" }}>Panchayat:</strong>{" "}
+                <span>{finalFormData.panchayat}</span>
+              </div>
+            )}
+            <div>
+              <strong style={{ color: "#333" }}>Pin Code:</strong>{" "}
+              <span>{finalFormData.pincode || ""}</span>
+            </div>
           </div>
         </div>
         <div
@@ -677,6 +673,7 @@ function PaymentSuccess() {
             padding: "15px 20px",
             background: "#fff",
             borderTop: "1px solid #e0e0e0",
+            position: "relative",
           }}
         >
           <div
@@ -684,6 +681,7 @@ function PaymentSuccess() {
               marginBottom: 12,
               fontSize: 11,
               lineHeight: 1.6,
+              marginRight: signaturePreview ? "200px" : "0",
             }}
           >
             <div style={{ marginBottom: 12 }}>
@@ -712,14 +710,22 @@ function PaymentSuccess() {
               </span>
             </div>
           </div>
+          {/* Signature in bottom right */}
           {signaturePreview && (
-            <div style={{ textAlign: "right", marginTop: 12 }}>
+            <div
+              style={{
+                position: "absolute",
+                bottom: "15px",
+                right: "20px",
+                textAlign: "right",
+              }}
+            >
               <div
                 style={{
                   display: "inline-block",
                   border: "1px solid #e0e0e0",
                   background: "#f0f8ff",
-                  padding: "10px 16px",
+                  padding: "8px 14px",
                   borderRadius: 4,
                 }}
               >
@@ -727,16 +733,16 @@ function PaymentSuccess() {
                   src={signaturePreview}
                   alt="Signature"
                   style={{
-                    width: 180,
-                    height: 70,
+                    width: 160,
+                    height: 60,
                     objectFit: "contain",
                     display: "block",
-                    marginBottom: 6,
+                    marginBottom: 4,
                   }}
                 />
                 <div
                   style={{
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: 600,
                     color: "#000",
                     textAlign: "center",
@@ -959,33 +965,38 @@ function PaymentSuccess() {
                   container.style.maxHeight = originalMaxHeight;
                   container.style.height = "";
                   const { jsPDF } = window.jspdf;
-                  const imgData = canvas.toDataURL("image/png", 0.95); // Slightly lower quality for smaller file
+                  const imgData = canvas.toDataURL("image/png", 0.95);
+                  
+                  // A4 size: 210mm x 297mm
                   const pdf = new jsPDF({
                     unit: "mm",
-                    format: "a4",
+                    format: [210, 297], // Explicit A4 dimensions
                     orientation: "portrait",
                   });
-                  const pdfWidth = pdf.internal.pageSize.getWidth();
-                  const pdfHeight = pdf.internal.pageSize.getHeight();
-                  const margin = 5; // Smaller margin for more space
+                  
+                  const pdfWidth = 210; // A4 width in mm
+                  const pdfHeight = 297; // A4 height in mm
+                  const margin = 5;
                   const imgWidth = pdfWidth - 2 * margin;
                   let imgHeight = (canvas.height * imgWidth) / canvas.width;
                   
-                  // Scale down if content is too tall to fit on one page
+                  // Ensure content fits on single A4 page
                   if (imgHeight > pdfHeight - 2 * margin) {
+                    // Scale to fit exactly on one page
                     const scaleFactor = (pdfHeight - 2 * margin) / imgHeight;
-                    imgHeight = (pdfHeight - 2 * margin);
+                    imgHeight = pdfHeight - 2 * margin;
                     const scaledWidth = imgWidth * scaleFactor;
+                    const xOffset = margin + (imgWidth - scaledWidth) / 2;
                     pdf.addImage(
                       imgData,
                       "PNG",
-                      margin + (imgWidth - scaledWidth) / 2, // Center horizontally
+                      xOffset,
                       margin,
                       scaledWidth,
                       imgHeight,
                     );
                   } else {
-                    // Fit on single page
+                    // Fit on single page without scaling
                     pdf.addImage(
                       imgData,
                       "PNG",
@@ -995,6 +1006,7 @@ function PaymentSuccess() {
                       imgHeight,
                     );
                   }
+                  
                   pdf.save(`Application_Slip_${applicationNumber}.pdf`);
                 } finally {
                   button.innerHTML = originalText;
