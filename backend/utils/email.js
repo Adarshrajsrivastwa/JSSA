@@ -629,19 +629,7 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
     console.log("📧 Proceeding with email send to:", applicationData.email);
 
     const transporter = createTransporter();
-    
-    // Verify transporter configuration
-    try {
-      await transporter.verify();
-      console.log("✅ SMTP server connection verified successfully");
-    } catch (verifyError) {
-      console.error("❌ SMTP server connection failed:", verifyError);
-      console.error("❌ Verify error message:", verifyError.message);
-      return {
-        success: false,
-        error: `SMTP connection failed: ${verifyError.message}`,
-      };
-    }
+    console.log("📧 Transporter created");
 
     // Format date
     const formatDate = (dateString) => {
@@ -1844,11 +1832,15 @@ Thank you for applying!
     console.log("📧 Email from:", process.env.SMTP_USER);
     console.log("📧 SMTP Host:", process.env.SMTP_HOST || "smtp.gmail.com");
     console.log("📧 SMTP Port:", process.env.SMTP_PORT || "587");
+    console.log("📧 Has attachments:", attachments.length > 0);
     
     const info = await transporter.sendMail(mailOptions);
     console.log("✅ Payment success email sent successfully!");
     console.log("✅ Message ID:", info.messageId);
     console.log("✅ Email sent to:", applicationData.email);
+    console.log("✅ Response:", info.response || "No response");
+    console.log("✅ Accepted:", JSON.stringify(info.accepted || []));
+    console.log("✅ Rejected:", JSON.stringify(info.rejected || []));
     console.log("✅ PDF attached:", pdfBuffer !== null);
     return {
       success: true,

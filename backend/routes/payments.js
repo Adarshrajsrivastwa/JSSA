@@ -373,11 +373,14 @@ router.post(
       application.orderId = orderId;
       await application.save();
 
-      // Send payment success email (async, don't wait for it)
+      // Send payment success email
+      console.log("📧 ========== EMAIL SEND PROCESS START ==========");
       try {
         console.log("📧 Preparing to send payment success email...");
+        console.log("📧 Application ID:", application._id);
         console.log("📧 Application email:", application.email);
         console.log("📧 Application createdBy:", application.createdBy);
+        console.log("📧 Application paymentStatus:", application.paymentStatus);
         
         // Check if application has email
         if (!application.email) {
