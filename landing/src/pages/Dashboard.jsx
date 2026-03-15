@@ -9572,7 +9572,6 @@ export default function JSSAbhiyan() {
           width: "100%",
           boxSizing: "border-box",
           borderTop: "1px solid #2a2a2a",
-          borderBottom: "1px solid #ffffff",
         }}
       >
         {/* LEFT: Phone + Email */}
@@ -9786,7 +9785,13 @@ export default function JSSAbhiyan() {
           >
             <a
               href="https://frontend.jssabhiyan.com/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="login-blink"
+              onClick={(e) => {
+                e.preventDefault();
+                window.open("https://frontend.jssabhiyan.com/", "_blank", "noopener,noreferrer");
+              }}
               style={{
                 background: "#e53e3e",
                 color: "#fff",
@@ -9799,6 +9804,7 @@ export default function JSSAbhiyan() {
                 display: "inline-block",
                 letterSpacing: "0.04em",
                 lineHeight: 1.3,
+                pointerEvents: "auto",
               }}
             >
               LOGIN
@@ -9912,6 +9918,12 @@ export default function JSSAbhiyan() {
           <div style={{ display: "flex", gap: 6, flexShrink: 0, alignItems: "center" }}>
             <a
               href="https://frontend.jssabhiyan.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                e.preventDefault();
+                window.open("https://frontend.jssabhiyan.com/", "_blank", "noopener,noreferrer");
+              }}
               style={{
                 background: "#e53e3e",
                 color: "#fff",
@@ -9924,6 +9936,7 @@ export default function JSSAbhiyan() {
                 whiteSpace: "nowrap",
                 lineHeight: 1.3,
                 letterSpacing: "0.02em",
+                pointerEvents: "auto",
               }}
             >
               LOGIN
