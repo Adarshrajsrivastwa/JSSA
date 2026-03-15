@@ -629,6 +629,19 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
     console.log("📧 Proceeding with email send to:", applicationData.email);
 
     const transporter = createTransporter();
+    
+    // Verify transporter configuration
+    try {
+      await transporter.verify();
+      console.log("✅ SMTP server connection verified successfully");
+    } catch (verifyError) {
+      console.error("❌ SMTP server connection failed:", verifyError);
+      console.error("❌ Verify error message:", verifyError.message);
+      return {
+        success: false,
+        error: `SMTP connection failed: ${verifyError.message}`,
+      };
+    }
 
     // Format date
     const formatDate = (dateString) => {
@@ -1290,10 +1303,12 @@ Thank you for applying!
 आवेदन करने के लिए धन्यवाद!
     `;
 
-    // Generate PDF from application slip HTML
+    // Generate PDF from application slip HTML (optional, non-blocking)
     let pdfBuffer = null;
-    try {
-      // Create HTML for PDF (only application slip, no email banner/credentials)
+    const pdfGenerationPromise = (async () => {
+      try {
+        console.log("📧 Starting PDF generation...");
+        // Create HTML for PDF (only application slip, no email banner/credentials)
       const pdfHtmlContent = `
 <!DOCTYPE html>
 <html>
@@ -1774,11 +1789,31 @@ Thank you for applying!
         },
       });
 
-      await browser.close();
-      console.log("PDF generated successfully");
-    } catch (pdfError) {
-      console.error("Error generating PDF:", pdfError);
-      // Continue without PDF if generation fails
+        await browser.close();
+        console.log("✅ PDF generated successfully");
+        return pdfBuffer;
+      } catch (pdfError) {
+        console.error("⚠️ Error generating PDF:", pdfError);
+        console.error("⚠️ PDF error details:", pdfError.message);
+        // Continue without PDF if generation fails
+        return null;
+      }
+    })();
+
+    // Wait for PDF with timeout (max 10 seconds), then send email
+    try {
+      pdfBuffer = await Promise.race([
+        pdfGenerationPromise,
+        new Promise((resolve) => setTimeout(() => resolve(null), 10000)), // 10 second timeout
+      ]);
+      if (pdfBuffer) {
+        console.log("✅ PDF ready for attachment");
+      } else {
+        console.log("⚠️ PDF generation timed out or failed, sending email without PDF");
+      }
+    } catch (pdfTimeoutError) {
+      console.error("⚠️ PDF generation timeout:", pdfTimeoutError);
+      pdfBuffer = null;
     }
 
     // Prepare email attachments
@@ -1789,9 +1824,12 @@ Thank you for applying!
         content: pdfBuffer,
         contentType: 'application/pdf',
       });
+      console.log("✅ PDF attachment prepared");
+    } else {
+      console.log("⚠️ No PDF attachment (generation failed or timed out)");
     }
 
-    // Send email
+    // Send email (even without PDF)
     const mailOptions = {
       from: `"JSSA" <${process.env.SMTP_USER}>`,
       to: applicationData.email,
@@ -1802,6 +1840,11 @@ Thank you for applying!
     };
 
     console.log("📧 Sending email via SMTP...");
+    console.log("📧 Email to:", applicationData.email);
+    console.log("📧 Email from:", process.env.SMTP_USER);
+    console.log("📧 SMTP Host:", process.env.SMTP_HOST || "smtp.gmail.com");
+    console.log("📧 SMTP Port:", process.env.SMTP_PORT || "587");
+    
     const info = await transporter.sendMail(mailOptions);
     console.log("✅ Payment success email sent successfully!");
     console.log("✅ Message ID:", info.messageId);

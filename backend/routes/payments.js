@@ -444,23 +444,25 @@ router.post(
 
           console.log("📧 Sending payment success email to:", application.email);
           
-          // Send email (don't wait for it)
-          sendPaymentSuccessEmail(
-            applicationDataForEmail,
-            loginCredentials,
-            jobPosting
-          )
-            .then((result) => {
-              if (result.success) {
-                console.log("✅ Payment success email sent successfully to:", application.email);
-              } else {
-                console.error("❌ Payment success email failed:", result.message || result.error);
-              }
-            })
-            .catch((err) => {
-              console.error("❌ Failed to send payment success email:", err);
-              console.error("❌ Error details:", err.message, err.stack);
-            });
+          // Send email - use await to ensure it's called
+          try {
+            const emailResult = await sendPaymentSuccessEmail(
+              applicationDataForEmail,
+              loginCredentials,
+              jobPosting
+            );
+            
+            if (emailResult && emailResult.success) {
+              console.log("✅ Payment success email sent successfully to:", application.email);
+              console.log("✅ Message ID:", emailResult.messageId);
+            } else {
+              console.error("❌ Payment success email failed:", emailResult?.message || emailResult?.error || "Unknown error");
+            }
+          } catch (emailErr) {
+            console.error("❌ Exception while sending payment success email:", emailErr);
+            console.error("❌ Error message:", emailErr.message);
+            console.error("❌ Error stack:", emailErr.stack);
+          }
         }
       } catch (emailError) {
         console.error("❌ Error preparing payment success email:", emailError);
