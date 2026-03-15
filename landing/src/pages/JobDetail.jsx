@@ -2591,15 +2591,14 @@ export default function JobDetail() {
         return;
       }
 
-      // Set returnUrl for Cashfree redirect
-      const returnUrl = `${window.location.origin}/payment-success?orderId=PLACEHOLDER&applicationId=PLACEHOLDER`;
-      
+      // Create order - returnUrl will be constructed after we get orderId
+      // Pass origin as returnUrl base, backend will handle it
       const orderResponse = await paymentsAPI.createOrder(
         id,
         formData.gender,
         formData.category,
         token,
-        returnUrl, // Pass returnUrl to backend
+        `${window.location.origin}/payment-success`, // Base URL without params
       );
       if (!orderResponse.success)
         throw new Error(
@@ -2607,6 +2606,8 @@ export default function JobDetail() {
         );
       const { orderId, paymentSessionId, amount, amountInRupees, appId } =
         orderResponse.data;
+      
+      console.log("💰 Payment order created, orderId:", orderId, "applicationId:", applicationId);
 
       // Store application data in sessionStorage for after payment redirect
       sessionStorage.setItem(
