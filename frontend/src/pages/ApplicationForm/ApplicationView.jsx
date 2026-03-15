@@ -18,13 +18,15 @@ import {
   CreditCard,
   Download,
 } from "lucide-react";
-import { applicationsAPI } from "../../utils/api";
+import { applicationsAPI, jobPostingsAPI } from "../../utils/api";
 import AddApplicationModal from "../../components/ApplicationForm/Form";
+import logo1 from "../../assets/jss.png";
 
 const ApplicationView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [application, setApplication] = useState(null);
+  const [jobPosting, setJobPosting] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -65,11 +67,24 @@ const ApplicationView = () => {
             photo: app.photo,
             signature: app.signature,
             status: app.status,
+            paymentStatus: app.paymentStatus || "pending",
             createdAt: app.createdAt,
             updatedAt: app.updatedAt,
             createdBy: app.createdBy,
             jobPostingId: app.jobPostingId,
           });
+          
+          // Fetch job posting details if available
+          if (app.jobPostingId) {
+            try {
+              const jobResponse = await jobPostingsAPI.getById(app.jobPostingId);
+              if (jobResponse.success && jobResponse.data) {
+                setJobPosting(jobResponse.data.posting);
+              }
+            } catch (jobErr) {
+              console.error("Error fetching job posting:", jobErr);
+            }
+          }
         }
       } catch (err) {
         setError(err.message || "Failed to load application");
@@ -126,13 +141,14 @@ const ApplicationView = () => {
           marks: app.marks,
           markPercentage: app.markPercentage,
           applicationNumber: app.applicationNumber,
-          photo: app.photo,
-          signature: app.signature,
-          status: app.status,
-          createdAt: app.createdAt,
-          updatedAt: app.updatedAt,
-          createdBy: app.createdBy,
-          jobPostingId: app.jobPostingId,
+            photo: app.photo,
+            signature: app.signature,
+            status: app.status,
+            paymentStatus: app.paymentStatus || "pending",
+            createdAt: app.createdAt,
+            updatedAt: app.updatedAt,
+            createdBy: app.createdBy,
+            jobPostingId: app.jobPostingId,
         });
       }
       setIsEditModalOpen(false);
@@ -163,379 +179,119 @@ const ApplicationView = () => {
     
     setDownloadingPDF(true);
     try {
-      await loadScript(
-        "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
-      );
-      await loadScript(
-        "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
-      );
-
-      const GREEN = "#3AB000";
-      const DARK_BLUE = "#1e2840";
-      const LIGHT_GRAY = "#f8f9fa";
-      const BORDER_COLOR = "#e0e0e0";
+      if (!window.html2canvas)
+        await loadScript(
+          "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+        );
+      if (!window.jspdf)
+        await loadScript(
+          "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+        );
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const container = document.getElementById("application-slip-pdf");
+      if (!container || !window.html2canvas || !window.jspdf) {
+        alert(
+          "PDF libraries not loaded. Please wait and try again.",
+        );
+        return;
+      }
       
-      const container = document.createElement("div");
-      container.style.cssText = `
-        position: fixed; left: -9999px; top: 0;
-        width: 750px; background: #fff;
-        font-family: 'Noto Sans Devanagari', 'Noto Sans', Arial, sans-serif;
-        font-size: 11px; color: #000;
-        padding: 15px;
-        line-height: 1.3;
-      `;
-
-      const formatDate = (date) => {
-        if (!date) return "—";
-        const d = new Date(date);
-        return d.toLocaleDateString("en-IN", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-        });
-      };
-
-      const formatDateTime = (date) => {
-        if (!date) {
-          const now = new Date();
-          return now.toLocaleString("en-US", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
+      const originalOverflow = container.style.overflow;
+      const originalMaxHeight = container.style.maxHeight;
+      container.style.overflow = "visible";
+      container.style.maxHeight = "none";
+      container.style.height = "auto";
+      const images = container.querySelectorAll("img");
+      await Promise.all(
+        Array.from(images).map((img) => {
+          if (img.complete) return Promise.resolve();
+          return new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+            setTimeout(resolve, 2000);
           });
-        }
-        const d = new Date(date);
-        return d.toLocaleString("en-US", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        });
-      };
-
-      const formatDateTimeShort = (date) => {
-        if (!date) {
-          const now = new Date();
-          return now.toLocaleString("en-US", {
-            month: "2-digit",
-            day: "2-digit",
-            year: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-          });
-        }
-        const d = new Date(date);
-        return d.toLocaleString("en-US", {
-          month: "2-digit",
-          day: "2-digit",
-          year: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        });
-      };
-
-      const formatGender = (gender) => {
-        if (!gender) return "—";
-        return gender.charAt(0).toUpperCase() + gender.slice(1);
-      };
-
-      const formatCategory = (category) => {
-        if (!category) return "—";
-        return category.toUpperCase();
-      };
-
-      // Get job posting details
-      const jobPosting = application.jobPostingId || {};
-      const postTitle = jobPosting.post?.en || jobPosting.post || "District Manager";
-      const advtNo = jobPosting.advtNo || "JSSA/REQ/01/2025/P-III";
-      const currentYear = new Date().getFullYear();
-      const recruitmentTitle = `${postTitle} Recruitment ${currentYear}`;
-
-      // Current date and time
-      const now = new Date();
-      const currentDateTime = formatDateTime(now);
-      const currentDateTimeShort = formatDateTimeShort(now);
-
-      // Personal details for Application Slip
-      const personalDetailsRows = [
-        ["Name", application.candidateName || "—"],
-        ["Father's Name", application.fatherName || "—"],
-        ["Mother's Name", application.motherName || "—"],
-        ["Date of Birth", formatDate(application.dob)],
-        ["Gender", formatGender(application.gender)],
-        ["Nationality", formatGender(application.nationality) || "Indian"],
-        ["Category", formatCategory(application.category)],
-        ["Aadhar Number", application.aadhar || "—"],
-        ["PAN Number", application.pan || "—"],
-        ["Mobile Number", application.mobile || "—"],
-        ["Email ID", application.email || "—"],
-        ["Permanent Address", application.address || "—"],
-        ["State", application.state || "—"],
-        ["Pincode", application.pincode || "—"],
-      ];
-
-      // Educational Details
-      const educationDetailsRows = [
-        ["Higher Education", application.higherEducation || "—"],
-        ["Board/University", application.board || "—"],
-        ["Total Marks", application.marks || "—"],
-        ["Marks in Percentage", application.markPercentage ? `${application.markPercentage}%` : "—"],
-      ];
-
-      // Photo HTML for Application Slip
-      const photoHTML = application.photo
-        ? `<img src="${application.photo}" style="width:120px;height:150px;object-fit:cover;border:2px solid #ddd;border-radius:4px;" />`
-        : "";
-
-      // Signature HTML for bottom
-      const signatureHTML = application.signature
-        ? `<img src="${application.signature}" style="width:180px;height:50px;object-fit:contain;background:transparent;" />`
-        : "";
-
-      // Check if terms accepted
-      const termsAccepted = application.termsAccepted || false;
-      const declarationAccepted = application.declarationAccepted || false;
-
-      // Logo SVG - exact match to image
-      const logoSVG = `
-        <svg width="100" height="100" viewBox="0 0 120 120" style="flex-shrink:0">
-          <circle cx="60" cy="60" r="58" fill="none" stroke="${GREEN}" stroke-width="4"/>
-          <circle cx="60" cy="60" r="50" fill="white"/>
-          <defs>
-            <path id="topArc" d="M 16,60 a44,44 0 0,1 88,0" />
-            <path id="botArc" d="M 16,60 a44,44 0 0,0 88,0" />
-          </defs>
-          <text font-size="7" fill="white" font-weight="bold" letter-spacing="1.2">
-            <textPath href="#topArc" startOffset="5%">जन स्वास्थ्य सहायता अभियान</textPath>
-          </text>
-          <text font-size="6" fill="white" font-weight="600" letter-spacing="0.8">
-            <textPath href="#botArc" startOffset="4%">A Project Of Healthcare R&amp;D Board</textPath>
-          </text>
-          <circle cx="38" cy="52" r="7" fill="#22c55e"/>
-          <ellipse cx="38" cy="72" rx="9" ry="13" fill="#22c55e"/>
-          <line x1="29" y1="65" x2="20" y2="58" stroke="#22c55e" stroke-width="3" stroke-linecap="round"/>
-          <line x1="47" y1="65" x2="56" y2="58" stroke="#22c55e" stroke-width="3" stroke-linecap="round"/>
-          <circle cx="60" cy="49" r="7.5" fill="#f97316"/>
-          <ellipse cx="60" cy="70" rx="9" ry="14" fill="#f97316"/>
-          <line x1="51" y1="62" x2="42" y2="55" stroke="#f97316" stroke-width="3" stroke-linecap="round"/>
-          <line x1="69" y1="62" x2="78" y2="55" stroke="#f97316" stroke-width="3" stroke-linecap="round"/>
-          <circle cx="82" cy="52" r="7" fill="#3b82f6"/>
-          <ellipse cx="82" cy="72" rx="9" ry="13" fill="#3b82f6"/>
-          <line x1="73" y1="65" x2="64" y2="58" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
-          <line x1="91" y1="65" x2="100" y2="58" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
-        </svg>
-      `;
-
-      // Build Personal Information rows for Application Form
-      const personalInfoRows = [
-        ["Aadhar Number:", application.aadhar || "—"],
-        ["PAN Number:", application.pan || "—"],
-        ["Mobile Number:", application.mobile || "—"],
-        ["Email ID:", application.email || "—"],
-        ["Permanent Address:", application.address || "—"],
-        ["State:", application.state || "—"],
-        ["Pincode:", application.pincode || "—"],
-      ];
-
-      // Payment status
-      const paymentStatus = application.paymentStatus === "paid" || application.paymentStatus === "complete" ? "Complete" : (application.paymentStatus || "Pending");
-
-      container.innerHTML = `
-        <div style="background:#fff;padding:20px;font-family:'Noto Sans Devanagari','Noto Sans',Arial,sans-serif;">
-          <!-- Top Header with Date and Title -->
-          <div style="display:flex;justify-content:space-between;align-items:start;padding:0;margin-bottom:15px;border-bottom:1px solid ${BORDER_COLOR};padding-bottom:10px;">
-            <div style="font-size:12px;color:#666;font-weight:400;">${currentDateTimeShort}</div>
-            <div style="font-size:16px;font-weight:700;color:#333;text-align:right;">Application Slip - ${recruitmentTitle}</div>
-          </div>
-
-          <!-- Logo and Organization Info -->
-          <div style="display:flex;align-items:center;gap:16px;margin-bottom:15px;padding-bottom:12px;border-bottom:1px solid ${BORDER_COLOR};">
-            <div style="flex-shrink:0;">${logoSVG}</div>
-            <div style="flex:1;">
-              <div style="color:${GREEN};font-size:26px;font-weight:900;line-height:1.2;margin-bottom:4px;font-family:'Noto Sans Devanagari',serif;">जन स्वास्थ्य सहायता अभियान</div>
-              <div style="color:${GREEN};font-size:13px;font-weight:700;margin-bottom:2px;line-height:1.3;">A Project Of Healthcare Research & Development Board</div>
-              <div style="color:${GREEN};font-size:11px;margin-top:2px;line-height:1.2;">(HRDB is Division of social welfare organization "NAC India")</div>
-              <div style="color:${GREEN};font-size:13px;font-weight:700;margin-top:4px;">Registration No. : <span style="color:#ff0000;">053083</span></div>
-            </div>
-          </div>
-
-          <!-- Recruitment Title -->
-          <div style="text-align:center;margin-bottom:15px;padding-bottom:8px;border-bottom:1px solid ${BORDER_COLOR};">
-            <div style="font-size:16px;font-weight:700;color:#000;">${recruitmentTitle}</div>
-          </div>
-
-          <!-- Application Details Bar -->
-          <div style="background:#f0fae8;border:2px solid #000;padding:10px 20px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-weight:700;font-size:13px;color:#1e2840;">Advt. No.: ${advtNo}</span>
-            <span style="font-weight:700;font-size:13px;color:#1e2840;">Application Slip</span>
-            <span style="font-weight:700;font-size:13px;color:#1e2840;">Date: ${currentDateTime}</span>
-          </div>
-
-          <!-- Post and Application Number -->
-          <div style="margin-bottom:15px;padding-bottom:10px;">
-            <div style="font-size:11px;color:#000;font-weight:700;margin-bottom:5px;">Post Applied for: <span style="font-weight:700;">${postTitle}</span></div>
-            <div style="font-size:11px;color:#000;font-weight:700;">Application No.: <span style="font-weight:700;">${application.applicationNumber || "—"}</span></div>
-          </div>
-
-          <!-- Personal Details Section with Photo -->
-          <div style="display:flex;gap:15px;margin-bottom:20px;align-items:flex-start;">
-            <div style="flex:1;">
-              <div style="font-size:15px;font-weight:700;color:#000;margin-bottom:10px;">
-                Personal Details
-              </div>
-              <table style="width:100%;border-collapse:collapse;font-size:13px;">
-                <tbody>
-                  ${personalDetailsRows.map(([label, value]) => `
-                    <tr>
-                      <td style="padding:6px 10px;font-weight:700;color:#000;width:35%;vertical-align:top;">${label}:</td>
-                      <td style="padding:6px 10px;font-weight:400;color:#000;vertical-align:top;">${value}</td>
-                    </tr>
-                  `).join("")}
-                </tbody>
-              </table>
-            </div>
-            ${photoHTML ? `
-              <div style="flex-shrink:0;width:120px;padding-top:0;">
-                ${photoHTML}
-              </div>
-            ` : ""}
-          </div>
-
-          <!-- Educational Details Section -->
-          <div style="margin-top:15px;margin-bottom:20px;">
-            <div style="font-size:15px;font-weight:700;color:#000;margin-bottom:10px;">
-              Educational Details
-              </div>
-            <table style="width:100%;border-collapse:collapse;font-size:13px;">
-              <tbody>
-                ${educationDetailsRows.map(([label, value]) => `
-                  <tr>
-                    <td style="padding:6px 10px;font-weight:700;color:#000;width:35%;vertical-align:top;">${label}:</td>
-                    <td style="padding:6px 10px;font-weight:400;color:#000;vertical-align:top;">${value}</td>
-                  </tr>
-                `).join("")}
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Declarations Section -->
-          <div style="margin-bottom:15px;">
-            <div style="font-size:11px;font-weight:400;color:#000;margin-bottom:5px;display:flex;align-items:center;gap:6px;">
-              <div style="width:12px;height:12px;border:1.5px solid #000;background:${termsAccepted ? '#d3d3d3' : '#fff'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                ${termsAccepted ? '<span style="color:#000;font-size:9px;font-weight:900;">✓</span>' : ''}
-              </div>
-              <span style="font-weight:400;">I have read and agree to the Terms and Conditions.</span>
-            </div>
-            <div style="font-size:11px;font-weight:400;color:#000;margin-top:6px;display:flex;align-items:start;gap:6px;">
-              <div style="width:12px;height:12px;border:1.5px solid #000;background:${declarationAccepted ? '#d3d3d3' : '#fff'};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
-                ${declarationAccepted ? '<span style="color:#000;font-size:9px;font-weight:900;">✓</span>' : ''}
-              </div>
-              <span style="font-weight:400;line-height:1.4;">I declare that all the information given in this application form is correct to the best of my knowledge and belief. If any information provided is found false, my candidature may be rejected at any point of time. I have read and understood the conditions which I would abide by. Thus, I have given the above declaration in my full consciousness without any pressure.</span>
-            </div>
-          </div>
-
-          <!-- Signature and Summary Table Side by Side -->
-          <div style="display:flex;justify-content:space-between;gap:15px;margin-top:12px;align-items:flex-start;margin-bottom:15px;">
-            <!-- Signature Area -->
-            <div style="flex:1;">
-              ${signatureHTML ? `
-                <div style="font-size:11px;font-weight:700;color:#000;margin-bottom:4px;">Candidate's Signature</div>
-                <div style="background:#e5e5e5;border:1px solid #ccc;padding:6px;width:200px;height:60px;display:flex;align-items:center;justify-content:center;border-radius:2px;">
-                  <img src="${application.signature}" style="width:180px;height:50px;object-fit:contain;background:transparent;" />
-            </div>
-          ` : ""}
-            </div>
-
-            <!-- Application Summary Table -->
-            <div style="flex:1;">
-              <table style="width:100%;border-collapse:collapse;font-size:11px;border:1px solid #000;">
-                <thead>
-                  <tr>
-                    <th style="padding:8px 10px;font-weight:700;color:#000;text-align:left;border:1px solid #000;background:#fff;">Application No.:</th>
-                    <th style="padding:8px 10px;font-weight:700;color:#000;text-align:left;border:1px solid #000;background:#fff;">Email:</th>
-                    <th style="padding:8px 10px;font-weight:700;color:#000;text-align:left;border:1px solid #000;background:#fff;">Payment Status:</th>
-                    <th style="padding:8px 10px;font-weight:700;color:#000;text-align:left;border:1px solid #000;background:#fff;">Date:</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td style="padding:8px 10px;font-weight:400;color:#000;border:1px solid #000;background:#fff;">${application.applicationNumber || "—"}</td>
-                    <td style="padding:8px 10px;font-weight:400;color:#000;border:1px solid #000;background:#fff;">${application.email || "—"}</td>
-                    <td style="padding:8px 10px;font-weight:400;color:#000;border:1px solid #000;background:#fff;">${paymentStatus}</td>
-                    <td style="padding:8px 10px;font-weight:400;color:#000;border:1px solid #000;background:#fff;">${currentDateTime}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Footer -->
-          <div style="margin-top:15px;padding-top:10px;border-top:1px solid ${BORDER_COLOR};">
-            <div style="font-size:11px;color:#666;text-align:left;margin-bottom:3px;font-weight:400;">
-              https://www.jssabhiyan-nac.in/fill_application_print?oid=${application.applicationNumber || ""}
-            </div>
-            <div style="font-size:11px;color:#666;text-align:right;font-weight:400;">1/1</div>
-          </div>
-        </div>
-      `;
-
-      document.body.appendChild(container);
-      await new Promise((r) => setTimeout(r, 300));
-
+        }),
+      );
+      const fullHeight = Math.max(
+        container.scrollHeight,
+        container.offsetHeight,
+        container.clientHeight,
+      );
+      const fullWidth = Math.max(
+        container.scrollWidth,
+        container.offsetWidth,
+        container.clientWidth,
+      );
       const canvas = await window.html2canvas(container, {
-        scale: 2,
+        scale: 2.5,
         useCORS: true,
-        backgroundColor: "#ffffff",
         logging: false,
-        width: 750,
-        height: container.scrollHeight,
+        backgroundColor: "#ffffff",
+        allowTaint: true,
+        width: fullWidth,
+        height: fullHeight,
+        windowWidth: fullWidth,
+        windowHeight: fullHeight,
+        scrollX: 0,
+        scrollY: 0,
+        removeContainer: false,
       });
-
-      const imgData = canvas.toDataURL("image/png");
+      container.style.overflow = originalOverflow;
+      container.style.maxHeight = originalMaxHeight;
+      container.style.height = "";
       const { jsPDF } = window.jspdf;
+      const imgData = canvas.toDataURL("image/png", 0.95);
+      
+      // A4 size: 210mm x 297mm
       const pdf = new jsPDF({
         unit: "mm",
-        format: "a4",
+        format: [210, 297],
         orientation: "portrait",
       });
-
-      const pageW = 210; // A4 width in mm
-      const pageH = 297; // A4 height in mm
-      const margin = 10; // margin on all sides
-      const availableW = pageW - (margin * 2);
-      const availableH = pageH - (margin * 2);
       
-      const imgW = availableW;
-      const imgH = (canvas.height * imgW) / canvas.width;
-
-      // Scale to fit on single page if needed
-      if (imgH > availableH) {
-        const scale = availableH / imgH;
-        const scaledW = imgW * scale;
-        const scaledH = imgH * scale;
-        const xOffset = (pageW - scaledW) / 2;
-        pdf.addImage(imgData, "PNG", xOffset, margin, scaledW, scaledH);
+      const pdfWidth = 210;
+      const pdfHeight = 297;
+      const margin = 5;
+      const imgWidth = pdfWidth - 2 * margin;
+      let imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      // Ensure content fits on single A4 page
+      if (imgHeight > pdfHeight - 2 * margin) {
+        const scaleFactor = (pdfHeight - 2 * margin) / imgHeight;
+        imgHeight = pdfHeight - 2 * margin;
+        const scaledWidth = imgWidth * scaleFactor;
+        const xOffset = margin + (imgWidth - scaledWidth) / 2;
+        pdf.addImage(
+          imgData,
+          "PNG",
+          xOffset,
+          margin,
+          scaledWidth,
+          imgHeight,
+        );
       } else {
-        pdf.addImage(imgData, "PNG", margin, margin, imgW, imgH);
+        pdf.addImage(
+          imgData,
+          "PNG",
+          margin,
+          margin,
+          imgWidth,
+          imgHeight,
+        );
       }
-
+      
       const appNumber = application.applicationNumber || application.id || "APP";
-      pdf.save(`JSSA_Application_${appNumber.replace(/\//g, "-")}.pdf`);
-      document.body.removeChild(container);
+      pdf.save(`Application_Slip_${appNumber}.pdf`);
     } catch (err) {
-      console.error("PDF generation error:", err);
-      alert("Failed to generate PDF: " + err.message);
+      alert(
+        "Failed to generate PDF: " + (err.message || "Unknown error"),
+      );
     } finally {
       setDownloadingPDF(false);
     }
   };
+
+  // ── Skeleton ──────────────────────────────────────────────────────────────
 
   // ── Skeleton ──────────────────────────────────────────────────────────────
   if (loading) {
@@ -683,7 +439,7 @@ const ApplicationView = () => {
                     {application.candidateName}
                   </h1>
                   <p className="text-green-100 text-sm">
-                    Application ID: {application.id}
+                    Application Number: {application.applicationNumber || "N/A"}
                   </p>
                 </div>
               </div>
@@ -769,7 +525,7 @@ const ApplicationView = () => {
               <table className="w-full text-sm mt-2">
                 <tbody>
                   {[
-                    ["Application ID", application.id],
+                    ["Application Number", application.applicationNumber || "—"],
                     ["Status", application.status],
                     [
                       "Created At",
@@ -913,6 +669,568 @@ const ApplicationView = () => {
             Back to Applications
           </button>
         </div>
+
+        {/* ── Hidden Application Slip for PDF (PaymentSuccess format) ── */}
+        <div
+          id="application-slip-pdf"
+          style={{
+            position: "absolute",
+            left: "-9999px",
+            top: 0,
+            background: "#fff",
+            borderRadius: 0,
+            maxWidth: "900px",
+            width: "900px",
+            margin: "0 auto",
+            padding: 0,
+            fontFamily: "Arial, sans-serif",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            fontSize: "14px",
+            lineHeight: "1.5",
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 15,
+              padding: "15px 20px",
+              background: "#0aca00",
+            }}
+          >
+            <div
+              style={{
+                width: 80,
+                height: 80,
+                borderRadius: "50%",
+                background: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                border: "2px solid #fff",
+                overflow: "hidden",
+              }}
+            >
+              <img
+                src={logo1}
+                alt="JSSA Logo"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  padding: "6px",
+                }}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div
+                style={{
+                  fontSize: 22,
+                  fontWeight: 900,
+                  color: "#fff",
+                  marginBottom: 4,
+                  lineHeight: 1.2,
+                }}
+              >
+                जन स्वास्थ्य सहायता अभियान
+              </div>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "#fff",
+                  marginBottom: 2,
+                  fontWeight: 600,
+                }}
+              >
+                A Project Of Healthcare Research & Development Board
+              </div>
+              <div style={{ fontSize: 10, color: "#fff", marginBottom: 4 }}>
+                (HRDB is Division of social welfare organization "NAC India")
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>
+                Registration No. : 053083
+              </div>
+            </div>
+          </div>
+          <div
+            style={{
+              background: "#fff",
+              color: "#000",
+              padding: "10px 20px",
+              textAlign: "center",
+              fontWeight: 700,
+              fontSize: 14,
+              borderBottom: "1px solid #e0e0e0",
+            }}
+          >
+            {jobPosting?.postTitle?.en || jobPosting?.post?.en || "Recruitment"} Recruitment
+          </div>
+          <div
+            style={{
+              background: "#000",
+              color: "#fff",
+              padding: "10px 20px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "8px",
+            }}
+          >
+            <div
+              style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}
+            >
+              Advt. No.: {jobPosting?.advtNo || ""}
+            </div>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                textAlign: "center",
+                flex: 1,
+                minWidth: "150px",
+              }}
+            >
+              Application Slip
+            </div>
+            <div style={{ fontSize: 13, whiteSpace: "nowrap" }}>
+              Date:{" "}
+              {new Date().toLocaleString("en-US", {
+                month: "numeric",
+                day: "numeric",
+                year: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: true,
+              })}
+            </div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              padding: "12px 20px",
+              background: "#f9f9f9",
+              borderBottom: "1px solid #e0e0e0",
+              flexWrap: "wrap",
+              gap: "8px",
+            }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 600 }}>
+              Post Applied for: {jobPosting?.postTitle?.en || jobPosting?.post?.en || ""}
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 700 }}>
+              Application No.: {application.applicationNumber || "N/A"}
+            </div>
+          </div>
+          <div style={{ padding: "15px 20px", background: "#fff", position: "relative" }}>
+            <h3
+              style={{
+                fontSize: 16,
+                fontWeight: 900,
+                color: "#000",
+                marginBottom: 12,
+                paddingBottom: 6,
+                borderBottom: "2px solid #e0e0e0",
+              }}
+            >
+              Personal Details
+            </h3>
+            {application.photo ? (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "70px",
+                  right: "20px",
+                  width: 110,
+                  textAlign: "center",
+                  zIndex: 10,
+                }}
+              >
+                <img
+                  src={application.photo}
+                  alt="Applicant Photo"
+                  style={{
+                    width: "100%",
+                    height: 130,
+                    objectFit: "cover",
+                    border: "2px solid #000",
+                    borderRadius: 4,
+                    display: "block",
+                    background: "#fff",
+                  }}
+                />
+              </div>
+            ) : null}
+            <div
+              style={{
+                fontSize: 15,
+                lineHeight: 2.2,
+                marginRight: application.photo ? "130px" : "0",
+              }}
+            >
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Name:</strong>{" "}
+                <strong style={{ color: "#000", fontWeight: 700 }}>
+                  {(application.candidateName || "").toUpperCase()}
+                </strong>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Application No.:</strong>{" "}
+                <span>{application.applicationNumber || "N/A"}</span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Father's Name:</strong>{" "}
+                <span>{(application.fatherName || "").toUpperCase()}</span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Mother's Name:</strong>{" "}
+                <span>{(application.motherName || "").toUpperCase()}</span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Date of Birth:</strong>{" "}
+                <span>
+                  {application.dob
+                    ? new Date(application.dob).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })
+                    : ""}
+                </span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Gender:</strong>{" "}
+                <span>
+                  {application.gender?.charAt(0).toUpperCase() +
+                    application.gender?.slice(1) || ""}
+                </span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Nationality:</strong>{" "}
+                <span>
+                  {application.nationality?.charAt(0).toUpperCase() +
+                    application.nationality?.slice(1) || ""}
+                </span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Category:</strong>{" "}
+                <span>{(application.category || "").toUpperCase()}</span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Aadhar Number:</strong>{" "}
+                <span>{application.aadhar || ""}</span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>PAN Number:</strong>{" "}
+                <span>{(application.pan || "").toUpperCase()}</span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Mobile Number:</strong>{" "}
+                <span>{application.mobile || ""}</span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Email ID:</strong>{" "}
+                <span>{application.email || ""}</span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Permanent Address:</strong>{" "}
+                <span>{(application.address || "").toUpperCase()}</span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>State:</strong>{" "}
+                <span>{application.state || ""}</span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>District:</strong>{" "}
+                <span>{application.district || ""}</span>
+              </div>
+              {application.block && (
+                <div style={{ marginBottom: 4 }}>
+                  <strong style={{ color: "#333" }}>Block:</strong>{" "}
+                  <span>{application.block}</span>
+                </div>
+              )}
+              {application.panchayat && (
+                <div style={{ marginBottom: 4 }}>
+                  <strong style={{ color: "#333" }}>Panchayat:</strong>{" "}
+                  <span>{application.panchayat}</span>
+                </div>
+              )}
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Pin Code:</strong>{" "}
+                <span>{application.pincode || ""}</span>
+              </div>
+            </div>
+          </div>
+          <div
+            style={{
+              padding: "15px 20px",
+              background: "#fff",
+              borderTop: "1px solid #e0e0e0",
+              position: "relative",
+            }}
+          >
+            <h3
+              style={{
+                fontSize: 16,
+                fontWeight: 900,
+                color: "#000",
+                marginBottom: 12,
+                paddingBottom: 6,
+                borderBottom: "2px solid #e0e0e0",
+              }}
+            >
+              Educational Details
+            </h3>
+            <div
+              style={{
+                fontSize: 15,
+                lineHeight: 2.2,
+                marginRight: application.signature ? "220px" : "0",
+              }}
+            >
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Higher Education:</strong>{" "}
+                <span>{application.higherEducation || ""}</span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Board/University:</strong>{" "}
+                <span>{application.board || ""}</span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Total Marks:</strong>{" "}
+                <span>{application.marks || ""}</span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Marks in Percentage:</strong>{" "}
+                <span>{application.markPercentage || ""}</span>
+              </div>
+            </div>
+            {application.signature ? (
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "15px",
+                  right: "20px",
+                  textAlign: "right",
+                  zIndex: 10,
+                }}
+              >
+                <div
+                  style={{
+                    display: "inline-block",
+                    border: "1px solid #e0e0e0",
+                    background: "#f0f8ff",
+                    padding: "10px 16px",
+                    borderRadius: 4,
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  <img
+                    src={application.signature}
+                    alt="Signature"
+                    style={{
+                      width: 180,
+                      height: 70,
+                      objectFit: "contain",
+                      display: "block",
+                      marginBottom: 6,
+                      background: "#fff",
+                    }}
+                  />
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#000",
+                      textAlign: "center",
+                    }}
+                  >
+                    Candidate's Signature
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </div>
+          <div
+            style={{
+              padding: "15px 20px",
+              background: "#fff",
+              borderTop: "1px solid #e0e0e0",
+              position: "relative",
+            }}
+          >
+            <div
+              style={{
+                marginBottom: 12,
+                fontSize: 11,
+                lineHeight: 1.6,
+              }}
+            >
+              <div style={{ marginBottom: 12 }}>
+                <input
+                  type="checkbox"
+                  checked
+                  readOnly
+                  style={{ marginRight: 8, cursor: "default" }}
+                />
+                <span>I have read and agree to the Terms and Conditions.</span>
+              </div>
+              <div>
+                <input
+                  type="checkbox"
+                  checked
+                  readOnly
+                  style={{ marginRight: 8, cursor: "default" }}
+                />
+                <span>
+                  I declare that all the information given in this application form
+                  is correct to the best of my knowledge and belief. If any
+                  information provided is found false, my candidature may be
+                  rejected at any point of time. I have read and understood the
+                  conditions which I would abide by. Thus, I have given the above
+                  declaration in my full consciousness without any pressure.
+                </span>
+              </div>
+            </div>
+          </div>
+          <div style={{ marginTop: 12, padding: "0 20px 15px" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: 13,
+                border: "1px solid #e0e0e0",
+              }}
+            >
+              <thead>
+                <tr style={{ background: "#1a2a4a", color: "#fff" }}>
+                  <th
+                    style={{
+                      padding: "10px",
+                      textAlign: "left",
+                      fontWeight: 700,
+                      border: "1px solid #1a2a4a",
+                      fontSize: 13,
+                    }}
+                  >
+                    Application No.
+                  </th>
+                  <th
+                    style={{
+                      padding: "10px",
+                      textAlign: "left",
+                      fontWeight: 700,
+                      border: "1px solid #1a2a4a",
+                      fontSize: 13,
+                    }}
+                  >
+                    Email
+                  </th>
+                  <th
+                    style={{
+                      padding: "10px",
+                      textAlign: "left",
+                      fontWeight: 700,
+                      border: "1px solid #1a2a4a",
+                      fontSize: 13,
+                    }}
+                  >
+                    Payment Status
+                  </th>
+                  <th
+                    style={{
+                      padding: "10px",
+                      textAlign: "left",
+                      fontWeight: 700,
+                      border: "1px solid #1a2a4a",
+                      fontSize: 13,
+                    }}
+                  >
+                    Date
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ background: "#f9f9f9" }}>
+                  <td
+                    style={{
+                      padding: "10px",
+                      border: "1px solid #e0e0e0",
+                      color: "#000",
+                      fontSize: 13,
+                    }}
+                  >
+                    {application.applicationNumber || "N/A"}
+                  </td>
+                  <td
+                    style={{
+                      padding: "10px",
+                      border: "1px solid #e0e0e0",
+                      color: "#000",
+                      fontSize: 13,
+                    }}
+                  >
+                    {application.email || ""}
+                  </td>
+                  <td
+                    style={{
+                      padding: "10px",
+                      border: "1px solid #e0e0e0",
+                      color: "#0aca00",
+                      fontWeight: 700,
+                      fontSize: 13,
+                    }}
+                  >
+                    {application.paymentStatus === "paid" ? "Complete" : "Pending"}
+                  </td>
+                  <td
+                    style={{
+                      padding: "10px",
+                      border: "1px solid #e0e0e0",
+                      color: "#000",
+                      fontSize: 13,
+                    }}
+                  >
+                    {new Date().toLocaleString("en-US", {
+                      month: "numeric",
+                      day: "numeric",
+                      year: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                      second: "2-digit",
+                      hour12: true,
+                    })}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div
+            style={{
+              padding: "12px 20px",
+              borderTop: "1px solid #e0e0e0",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: 10,
+              color: "#666",
+              background: "#f9f9f9",
+              flexWrap: "wrap",
+              gap: "8px",
+            }}
+          >
+            <div style={{ wordBreak: "break-all", flex: 1, minWidth: "200px" }}>
+              https://www.jssabhiyan-nac.in/fill_application_print?oid=
+              {application.id || ""}
+            </div>
+            <div>1/1</div>
+          </div>
+        </div>
       </div>
 
       {/* ── Edit Application Modal ── */}
@@ -936,7 +1254,9 @@ const QuickInfo = ({ icon, label, value, valueClass = "text-gray-800 font-semibo
     </div>
     <div className="min-w-0">
       <p className="text-xs text-gray-400 font-medium">{label}</p>
-      <p className={`text-sm mt-0.5 truncate ${valueClass}`}>{value || "—"}</p>
+      <div className={`text-sm mt-0.5 ${typeof value === 'string' ? 'truncate' : ''} ${valueClass}`}>
+        {value || "—"}
+      </div>
     </div>
   </div>
 );

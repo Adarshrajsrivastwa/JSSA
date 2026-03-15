@@ -212,7 +212,7 @@ const Gallery = () => {
   }
 
   return (
-    <DashboardLayout activePath="/gallery">
+    <DashboardLayout activePath="/admin/gallery">
       <div className="p-3 sm:p-6">
         {/* Header */}
         <div className="mb-4 sm:mb-6">

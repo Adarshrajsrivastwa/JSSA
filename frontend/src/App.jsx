@@ -96,7 +96,7 @@ function App() {
 
             {/* Gallery - Admin only */}
             <Route
-              path="/gallery"
+              path="/admin/gallery"
               element={
                 <RequireRole allow={["admin"]}>
                   <Gallery />

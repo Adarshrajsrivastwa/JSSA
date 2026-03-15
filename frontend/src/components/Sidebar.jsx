@@ -126,7 +126,7 @@ const Sidebar = () => {
 
     if (role === "admin") {
       base.push(
-        { name: "Gallery", icon: ImageIcon, path: "/gallery" },
+        { name: "Gallery", icon: ImageIcon, path: "/admin/gallery" },
         { name: "Scroller", icon: Film, path: "/scroller" },
         { name: "Notifications", icon: Bell, path: "/notifications-manage" },
         { name: "Payment Settings", icon: CreditCard, path: "/settings" },

@@ -573,15 +573,17 @@ export default function JSSAbhiyanLogin() {
               </div>
             </div>
 
-            <div className="text-right">
-              <Link
-                to="/forgot-password"
-                className="text-sm font-semibold"
-                style={{ color: GREEN, textDecoration: "none" }}
-              >
-                Forgot Password?
-              </Link>
-            </div>
+            {formData.role === "applicant" && (
+              <div className="text-right">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm font-semibold"
+                  style={{ color: GREEN, textDecoration: "none" }}
+                >
+                  Forgot Password?
+                </Link>
+              </div>
+            )}
 
             {error && (
               <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium">

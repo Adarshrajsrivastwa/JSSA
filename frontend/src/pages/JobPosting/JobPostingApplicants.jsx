@@ -49,6 +49,7 @@ const JobPostingApplicants = () => {
             district: app.district,
             higherEducation: app.higherEducation,
             status: app.status,
+            paymentStatus: app.paymentStatus || "pending",
             createdAt: app.createdAt,
           }));
           setApplicants(transformed);
@@ -271,7 +272,7 @@ const JobPostingApplicants = () => {
                       Education
                     </th>
                     <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
-                      Status
+                      Payment Status
                     </th>
                     <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
                       Applied On
@@ -322,9 +323,19 @@ const JobPostingApplicants = () => {
                         {app.higherEducation}
                       </td>
                       <td className="px-4 py-4 text-center">
-                        <span className={`inline-block px-2 py-1 rounded text-xs font-semibold border ${statusColors[app.status] || statusColors.Inactive}`}>
-                          {app.status || "Pending"}
-                        </span>
+                        {app.paymentStatus === "pending" || !app.paymentStatus ? (
+                          <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-200">
+                            Payment Pending
+                          </span>
+                        ) : app.paymentStatus === "paid" ? (
+                          <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+                            Payment Done
+                          </span>
+                        ) : (
+                          <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-gray-50 text-gray-700 border border-gray-200">
+                            {app.paymentStatus}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-4 text-center text-gray-700 text-xs">
                         {app.createdAt
@@ -388,9 +399,19 @@ const JobPostingApplicants = () => {
                     <div className="text-sm text-gray-600">{app.fatherName}</div>
                   </div>
                   <div>
-                    <span className={`inline-block px-2 py-1 rounded text-xs font-semibold border ${statusColors[app.status] || statusColors.Inactive}`}>
-                      {app.status || "Pending"}
-                    </span>
+                    {app.paymentStatus === "pending" || !app.paymentStatus ? (
+                      <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-200">
+                        Payment Pending
+                      </span>
+                    ) : app.paymentStatus === "paid" ? (
+                      <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+                        Payment Done
+                      </span>
+                    ) : (
+                      <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-gray-50 text-gray-700 border border-gray-200">
+                        {app.paymentStatus}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -406,6 +427,24 @@ const JobPostingApplicants = () => {
                   <div className="flex items-start">
                     <span className="font-medium w-20 flex-shrink-0">Education:</span>
                     <span className="flex-1">{app.higherEducation}</span>
+                  </div>
+                  <div className="flex items-start">
+                    <span className="font-medium w-20 flex-shrink-0">Payment:</span>
+                    <span className="flex-1">
+                      {app.paymentStatus === "pending" || !app.paymentStatus ? (
+                        <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-200">
+                          Payment Pending
+                        </span>
+                      ) : app.paymentStatus === "paid" ? (
+                        <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+                          Payment Done
+                        </span>
+                      ) : (
+                        <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-gray-50 text-gray-700 border border-gray-200">
+                          {app.paymentStatus}
+                        </span>
+                      )}
+                    </span>
                   </div>
                   <div className="flex items-start">
                     <span className="font-medium w-20 flex-shrink-0">Applied On:</span>
