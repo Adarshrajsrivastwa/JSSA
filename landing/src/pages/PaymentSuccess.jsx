@@ -369,6 +369,64 @@ function PaymentSuccess() {
         padding: "10px",
       }}
     >
+      {/* Payment Success Banner */}
+      <div
+        style={{
+          maxWidth: "900px",
+          width: "100%",
+          margin: "0 auto 20px",
+          background: "#fff",
+          borderRadius: 8,
+          padding: "20px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            fontSize: 32,
+            fontWeight: 900,
+            color: GREEN,
+            marginBottom: 12,
+          }}
+        >
+          ✅ Payment Successful!
+        </div>
+        <div
+          style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: "#333",
+            marginBottom: 8,
+          }}
+        >
+          Your application has been submitted successfully
+        </div>
+        <div
+          style={{
+            fontSize: 16,
+            fontWeight: 600,
+            color: "#666",
+            marginBottom: 16,
+          }}
+        >
+          Application Number:{" "}
+          <span style={{ color: GREEN, fontSize: 18 }}>
+            {applicationNumber || "N/A"}
+          </span>
+        </div>
+        <div
+          style={{
+            fontSize: 14,
+            color: "#666",
+            lineHeight: 1.6,
+          }}
+        >
+          Please download your application slip below. Keep this application number
+          for future reference.
+        </div>
+      </div>
+
       <div
         id="application-slip-pdf"
         style={{
@@ -381,8 +439,8 @@ function PaymentSuccess() {
           position: "relative",
           fontFamily: "Arial, sans-serif",
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          fontSize: "12px", // Smaller base font for single page PDF
-          lineHeight: "1.4",
+          fontSize: "14px", // Increased base font size
+          lineHeight: "1.5",
         }}
       >
         {/* Remove top timestamp - not in image format */}
