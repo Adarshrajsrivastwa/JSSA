@@ -689,7 +689,8 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
     const logoPathForPdf = "./landing/src/assets/jss.png"; // For Puppeteer PDF generation
 
     // Login URL
-    const loginUrl = process.env.FRONTEND_URL || "https://frontend.jssabhiyan.com";
+    const loginUrl = process.env.FRONTEND_URL || process.env.VITE_FRONTEND_URL || "https://frontend.jssabhiyan.com";
+    console.log("📧 Login URL:", loginUrl);
 
     // Email HTML template - Matching the payment success page design
     const htmlContent = `
@@ -1351,6 +1352,16 @@ This is an automated email. Please do not reply to this email.
     console.log("📧 Has attachments:", attachments.length > 0);
     console.log("📧 Email subject:", mailOptions.subject);
     
+    console.log("📧 Attempting to send email...");
+    console.log("📧 Mail options:", {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject,
+      hasHtml: !!mailOptions.html,
+      hasText: !!mailOptions.text,
+      attachmentsCount: mailOptions.attachments?.length || 0
+    });
+    
     const info = await transporter.sendMail(mailOptions);
     console.log("✅ Email sent successfully!");
     console.log("✅ Message ID:", info.messageId);
@@ -1365,6 +1376,11 @@ This is an automated email. Please do not reply to this email.
   } catch (error) {
     console.error("❌ Error sending payment success email:", error);
     console.error("❌ Error message:", error.message);
+    console.error("❌ Error code:", error.code);
+    console.error("❌ Error command:", error.command);
+    console.error("❌ Error responseCode:", error.responseCode);
+    console.error("❌ Error response:", error.response);
+    console.error("❌ Full error:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
     return {
       success: false,
       error: error.message,
