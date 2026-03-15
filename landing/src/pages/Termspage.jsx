@@ -1,6 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 export default function TermsPage({ onNavigate }) {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <div
       style={{
@@ -52,11 +56,9 @@ export default function TermsPage({ onNavigate }) {
       `}</style>
 
       <div className="terms-wrap">
-        {/* Section 1 */}
         <p className="terms-section-title">
           Terms &amp; Conditians For Joining Us
         </p>
-
         <p className="terms-para">
           1) The person should be above 18 yaars to be active member of this
           organization and without any criminal background.
@@ -102,12 +104,10 @@ export default function TermsPage({ onNavigate }) {
           fee will be non-refundable.
         </p>
 
-        {/* Section 2 */}
         <div className="terms-section-gap">
           <p className="terms-section-title">
             Terms &amp; Conditions For Working With Us
           </p>
-
           <p className="terms-para">
             1) The Person's age should be minimum 19 years maximum 40 years and
             without any criminal background to fill the application form for

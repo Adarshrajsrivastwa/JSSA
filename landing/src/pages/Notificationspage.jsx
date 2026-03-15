@@ -186,7 +186,6 @@ export default function NotificationsPage() {
     fetchNotifications();
   }, []);
 
-  // Check if notification is "new" — within last 30 days
   const isNew = (dateString) => {
     if (!dateString) return false;
     const date = new Date(dateString);
@@ -199,13 +198,11 @@ export default function NotificationsPage() {
       style={{
         minHeight: "100vh",
         background: "#fff",
-        padding: "32px 100px",
         fontFamily: "'Segoe UI', 'Noto Sans', sans-serif",
       }}
       className="notif-wrap"
     >
       <div style={{ maxWidth: 1400, margin: "0 auto" }}>
-        {/* Heading */}
         <h2
           style={{
             fontWeight: 700,
@@ -219,7 +216,6 @@ export default function NotificationsPage() {
         </h2>
         <div style={{ borderBottom: `2px solid ${GREEN}`, marginBottom: 0 }} />
 
-        {/* Body */}
         {loading ? (
           <div
             style={{
@@ -254,7 +250,6 @@ export default function NotificationsPage() {
                   (e.currentTarget.style.background = "transparent")
                 }
               >
-                {/* >> arrow */}
                 <span
                   style={{
                     fontWeight: 700,
@@ -265,10 +260,7 @@ export default function NotificationsPage() {
                 >
                   &gt;&gt;
                 </span>
-
-                {/* Content */}
                 <span style={{ lineHeight: 1.7, color: "#1a2a4a" }}>
-                  {/* Title — linked if URL present */}
                   {n.url ? (
                     <a
                       href={n.url}
@@ -291,8 +283,6 @@ export default function NotificationsPage() {
                   ) : (
                     <span>{n.title}</span>
                   )}
-
-                  {/* NEW badge */}
                   {isNew(n.notificationDate) && (
                     <span
                       style={{
@@ -311,8 +301,6 @@ export default function NotificationsPage() {
                       NEW
                     </span>
                   )}
-
-                  {/* Date + Time inline */}
                   {(n.notificationDate || n.notificationTime) && (
                     <span
                       style={{
@@ -338,8 +326,6 @@ export default function NotificationsPage() {
                   )}
                 </span>
               </div>
-
-              {/* Dashed divider */}
               <div
                 style={{ borderBottom: "1px dashed #aaa", margin: "0 8px" }}
               />
@@ -361,9 +347,10 @@ export default function NotificationsPage() {
           transition: background 0.15s;
         }
         @media (max-width: 768px) {
-          .notif-wrap { padding: 16px 12px; }
-          .notif-heading { font-size: 16px; }
-          .notif-item { padding: 12px 10px; font-size: 13px; }
+          .notif-wrap { padding: 16px 10px !important; }
+          .notif-heading { font-size: 14px; padding: 0 8px; }
+          .notif-item { padding: 10px 8px; font-size: 11px; gap: 5px; }
+          .notif-item span { font-size: 11px; }
         }
       `}</style>
     </div>

@@ -4,13 +4,13 @@ const sections = [
   {
     title: "Who we are",
     content: [
-      'Our website address is <a href="jssabhiyan.com" style="color:#111827;text-decoration:none;">jssabhiyan.com</a>.',
+      'Our website address is <a href="https://jssabhiyan.com/" style="color:#111827;text-decoration:none;">https://jssabhiyan.com/</a>.',
     ],
   },
   {
     title: "Comments",
     content: [
-      'When visitors leave comments on the site we collect the data shown in the comments form, and also the visitor\'s IP address and browser user agent string to help spam detection. An anonymized string created from your email address (also called a hash) may be provided to the Gravatar service to see if you are using it. The Gravatar service privacy policy is available here: <a href="https://automattic.com/privacy/" style="color:#111827;text-decoration:none;">https://automattic.com/privacy/</a>. After approval of your comment, your profile picture is visible to the public in the context of your comment.',
+      'When visitors leave comments on the site we collect the data shown in the comments form, and also the visitor\'s IP address and browser user agent string to help spam detection. An anonymized string created from your email address (also called a hash) may be provided to the Gravatar service to see if you are using it. The Gravatar service privacy policy is available here: <a href="https://jssabhiyan.com/privacy-policy" style="color:#111827;text-decoration:none;">https://jssabhiyan.com/privacy-policy</a>. After approval of your comment, your profile picture is visible to the public in the context of your comment.',
     ],
   },
   {

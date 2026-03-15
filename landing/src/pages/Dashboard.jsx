@@ -2809,7 +2809,6 @@ const navLinks = [
   { label: "GALLERY", page: "gallery" },
   { label: "VERIFICATION", page: "verification" },
   { label: "CONTACTS", page: "contacts" },
-  { label: "PRIVACY POLICY", page: "privacy" },
 ];
 
 /* ─── Animated Counter ─── */
@@ -4824,6 +4823,7 @@ export default function JSSAbhiyan() {
                 width: "auto",
                 objectFit: "contain",
                 display: "block",
+                marginTop: 16,
               }}
             />
           </button>

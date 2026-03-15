@@ -2158,101 +2158,139 @@ export default function JobDetail() {
     const payment = searchParams.get("payment");
     const orderId = searchParams.get("orderId");
     const applicationId = searchParams.get("applicationId");
-    
+
     // Check if we're returning from Cashfree payment
     if (payment === "success" || orderId || applicationId) {
       const pendingData = sessionStorage.getItem("pendingApplication");
-      
+
       if (pendingData) {
         try {
           const data = JSON.parse(pendingData);
-          const { token, applicationData, defaultPassword, applicationNumber, formData: storedFormData, applicationId: storedApplicationId } = data;
-          
+          const {
+            token,
+            applicationData,
+            defaultPassword,
+            applicationNumber,
+            formData: storedFormData,
+            applicationId: storedApplicationId,
+          } = data;
+
           // Use applicationId from URL or stored data
           const finalApplicationId = applicationId || storedApplicationId;
-          
-          // Get payment details from URL (Cashfree redirects with these params)
-          const paymentId = searchParams.get("paymentId") || 
-                           searchParams.get("referenceId") || 
-                           searchParams.get("cf_payment_id");
-          const signature = searchParams.get("signature") || 
-                           searchParams.get("cf_signature");
-          const orderAmount = searchParams.get("orderAmount") || 
-                             searchParams.get("order_amount");
-          const txStatus = searchParams.get("txStatus") || 
-                          searchParams.get("tx_status") || 
-                          searchParams.get("payment_status") || 
-                          "SUCCESS";
-          const paymentMode = searchParams.get("paymentMode") || 
-                            searchParams.get("payment_mode") || 
-                            "";
-          const txMsg = searchParams.get("txMsg") || 
-                       searchParams.get("tx_msg") || 
-                       searchParams.get("payment_message") || 
-                       "";
-          const txTime = searchParams.get("txTime") || 
-                        searchParams.get("tx_time") || 
-                        "";
 
-          console.log("Payment redirect detected:", { payment, orderId, finalApplicationId, paymentId, signature, txStatus });
+          // Get payment details from URL (Cashfree redirects with these params)
+          const paymentId =
+            searchParams.get("paymentId") ||
+            searchParams.get("referenceId") ||
+            searchParams.get("cf_payment_id");
+          const signature =
+            searchParams.get("signature") || searchParams.get("cf_signature");
+          const orderAmount =
+            searchParams.get("orderAmount") || searchParams.get("order_amount");
+          const txStatus =
+            searchParams.get("txStatus") ||
+            searchParams.get("tx_status") ||
+            searchParams.get("payment_status") ||
+            "SUCCESS";
+          const paymentMode =
+            searchParams.get("paymentMode") ||
+            searchParams.get("payment_mode") ||
+            "";
+          const txMsg =
+            searchParams.get("txMsg") ||
+            searchParams.get("tx_msg") ||
+            searchParams.get("payment_message") ||
+            "";
+          const txTime =
+            searchParams.get("txTime") || searchParams.get("tx_time") || "";
+
+          console.log("Payment redirect detected:", {
+            payment,
+            orderId,
+            finalApplicationId,
+            paymentId,
+            signature,
+            txStatus,
+          });
 
           // If we have paymentId and signature, verify payment
           if (paymentId && signature && orderId) {
-            paymentsAPI.verifyPayment(
-              orderId,
-              paymentId,
-              signature,
-              finalApplicationId,
-              orderAmount,
-              txStatus,
-              paymentMode,
-              txMsg,
-              txTime,
-              token,
-            ).then((verifyResponse) => {
-              if (verifyResponse.success) {
-                // Redirect to payment success page
-                navigate(`/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`);
-                // Clean up will happen on success page
-              } else {
-                alert(`Payment verification failed: ${verifyResponse.message || "Please contact support."}`);
-              }
-            }).catch((err) => {
-              console.error("Payment verification error:", err);
-              alert(`Payment verification failed: ${err.message}`);
-            });
+            paymentsAPI
+              .verifyPayment(
+                orderId,
+                paymentId,
+                signature,
+                finalApplicationId,
+                orderAmount,
+                txStatus,
+                paymentMode,
+                txMsg,
+                txTime,
+                token,
+              )
+              .then((verifyResponse) => {
+                if (verifyResponse.success) {
+                  // Redirect to payment success page
+                  navigate(
+                    `/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`,
+                  );
+                  // Clean up will happen on success page
+                } else {
+                  alert(
+                    `Payment verification failed: ${verifyResponse.message || "Please contact support."}`,
+                  );
+                }
+              })
+              .catch((err) => {
+                console.error("Payment verification error:", err);
+                alert(`Payment verification failed: ${err.message}`);
+              });
           } else if (txStatus === "SUCCESS" || payment === "success") {
-            // If payment status is SUCCESS but we don't have all params, 
+            // If payment status is SUCCESS but we don't have all params,
             // still show success page (payment might be verified via webhook)
             // But first try to get payment status from backend
             if (orderId && finalApplicationId) {
               // Try to verify payment status from backend
-              const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "";
-              fetch(`${apiUrl}/payments/status?orderId=${orderId}&applicationId=${finalApplicationId}`, {
-                headers: {
-                  "Authorization": `Bearer ${token}`,
+              const apiUrl =
+                import.meta.env.VITE_API_URL ||
+                import.meta.env.VITE_BACKEND_URL ||
+                "";
+              fetch(
+                `${apiUrl}/payments/status?orderId=${orderId}&applicationId=${finalApplicationId}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
                 },
-              })
-              .then(res => res.json())
-              .then(result => {
-                console.log("Payment status check result:", result);
-                if (result.success && result.data.paymentStatus === "paid") {
-                  // Redirect to payment success page
-                  navigate(`/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`);
-                } else {
-                  // Show success page anyway if payment=success in URL
-                  navigate(`/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId}`);
-                }
-              })
-              .catch(() => {
-                // If API call fails, still show success page if payment=success
-                if (payment === "success") {
-                  navigate(`/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId}`);
-                }
-              });
+              )
+                .then((res) => res.json())
+                .then((result) => {
+                  console.log("Payment status check result:", result);
+                  if (result.success && result.data.paymentStatus === "paid") {
+                    // Redirect to payment success page
+                    navigate(
+                      `/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`,
+                    );
+                  } else {
+                    // Show success page anyway if payment=success in URL
+                    navigate(
+                      `/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId}`,
+                    );
+                  }
+                })
+                .catch(() => {
+                  // If API call fails, still show success page if payment=success
+                  if (payment === "success") {
+                    navigate(
+                      `/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId}`,
+                    );
+                  }
+                });
             } else if (payment === "success") {
               // If we have payment=success but no orderId, still show success
-              navigate(`/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId || ""}`);
+              navigate(
+                `/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId || ""}`,
+              );
             }
           }
         } catch (err) {
@@ -2262,11 +2300,14 @@ export default function JobDetail() {
         // If no pendingData but we have payment=success, check if application exists
         // This handles cases where sessionStorage was cleared
         if (payment === "success" && applicationId) {
-          const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "";
+          const apiUrl =
+            import.meta.env.VITE_API_URL ||
+            import.meta.env.VITE_BACKEND_URL ||
+            "";
           if (apiUrl) {
             fetch(`${apiUrl}/applications/${applicationId}`)
-              .then(res => res.json())
-              .then(result => {
+              .then((res) => res.json())
+              .then((result) => {
                 if (result.success && result.data.application) {
                   const app = result.data.application;
                   if (app.paymentStatus === "paid") {
@@ -2276,7 +2317,9 @@ export default function JobDetail() {
                   }
                 }
               })
-              .catch(err => console.error("Error fetching application:", err));
+              .catch((err) =>
+                console.error("Error fetching application:", err),
+              );
           }
         }
       }
@@ -2495,15 +2538,22 @@ export default function JobDetail() {
 
       if (feeAmount <= 0) {
         // No payment required, redirect to success page
-        sessionStorage.setItem("pendingApplication", JSON.stringify({
-          applicationId: applyData.data.application._id,
-          applicationData: applyData.data.application,
-          defaultPassword: applyData.data.defaultPassword,
-          applicationNumber: applyData.data.application.applicationNumber || formData.applicationNumber,
-          token: applyData.data.token,
-          formData: formData,
-        }));
-        navigate(`/payment-success?applicationId=${applyData.data.application._id}`);
+        sessionStorage.setItem(
+          "pendingApplication",
+          JSON.stringify({
+            applicationId: applyData.data.application._id,
+            applicationData: applyData.data.application,
+            defaultPassword: applyData.data.defaultPassword,
+            applicationNumber:
+              applyData.data.application.applicationNumber ||
+              formData.applicationNumber,
+            token: applyData.data.token,
+            formData: formData,
+          }),
+        );
+        navigate(
+          `/payment-success?applicationId=${applyData.data.application._id}`,
+        );
         return;
       }
 
@@ -2517,21 +2567,27 @@ export default function JobDetail() {
         throw new Error(
           orderResponse.error || "Failed to create payment order",
         );
-      const { orderId, paymentSessionId, amount, amountInRupees, appId } = orderResponse.data;
+      const { orderId, paymentSessionId, amount, amountInRupees, appId } =
+        orderResponse.data;
 
       // Store application data in sessionStorage for after payment redirect
-      sessionStorage.setItem("pendingApplication", JSON.stringify({
-        applicationId: applicationId,
-        applicationData: applyData.data.application,
-        defaultPassword: applyData.data.defaultPassword,
-        applicationNumber: applyData.data.application.applicationNumber || formData.applicationNumber,
-        token: token,
-        formData: formData, // Store form data for PDF
-      }));
+      sessionStorage.setItem(
+        "pendingApplication",
+        JSON.stringify({
+          applicationId: applicationId,
+          applicationData: applyData.data.application,
+          defaultPassword: applyData.data.defaultPassword,
+          applicationNumber:
+            applyData.data.application.applicationNumber ||
+            formData.applicationNumber,
+          token: token,
+          formData: formData, // Store form data for PDF
+        }),
+      );
 
       // Redirect to Cashfree payment page - will redirect to payment success page after payment
       const returnUrl = `${window.location.origin}/payment-success?orderId=${orderId}&applicationId=${applicationId}`;
-      
+
       // Load Cashfree Checkout.js and redirect
       const script = document.createElement("script");
       script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
@@ -3188,17 +3244,22 @@ export default function JobDetail() {
                       }}
                     />
                     I have read and agree to the Terms and Conditions.{" "}
-                    <a
-                      href="#"
+                    <button
+                      onClick={() => navigate("/terms")}
                       style={{
                         color: "#000",
                         fontWeight: 700,
                         textDecoration: "underline",
                         marginLeft: 4,
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        fontSize: "inherit",
+                        padding: 0,
                       }}
                     >
                       Click here to read
-                    </a>
+                    </button>
                   </label>
                   {validationErrors.agreed1 && (
                     <div
@@ -3696,8 +3757,8 @@ export default function JobDetail() {
                     form is correct to the best of my knowledge and belief. If
                     any information provided is found false, my candidature may
                     be rejected at any point of time. I have read and understood
-                    the conditions which I would abide by. Thus, I have given the
-                    above declaration in my full consciousness without any
+                    the conditions which I would abide by. Thus, I have given
+                    the above declaration in my full consciousness without any
                     pressure.
                   </span>
                 </div>
