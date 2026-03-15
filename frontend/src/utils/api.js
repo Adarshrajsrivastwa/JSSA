@@ -10,40 +10,25 @@ if (!API_BASE_URL) {
 }
 
 /**
- * Get auth token from localStorage
- */
-function getToken() {
-  const session = localStorage.getItem("jssa_auth");
-  if (!session) return null;
-  try {
-    const parsed = JSON.parse(session);
-    return parsed.token || null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Make API request with authentication
+ * Make API request (public endpoints don't need authentication)
+ * @param {string} endpoint - API endpoint
+ * @param {object} options - Request options
+ * @param {string} options.token - Optional authentication token
  */
 async function apiRequest(endpoint, options = {}) {
   if (!API_BASE_URL) {
-    return {
-      success: false,
-      data: null,
-      error: "API base URL is not configured. Please set VITE_API_URL or VITE_BACKEND_URL in your .env file"
-    };
+    throw new Error("API base URL is not configured. Please set VITE_API_URL or VITE_BACKEND_URL in your .env file");
   }
   
-  const token = getToken();
   const url = `${API_BASE_URL}${endpoint}`;
+  const { token, ...restOptions } = options;
 
   const config = {
-    ...options,
+    ...restOptions,
     headers: {
       "Content-Type": "application/json",
       ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
+      ...restOptions.headers,
     },
   };
 
@@ -57,10 +42,22 @@ async function apiRequest(endpoint, options = {}) {
       data = await response.json();
     } else {
       const text = await response.text();
+      // For 404 errors, return empty data structure silently
+      if (response.status === 404) {
+        // Silently handle 404 - don't log to avoid console spam
+        return { success: false, data: null, error: "Route not found" };
+      }
       throw new Error(text || "Server returned non-JSON response");
     }
 
     if (!response.ok) {
+      // For 404 errors, return empty data structure silently
+      if (response.status === 404) {
+        // Silently handle 404 - don't log to avoid console spam
+        return { success: false, data: null, error: data.message || data.error || "Route not found" };
+      }
+      // Only log non-404 errors
+      console.error(`API Error ${response.status}:`, data.message || data.error || `Request failed`);
       throw new Error(data.message || data.error || `Request failed with status ${response.status}`);
     }
 
@@ -73,113 +70,14 @@ async function apiRequest(endpoint, options = {}) {
     
     // Provide more helpful error messages
     if (error.message === "Failed to fetch" || error.name === "TypeError") {
-      // Return error structure instead of throwing for better error handling
-      return {
-        success: false,
-        data: null,
-        error: `Cannot connect to backend server. Please ensure:
-1. Backend server is running (npm run dev:backend)
-2. Backend is accessible at ${API_BASE_URL}
-3. Check CORS settings in backend`
-      };
+      // Silently handle network errors - return empty data structure
+      return { success: false, data: null, error: "Network error" };
     }
     
     // For other errors, return error structure instead of throwing
-    return {
-      success: false,
-      data: null,
-      error: error.message || "Unknown error"
-    };
+    return { success: false, data: null, error: error.message || "Unknown error" };
   }
 }
-
-/**
- * Auth API
- */
-export const authAPI = {
-  register: async (userData) => {
-    return apiRequest("/auth/register", {
-      method: "POST",
-      body: JSON.stringify(userData),
-    });
-  },
-
-  login: async (identifier, password, role) => {
-    return apiRequest("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ identifier, password, role }),
-    });
-  },
-
-  getProfile: async () => {
-    return apiRequest("/auth/me", { method: "GET" });
-  },
-
-  forgotPassword: async (email) => {
-    return apiRequest("/auth/forgot-password", {
-      method: "POST",
-      body: JSON.stringify({ email }),
-    });
-  },
-
-  verifyOTP: async (email, otp) => {
-    return apiRequest("/auth/verify-otp", {
-      method: "POST",
-      body: JSON.stringify({ email, otp }),
-    });
-  },
-
-  resetPassword: async (email, otp, newPassword) => {
-    return apiRequest("/auth/reset-password", {
-      method: "POST",
-      body: JSON.stringify({ email, otp, newPassword }),
-    });
-  },
-};
-
-/**
- * Applications API
- */
-export const applicationsAPI = {
-  getAll: async (params = {}) => {
-    const queryParams = new URLSearchParams();
-    if (params.status) queryParams.append("status", params.status);
-    if (params.search) queryParams.append("search", params.search);
-    if (params.page) queryParams.append("page", params.page);
-    if (params.limit) queryParams.append("limit", params.limit);
-    if (params.jobPostingId) queryParams.append("jobPostingId", params.jobPostingId);
-    
-    const queryString = queryParams.toString();
-    const url = `/applications${queryString ? `?${queryString}` : ""}`;
-    return apiRequest(url, { method: "GET" });
-  },
-
-  getById: async (id) => {
-    return apiRequest(`/applications/${id}`, { method: "GET" });
-  },
-
-  create: async (applicationData) => {
-    return apiRequest("/applications", {
-      method: "POST",
-      body: JSON.stringify(applicationData),
-    });
-  },
-
-  update: async (id, applicationData) => {
-    return apiRequest(`/applications/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(applicationData),
-    });
-  },
-
-  delete: async (id) => {
-    return apiRequest(`/applications/${id}`, { method: "DELETE" });
-  },
-
-  checkApplication: async (jobPostingId) => {
-    return apiRequest(`/applications/check/${jobPostingId}`, { method: "GET" });
-  },
-};
 
 /**
  * Job Postings API
@@ -201,143 +99,12 @@ export const jobPostingsAPI = {
     return apiRequest(`/job-postings/${id}`, { method: "GET" });
   },
 
-  create: async (postingData) => {
-    return apiRequest("/job-postings", {
-      method: "POST",
-      body: JSON.stringify(postingData),
-    });
+  getLatestResults: async () => {
+    return apiRequest("/job-postings/latest-results", { method: "GET" });
   },
 
-  update: async (id, postingData) => {
-    return apiRequest(`/job-postings/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(postingData),
-    });
-  },
-
-  delete: async (id) => {
-    return apiRequest(`/job-postings/${id}`, { method: "DELETE" });
-  },
-};
-
-/**
- * Students API
- */
-export const studentsAPI = {
-  register: async (studentData) => {
-    return apiRequest("/students/register", {
-      method: "POST",
-      body: JSON.stringify(studentData),
-    });
-  },
-
-  getAll: async (params = {}) => {
-    const queryParams = new URLSearchParams();
-    if (params.status) queryParams.append("status", params.status);
-    if (params.search) queryParams.append("search", params.search);
-    if (params.page) queryParams.append("page", params.page);
-    if (params.limit) queryParams.append("limit", params.limit);
-
-    const queryString = queryParams.toString();
-    const url = `/students${queryString ? `?${queryString}` : ""}`;
-    return apiRequest(url, { method: "GET" });
-  },
-
-  getById: async (id) => {
-    return apiRequest(`/students/${id}`, { method: "GET" });
-  },
-
-  update: async (id, studentData) => {
-    return apiRequest(`/students/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(studentData),
-    });
-  },
-};
-
-/**
- * Dashboard API
- */
-export const dashboardAPI = {
-  getStats: async () => {
-    return apiRequest("/dashboard/stats", { method: "GET" });
-  },
-};
-
-/**
- * Settings API
- */
-export const settingsAPI = {
-  get: async () => {
-    return apiRequest("/settings", { method: "GET" });
-  },
-
-  update: async (settingsData) => {
-    return apiRequest("/settings", {
-      method: "PUT",
-      body: JSON.stringify(settingsData),
-    });
-  },
-
-  getRazorpayStatus: async () => {
-    return apiRequest("/settings/razorpay/status", { method: "GET" });
-  },
-
-  verifyRazorpayCredentials: async () => {
-    return apiRequest("/settings/razorpay/verify", { method: "POST" });
-  },
-};
-
-/**
- * Gallery API
- */
-export const galleryAPI = {
-  getAll: async (active = null) => {
-    const query = active !== null ? `?active=${active}` : "";
-    return apiRequest(`/gallery${query}`, { method: "GET" });
-  },
-
-  getById: async (id) => {
-    return apiRequest(`/gallery/${id}`, { method: "GET" });
-  },
-
-  upload: async (formData) => {
-    const token = getToken();
-    const url = `${API_BASE_URL}/gallery`;
-    
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: formData,
-    });
-
-    const contentType = response.headers.get("content-type");
-    let data;
-    if (contentType && contentType.includes("application/json")) {
-      data = await response.json();
-    } else {
-      const text = await response.text();
-      throw new Error(text || "Server returned non-JSON response");
-    }
-
-    if (!response.ok) {
-      throw new Error(data.message || data.error || `Request failed with status ${response.status}`);
-    }
-
-    return data;
-  },
-
-  update: async (id, updateData) => {
-    return apiRequest(`/gallery/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(updateData),
-    });
-  },
-
-  delete: async (id) => {
-    return apiRequest(`/gallery/${id}`, { method: "DELETE" });
+  getLatestVacancies: async () => {
+    return apiRequest("/job-postings/latest-vacancies", { method: "GET" });
   },
 };
 
@@ -349,79 +116,15 @@ export const scrollerAPI = {
     const query = active !== null ? `?active=${active}` : "";
     return apiRequest(`/scroller${query}`, { method: "GET" });
   },
-
-  getById: async (id) => {
-    return apiRequest(`/scroller/${id}`, { method: "GET" });
-  },
-
-  upload: async (formData) => {
-    const token = getToken();
-    const url = `${API_BASE_URL}/scroller`;
-    
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: formData,
-    });
-
-    const contentType = response.headers.get("content-type");
-    let data;
-    if (contentType && contentType.includes("application/json")) {
-      data = await response.json();
-    } else {
-      const text = await response.text();
-      throw new Error(text || "Server returned non-JSON response");
-    }
-
-    if (!response.ok) {
-      throw new Error(data.message || data.error || `Request failed with status ${response.status}`);
-    }
-
-    return data;
-  },
-
-  update: async (id, updateData) => {
-    return apiRequest(`/scroller/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(updateData),
-    });
-  },
-
-  delete: async (id) => {
-    return apiRequest(`/scroller/${id}`, { method: "DELETE" });
-  },
 };
 
 /**
- * Payments API
+ * Gallery API
  */
-export const paymentsAPI = {
-  createOrder: async (jobPostingId, gender, category) => {
-    return apiRequest("/payments/create-order", {
-      method: "POST",
-      body: JSON.stringify({ jobPostingId, gender, category }),
-    });
-  },
-
-  verifyPayment: async (orderId, paymentId, signature, applicationId) => {
-    return apiRequest("/payments/verify", {
-      method: "POST",
-      body: JSON.stringify({
-        razorpay_order_id: orderId,
-        razorpay_payment_id: paymentId,
-        razorpay_signature: signature,
-        applicationId: applicationId,
-      }),
-    });
-  },
-
-  calculateFee: async (jobPostingId, gender, category) => {
-    return apiRequest(
-      `/payments/calculate-fee?jobPostingId=${jobPostingId}&gender=${gender}&category=${category}`,
-      { method: "GET" }
-    );
+export const galleryAPI = {
+  getAll: async (active = null) => {
+    const query = active !== null ? `?active=${active}` : "";
+    return apiRequest(`/gallery${query}`, { method: "GET" });
   },
 };
 
@@ -433,27 +136,43 @@ export const notificationsAPI = {
     const query = active !== null ? `?active=${active}` : "";
     return apiRequest(`/notifications${query}`, { method: "GET" });
   },
+};
 
-  getById: async (id) => {
-    return apiRequest(`/notifications/${id}`, { method: "GET" });
-  },
-
-  create: async (data) => {
-    return apiRequest("/notifications", {
+/**
+ * Payments API
+ */
+export const paymentsAPI = {
+  createOrder: async (jobPostingId, gender, category, token = null) => {
+    return apiRequest("/payments/create-order", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ jobPostingId, gender, category }),
+      token,
     });
   },
 
-  update: async (id, data) => {
-    return apiRequest(`/notifications/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
+  verifyPayment: async (orderId, paymentId, signature, applicationId, orderAmount, txStatus, paymentMode, txMsg, txTime, token = null) => {
+    return apiRequest("/payments/verify", {
+      method: "POST",
+      body: JSON.stringify({
+        orderId: orderId,
+        paymentId: paymentId,
+        signature: signature,
+        applicationId: applicationId,
+        orderAmount: orderAmount,
+        txStatus: txStatus,
+        paymentMode: paymentMode,
+        txMsg: txMsg,
+        txTime: txTime,
+      }),
+      token,
     });
   },
 
-  delete: async (id) => {
-    return apiRequest(`/notifications/${id}`, { method: "DELETE" });
+  calculateFee: async (jobPostingId, gender, category, token = null) => {
+    return apiRequest(
+      `/payments/calculate-fee?jobPostingId=${jobPostingId}&gender=${gender}&category=${category}`,
+      { method: "GET", token }
+    );
   },
 };
 

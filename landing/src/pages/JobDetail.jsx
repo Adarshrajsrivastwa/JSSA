@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { jobPostingsAPI, paymentsAPI } from "../utils/api.js";
 import logo from "../assets/img0.png";
 import logo1 from "../assets/jss.png";
@@ -2014,6 +2014,7 @@ function InlineReview({
 export default function JobDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -2057,12 +2058,25 @@ export default function JobDetail() {
     markPercentage: "",
   });
 
+  // COMMENTED: Razorpay script loading - replaced with Cashfree
+  // useEffect(() => {
+  //   const script = document.createElement("script");
+  //   script.src = "https://checkout.razorpay.com/v1/checkout.js";
+  //   script.async = true;
+  //   document.body.appendChild(script);
+  //   return () => document.body.removeChild(script);
+  // }, []);
+
   useEffect(() => {
     const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
     script.async = true;
     document.body.appendChild(script);
-    return () => document.body.removeChild(script);
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -2138,6 +2152,67 @@ export default function JobDetail() {
     };
     if (id) fetchJob();
   }, [id]);
+
+  // Handle Cashfree payment redirect
+  useEffect(() => {
+    const payment = searchParams.get("payment");
+    if (payment === "success") {
+      const orderId = searchParams.get("orderId");
+      const applicationId = searchParams.get("applicationId");
+      const pendingData = sessionStorage.getItem("pendingApplication");
+      
+      if (pendingData && orderId && applicationId) {
+        try {
+          const { token } = JSON.parse(pendingData);
+          
+          // Get payment details from URL or Cashfree callback
+          const paymentId = searchParams.get("paymentId") || searchParams.get("referenceId");
+          const signature = searchParams.get("signature");
+          const orderAmount = searchParams.get("orderAmount");
+          const txStatus = searchParams.get("txStatus") || "SUCCESS";
+          const paymentMode = searchParams.get("paymentMode") || "";
+          const txMsg = searchParams.get("txMsg") || "";
+          const txTime = searchParams.get("txTime") || "";
+
+          if (paymentId && signature) {
+            // Verify payment
+            paymentsAPI.verifyPayment(
+              orderId,
+              paymentId,
+              signature,
+              applicationId,
+              orderAmount,
+              txStatus,
+              paymentMode,
+              txMsg,
+              txTime,
+              token,
+            ).then((verifyResponse) => {
+              if (verifyResponse.success) {
+                const data = JSON.parse(pendingData);
+                setSubmittedApplication({
+                  ...data.applicationData,
+                  defaultPassword: data.defaultPassword,
+                  applicationNumber: data.applicationNumber,
+                });
+                setShowSuccessPage(true);
+                // Clean up
+                sessionStorage.removeItem("pendingApplication");
+                // Remove payment params from URL
+                window.history.replaceState({}, "", window.location.pathname);
+              } else {
+                alert(`Payment verification failed: ${verifyResponse.message || "Please contact support."}`);
+              }
+            }).catch((err) => {
+              alert(`Payment verification failed: ${err.message}`);
+            });
+          }
+        } catch (err) {
+          console.error("Payment redirect handling error:", err);
+        }
+      }
+    }
+  }, [searchParams]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -2371,8 +2446,44 @@ export default function JobDetail() {
         throw new Error(
           orderResponse.error || "Failed to create payment order",
         );
-      const { orderId, amount, amountInRupees, keyId } = orderResponse.data;
+      const { orderId, paymentSessionId, amount, amountInRupees, appId } = orderResponse.data;
 
+      // Store application data in sessionStorage for after payment redirect
+      sessionStorage.setItem("pendingApplication", JSON.stringify({
+        applicationId,
+        applicationData: applyData.data.application,
+        defaultPassword: applyData.data.defaultPassword,
+        applicationNumber: applyData.data.application.applicationNumber || formData.applicationNumber,
+        token,
+      }));
+
+      // Redirect to Cashfree payment page
+      const returnUrl = `${window.location.origin}${window.location.pathname}?payment=success&orderId=${orderId}&applicationId=${applicationId}`;
+      
+      // Load Cashfree Checkout.js and redirect
+      const script = document.createElement("script");
+      script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+      script.onload = () => {
+        if (window.Cashfree) {
+          const cashfree = new window.Cashfree({
+            mode: "production",
+          });
+          cashfree.checkout({
+            paymentSessionId: paymentSessionId,
+            redirectTarget: "_self",
+          });
+        } else {
+          // Fallback: redirect directly to Cashfree payment URL
+          window.location.href = `https://www.cashfree.com/checkout/payment/${paymentSessionId}`;
+        }
+      };
+      script.onerror = () => {
+        // Fallback: redirect directly to Cashfree payment URL
+        window.location.href = `https://www.cashfree.com/checkout/payment/${paymentSessionId}`;
+      };
+      document.body.appendChild(script);
+
+      /* COMMENTED: Razorpay payment code
       let retries = 0;
       while (!window.Razorpay && retries < 10) {
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -2440,6 +2551,7 @@ export default function JobDetail() {
         setApplying(false);
       });
       razorpay.open();
+      */
     } catch (err) {
       alert("Error: " + err.message);
       setApplying(false);
