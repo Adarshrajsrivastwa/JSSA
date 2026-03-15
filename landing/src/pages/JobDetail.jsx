@@ -2211,24 +2211,9 @@ export default function JobDetail() {
               token,
             ).then((verifyResponse) => {
               if (verifyResponse.success) {
-                setSubmittedApplication({
-                  ...applicationData,
-                  defaultPassword: defaultPassword,
-                  applicationNumber: applicationNumber,
-                });
-                // Restore form data if available
-                if (storedFormData) {
-                  Object.keys(storedFormData).forEach(key => {
-                    if (storedFormData[key]) {
-                      setFormData(prev => ({ ...prev, [key]: storedFormData[key] }));
-                    }
-                  });
-                }
-                setShowSuccessPage(true);
-                // Clean up
-                sessionStorage.removeItem("pendingApplication");
-                // Remove payment params from URL
-                window.history.replaceState({}, "", window.location.pathname);
+                // Redirect to payment success page
+                navigate(`/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`);
+                // Clean up will happen on success page
               } else {
                 alert(`Payment verification failed: ${verifyResponse.message || "Please contact support."}`);
               }
@@ -2252,81 +2237,22 @@ export default function JobDetail() {
               .then(result => {
                 console.log("Payment status check result:", result);
                 if (result.success && result.data.paymentStatus === "paid") {
-                  setSubmittedApplication({
-                    ...applicationData,
-                    defaultPassword: defaultPassword,
-                    applicationNumber: applicationNumber,
-                  });
-                  // Restore form data if available
-                  if (storedFormData) {
-                    Object.keys(storedFormData).forEach(key => {
-                      if (storedFormData[key]) {
-                        setFormData(prev => ({ ...prev, [key]: storedFormData[key] }));
-                      }
-                    });
-                  }
-                  setShowSuccessPage(true);
-                  sessionStorage.removeItem("pendingApplication");
-                  window.history.replaceState({}, "", window.location.pathname);
+                  // Redirect to payment success page
+                  navigate(`/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`);
                 } else {
                   // Show success page anyway if payment=success in URL
-                  setSubmittedApplication({
-                    ...applicationData,
-                    defaultPassword: defaultPassword,
-                    applicationNumber: applicationNumber,
-                  });
-                  // Restore form data if available
-                  if (storedFormData) {
-                    Object.keys(storedFormData).forEach(key => {
-                      if (storedFormData[key]) {
-                        setFormData(prev => ({ ...prev, [key]: storedFormData[key] }));
-                      }
-                    });
-                  }
-                  setShowSuccessPage(true);
-                  sessionStorage.removeItem("pendingApplication");
-                  window.history.replaceState({}, "", window.location.pathname);
+                  navigate(`/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId}`);
                 }
               })
               .catch(() => {
                 // If API call fails, still show success page if payment=success
                 if (payment === "success") {
-                  setSubmittedApplication({
-                    ...applicationData,
-                    defaultPassword: defaultPassword,
-                    applicationNumber: applicationNumber,
-                  });
-                  // Restore form data if available
-                  if (storedFormData) {
-                    Object.keys(storedFormData).forEach(key => {
-                      if (storedFormData[key]) {
-                        setFormData(prev => ({ ...prev, [key]: storedFormData[key] }));
-                      }
-                    });
-                  }
-                  setShowSuccessPage(true);
-                  sessionStorage.removeItem("pendingApplication");
-                  window.history.replaceState({}, "", window.location.pathname);
+                  navigate(`/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId}`);
                 }
               });
             } else if (payment === "success") {
               // If we have payment=success but no orderId, still show success
-              setSubmittedApplication({
-                ...applicationData,
-                defaultPassword: defaultPassword,
-                applicationNumber: applicationNumber,
-              });
-              // Restore form data if available
-              if (storedFormData) {
-                Object.keys(storedFormData).forEach(key => {
-                  if (storedFormData[key]) {
-                    setFormData(prev => ({ ...prev, [key]: storedFormData[key] }));
-                  }
-                });
-              }
-              setShowSuccessPage(true);
-              sessionStorage.removeItem("pendingApplication");
-              window.history.replaceState({}, "", window.location.pathname);
+              navigate(`/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId || ""}`);
             }
           }
         } catch (err) {
@@ -2345,12 +2271,8 @@ export default function JobDetail() {
                   const app = result.data.application;
                   if (app.paymentStatus === "paid") {
                     // Get form data from somewhere or show success with available data
-                    setSubmittedApplication({
-                      ...app,
-                      applicationNumber: app.applicationNumber || "",
-                    });
-                    setShowSuccessPage(true);
-                    window.history.replaceState({}, "", window.location.pathname);
+                    // Redirect to payment success page
+                    navigate(`/payment-success?applicationId=${applicationId}`);
                   }
                 }
               })
@@ -2572,14 +2494,16 @@ export default function JobDetail() {
       const token = applyData.data.token;
 
       if (feeAmount <= 0) {
-        setSubmittedApplication({
-          ...applyData.data.application,
+        // No payment required, redirect to success page
+        sessionStorage.setItem("pendingApplication", JSON.stringify({
+          applicationId: applyData.data.application._id,
+          applicationData: applyData.data.application,
           defaultPassword: applyData.data.defaultPassword,
-          applicationNumber:
-            applyData.data.application.applicationNumber ||
-            formData.applicationNumber,
-        });
-        setShowSuccessPage(true);
+          applicationNumber: applyData.data.application.applicationNumber || formData.applicationNumber,
+          token: applyData.data.token,
+          formData: formData,
+        }));
+        navigate(`/payment-success?applicationId=${applyData.data.application._id}`);
         return;
       }
 
@@ -2605,8 +2529,8 @@ export default function JobDetail() {
         formData: formData, // Store form data for PDF
       }));
 
-      // Redirect to Cashfree payment page
-      const returnUrl = `${window.location.origin}${window.location.pathname}?payment=success&orderId=${orderId}&applicationId=${applicationId}`;
+      // Redirect to Cashfree payment page - will redirect to payment success page after payment
+      const returnUrl = `${window.location.origin}/payment-success?orderId=${orderId}&applicationId=${applicationId}`;
       
       // Load Cashfree Checkout.js and redirect
       const script = document.createElement("script");
@@ -2659,14 +2583,16 @@ export default function JobDetail() {
               token,
             );
             if (verifyResponse.success) {
-              setSubmittedApplication({
-                ...applyData.data.application,
+              // Redirect to payment success page
+              sessionStorage.setItem("pendingApplication", JSON.stringify({
+                applicationId: applyData.data.application._id,
+                applicationData: applyData.data.application,
                 defaultPassword: applyData.data.defaultPassword,
-                applicationNumber:
-                  applyData.data.application.applicationNumber ||
-                  formData.applicationNumber,
-              });
-              setShowSuccessPage(true);
+                applicationNumber: applyData.data.application.applicationNumber || formData.applicationNumber,
+                token: applyData.data.token,
+                formData: formData,
+              }));
+              navigate(`/payment-success?applicationId=${applyData.data.application._id}`);
             } else {
               alert(
                 `Payment verification failed: ${verifyResponse.message || "Please contact support."}`,
@@ -3346,7 +3272,8 @@ export default function JobDetail() {
       </div>
 
       {/* Success Modal */}
-      {showSuccessPage && submittedApplication && (
+      {/* Success page moved to /payment-success route */}
+      {false && showSuccessPage && submittedApplication && (
         <div
           style={{
             position: "fixed",

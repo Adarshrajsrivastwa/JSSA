@@ -4,6 +4,7 @@ import TopBarMail from "./pages/TopBarComponents/TopBarMail";
 import Dashboard from "./pages/Dashboard";
 import JobDetail from "./pages/JobDetail";
 import Login from "./pages/Login";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 // NOTE: BrowserRouter is in main.jsx — DO NOT add it here
 
@@ -14,6 +15,7 @@ function App() {
       <Route path="/topbar-notifications" element={<TopBarNotification />} />
       <Route path="/mail" element={<TopBarMail />} />
       <Route path="/job-postings/view/:id" element={<JobDetail />} />
+      <Route path="/payment-success" element={<PaymentSuccess />} />
 
       {/* All JSS Abhiyan pages — Dashboard reads URL and shows correct page */}
       <Route path="/" element={<Dashboard />} />

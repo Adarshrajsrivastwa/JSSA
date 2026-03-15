@@ -2605,8 +2605,8 @@ export default function JobDetail() {
         formData: formData, // Store form data for PDF
       }));
 
-      // Redirect to Cashfree payment page
-      const returnUrl = `${window.location.origin}${window.location.pathname}?payment=success&orderId=${orderId}&applicationId=${applicationId}`;
+      // Redirect to Cashfree payment page - will redirect to payment success page after payment
+      const returnUrl = `${window.location.origin}/payment-success?orderId=${orderId}&applicationId=${applicationId}`;
       
       // Load Cashfree Checkout.js and redirect
       const script = document.createElement("script");
