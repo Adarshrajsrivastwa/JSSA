@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { jobPostingsAPI, paymentsAPI } from "../utils/api.js";
 import logo from "../assets/img0.png";
 import logo1 from "../assets/jss.png";
@@ -55,10 +55,8 @@ const jobsCSS = `
     font-size: 15px; padding: 12px 40px;
     border: none; cursor: pointer; border-radius: 4px;
   }
-  .jobs-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
-  .jobs-grid-2 > div { display: flex; flex-direction: column; }
-  .jobs-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: start; }
-  .jobs-grid-3 > div { display: flex; flex-direction: column; }
+  .jobs-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .jobs-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
 
   .jobs-detail-title-row {
     background: #c2fbd7;
@@ -132,9 +130,6 @@ const jobsCSS = `
   .jobs-detail-val {
     padding: 12px 12px; font-size: 14px; color: #000000; line-height: 1.6;
     background: #c2fbd7;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .review-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -178,76 +173,50 @@ const jobsCSS = `
 
     .tb-topbar { flex-wrap: nowrap !important; padding: 4px 6px !important; gap: 4px !important; justify-content: space-between !important; height: auto !important; min-height: 36px !important; position: relative !important; width: 100% !important; box-sizing: border-box !important; }
     .tb-left   { display: flex !important; gap: 4px !important; flex-shrink: 0 !important; margin-left: 0 !important; align-items: center !important; }
-    .tb-phone  { display: flex !important; font-size: 9px !important; gap: 2px !important; white-space: nowrap !important; font-weight: 600 !important; color: #000000 !important; align-items: center !important; }
-    .tb-phone svg { width: 10px !important; height: 10px !important; }
-    .tb-email  { display: flex !important; font-size: 9px !important; gap: 2px !important; white-space: nowrap !important; font-weight: 600 !important; color: #000000 !important; align-items: center !important; }
-    .tb-email svg { width: 10px !important; height: 10px !important; }
+    .tb-phone  { display: flex !important; font-size: 7px !important; gap: 2px !important; white-space: nowrap !important; font-weight: 600 !important; color: #000000 !important; align-items: center !important; }
+    .tb-phone svg { width: 8px !important; height: 8px !important; }
+    .tb-email  { display: flex !important; font-size: 7px !important; gap: 2px !important; white-space: nowrap !important; font-weight: 600 !important; color: #000000 !important; align-items: center !important; }
+    .tb-email svg { width: 8px !important; height: 8px !important; }
     .tb-search { position: absolute !important; left: 55% !important; transform: translateX(-50%) !important; display: flex !important; align-items: center !important; }
-    .tb-search input { width: 100px !important; font-size: 9px !important; height: 24px !important; padding: 2px 20px 2px 6px !important; border: 1px solid #000 !important; border-radius: 3px !important; }
-    .tb-search svg { width: 12px !important; height: 12px !important; right: 4px !important; position: absolute !important; pointer-events: none !important; }
-    .tb-dl-btn { font-size: 8px !important; padding: 4px 6px !important; white-space: nowrap !important; flex-shrink: 0 !important; height: 24px !important; font-weight: 700 !important; border-radius: 3px !important; margin-right: 0 !important; }
+    .tb-search input { width: 80px !important; font-size: 7px !important; height: 22px !important; padding: 2px 18px 2px 5px !important; border: 1px solid #000 !important; border-radius: 3px !important; }
+    .tb-search svg { width: 10px !important; height: 10px !important; right: 4px !important; position: absolute !important; pointer-events: none !important; }
+    .tb-dl-btn { font-size: 6px !important; padding: 3px 5px !important; white-space: nowrap !important; flex-shrink: 0 !important; height: 22px !important; font-weight: 700 !important; border-radius: 3px !important; margin-right: 0 !important; }
 
     .nav-list { flex-wrap: nowrap !important; }
     .nav-item  { flex: 1 1 0 !important; }
-    .nav-btn   { font-size: 8px !important; padding: 6px 2px !important; }
+    .nav-btn   { font-size: 5.5px !important; padding: 4px 1px !important; }
 
-    .job-detail-container { padding: 0 2% !important; }
-    .jobs-detail-title-row { font-size: 10px !important; padding: 8px 6px !important; line-height: 1.4 !important; }
+    .jobs-detail-title-row { font-size: 7px; padding: 6px; line-height: 1.4; }
     .jobs-detail-download-row { grid-template-columns: 1fr 1fr !important; }
-    .jobs-detail-download-cell { padding: 10px 8px !important; }
-    .jobs-detail-download-cell .advt-label { font-size: 12px !important; margin-bottom: 3px !important; }
-    .jobs-detail-download-cell .advt-date  { font-size: 11px !important; margin-bottom: 6px !important; }
-    .jobs-detail-download-cell .dl-link    { font-size: 10px !important; gap: 3px !important; }
-    .jobs-detail-download-cell .dl-link svg { width: 20px !important; height: 24px !important; }
-    .jobs-detail-download-cell .new-badge  { font-size: 7px !important; padding: 1px 3px !important; }
+    .jobs-detail-download-cell { padding: 6px 4px; }
+    .jobs-detail-download-cell .advt-label { font-size: 7px; margin-bottom: 2px; }
+    .jobs-detail-download-cell .advt-date  { font-size: 6px; margin-bottom: 6px; }
+    .jobs-detail-download-cell .dl-link    { font-size: 6px; gap: 2px; }
+    .jobs-detail-download-cell .new-badge  { font-size: 6px; padding: 1px 3px; }
 
     .jobs-detail-row { grid-template-columns: 1fr 1fr !important; }
-    .jobs-detail-lang-cell { grid-template-columns: 120px 20px 1fr !important; }
-    .jobs-detail-key   { font-size: 11px !important; padding: 8px 6px !important; line-height: 1.4 !important; }
-    .jobs-detail-colon { display: flex !important; font-size: 11px !important; padding: 8px 0 !important; }
-    .jobs-detail-val   { font-size: 11px !important; padding: 8px 6px !important; line-height: 1.4 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+    .jobs-detail-lang-cell { grid-template-columns: 52px 10px 1fr !important; }
+    .jobs-detail-key   { font-size: 7px !important; padding: 4px 3px 4px 4px !important; line-height: 1.4 !important; }
+    .jobs-detail-colon { font-size: 7px !important; padding: 4px 0 !important; }
+    .jobs-detail-val   { font-size: 7px !important; padding: 4px 3px !important; line-height: 1.4 !important; }
 
-    .jobs-grid-2 { grid-template-columns: 1fr 1fr !important; gap: 10px !important; align-items: start !important; }
-    .jobs-grid-2 > div { display: flex !important; flex-direction: column !important; }
-    .jobs-grid-3 { grid-template-columns: 1fr 1fr 1fr !important; gap: 10px !important; align-items: start !important; }
-    .jobs-grid-3 > div { display: flex !important; flex-direction: column !important; }
-    .jobs-section-heading { font-size: 12px !important; margin: 14px 0 10px !important; }
-    .jobs-submit-btn { font-size: 12px !important; padding: 10px 20px !important; }
-    .review-table { font-size: 11px !important; }
-    .review-table td { font-size: 11px !important; padding: 8px 6px !important; }
-    .review-table td:first-child { font-size: 11px !important; }
+    .jobs-grid-2 { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+    .jobs-grid-3 { grid-template-columns: 1fr 1fr 1fr !important; gap: 5px !important; }
+    .jobs-section-heading { font-size: 11px; margin: 12px 0 8px; }
+    .jobs-submit-btn { font-size: 11px; padding: 8px 18px; }
+    .review-table td { font-size: 11px; padding: 6px 8px; }
 
     footer { padding: 10px 6px 0 !important; }
-    .footer-inner   { flex-direction: row !important; gap: 6px !important; align-items: flex-start !important; padding: 0 !important; }
-    .ft-heading     { font-size: 8px !important; margin-bottom: 6px !important; letter-spacing: 0.02em !important; }
+    .footer-inner   { flex-direction: row !important; gap: 6px !important; padding: 0 !important; }
+    .ft-heading     { font-size: 8px !important; margin-bottom: 6px !important; }
     .ft-list        { gap: 3px !important; }
-    .ft-link        { font-size: 7px !important; font-weight: 500 !important; }
-    .ft-logo-wrap   { padding: 0 4px !important; width: auto !important; justify-content: center !important; }
+    .ft-link        { font-size: 7px !important; }
+    .ft-logo-wrap   { padding: 0 4px !important; }
     .ft-logo-img    { width: 60px !important; }
     .ft-contact     { gap: 3px !important; align-items: flex-end !important; }
     .ft-contact-item { font-size: 7px !important; }
-    .ft-contact-link { font-size: 7px !important; text-align: left !important; margin-top: 2px !important; }
+    .ft-contact-link { font-size: 7px !important; margin-top: 2px !important; }
     .ft-copyright   { font-size: 7px !important; padding: 8px 0 !important; margin-top: 10px !important; }
-  }
-
-  @media (max-width: 480px) {
-    .job-detail-container { padding: 0 1.5% !important; }
-    .jobs-detail-title-row { font-size: 9px !important; padding: 7px 5px !important; line-height: 1.3 !important; }
-    .jobs-detail-download-row { grid-template-columns: 1fr 1fr !important; }
-    .jobs-detail-download-cell { padding: 8px 6px !important; }
-    .jobs-detail-download-cell .advt-label { font-size: 11px !important; }
-    .jobs-detail-download-cell .advt-date  { font-size: 10px !important; }
-    .jobs-detail-download-cell .dl-link    { font-size: 9px !important; }
-    .jobs-detail-download-cell .dl-link svg { width: 18px !important; height: 22px !important; }
-    .jobs-detail-row { grid-template-columns: 1fr 1fr !important; }
-    .jobs-detail-lang-cell { grid-template-columns: 100px 18px 1fr !important; }
-    .jobs-detail-key   { font-size: 10px !important; padding: 7px 5px !important; }
-    .jobs-detail-colon { font-size: 10px !important; padding: 7px 0 !important; }
-    .jobs-detail-val   { font-size: 10px !important; padding: 7px 5px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
-    .jobs-section-heading { font-size: 11px !important; }
-    .jobs-submit-btn { font-size: 11px !important; padding: 9px 18px !important; }
-    .review-table { font-size: 10px !important; }
-    .review-table td { font-size: 10px !important; padding: 7px 5px !important; }
   }
 `;
 
@@ -2046,7 +2015,6 @@ export default function JobDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const location = useLocation();
 
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -2065,7 +2033,6 @@ export default function JobDetail() {
   const [agreed1, setAgreed1] = useState(false);
   const [agreed2, setAgreed2] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
-  const paymentRedirectProcessed = useRef(false);
   const [formData, setFormData] = useState({
     applicationNumber: "",
     candidateName: "",
@@ -2188,28 +2155,12 @@ export default function JobDetail() {
 
   // Handle Cashfree payment redirect
   useEffect(() => {
-    // Don't run this logic if we're already on payment-success page
-    const currentPath = location.pathname || window.location.pathname;
-    if (currentPath === "/payment-success" || currentPath.includes("/payment-success")) {
-      console.log("🚫 Skipping payment redirect logic - already on payment-success page:", currentPath);
-      paymentRedirectProcessed.current = true; // Mark as processed to prevent any redirects
-      return;
-    }
-
-    // Prevent multiple redirects
-    if (paymentRedirectProcessed.current) {
-      console.log("🚫 Skipping payment redirect logic - already processed");
-      return;
-    }
-
     const payment = searchParams.get("payment");
     const orderId = searchParams.get("orderId");
     const applicationId = searchParams.get("applicationId");
 
     // Check if we're returning from Cashfree payment
-    // Only process if we have payment parameters AND we're on JobDetail page
-    if ((payment === "success" || orderId || applicationId) && location.pathname.includes("/job-postings/view/")) {
-      paymentRedirectProcessed.current = true;
+    if (payment === "success" || orderId || applicationId) {
       const pendingData = sessionStorage.getItem("pendingApplication");
 
       if (pendingData) {
@@ -2279,15 +2230,12 @@ export default function JobDetail() {
               )
               .then((verifyResponse) => {
                 if (verifyResponse.success) {
-                  console.log("✅ Payment verified successfully, redirecting to payment-success page");
-                  // Redirect to payment success page - use replace to prevent back navigation
+                  // Redirect to payment success page
                   navigate(
                     `/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`,
-                    { replace: true }
                   );
                   // Clean up will happen on success page
                 } else {
-                  console.error("❌ Payment verification failed:", verifyResponse);
                   alert(
                     `Payment verification failed: ${verifyResponse.message || "Please contact support."}`,
                   );
@@ -2319,38 +2267,29 @@ export default function JobDetail() {
                 .then((result) => {
                   console.log("Payment status check result:", result);
                   if (result.success && result.data.paymentStatus === "paid") {
-                    console.log("✅ Payment status is paid, redirecting to payment-success page");
-                    // Redirect to payment success page - use replace to prevent back navigation
+                    // Redirect to payment success page
                     navigate(
                       `/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`,
-                      { replace: true }
                     );
                   } else {
-                    console.log("⚠️ Payment status not confirmed, but showing success page anyway");
                     // Show success page anyway if payment=success in URL
                     navigate(
                       `/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId}`,
-                      { replace: true }
                     );
                   }
                 })
-                .catch((err) => {
-                  console.error("Error checking payment status:", err);
+                .catch(() => {
                   // If API call fails, still show success page if payment=success
                   if (payment === "success") {
-                    console.log("⚠️ API call failed, but payment=success in URL, redirecting to payment-success page");
                     navigate(
                       `/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId}`,
-                      { replace: true }
                     );
                   }
                 });
             } else if (payment === "success") {
               // If we have payment=success but no orderId, still show success
-              console.log("✅ Payment=success in URL, redirecting to payment-success page");
               navigate(
                 `/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId || ""}`,
-                { replace: true }
               );
             }
           }
@@ -2374,8 +2313,7 @@ export default function JobDetail() {
                   if (app.paymentStatus === "paid") {
                     // Get form data from somewhere or show success with available data
                     // Redirect to payment success page
-                    console.log("✅ Application payment status is paid, redirecting to payment-success page");
-                    navigate(`/payment-success?applicationId=${applicationId}`, { replace: true });
+                    navigate(`/payment-success?applicationId=${applicationId}`);
                   }
                 }
               })
@@ -2386,7 +2324,7 @@ export default function JobDetail() {
         }
       }
     }
-  }, [searchParams, location.pathname, navigate]);
+  }, [searchParams]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -2535,19 +2473,16 @@ export default function JobDetail() {
   };
 
   const handleReview = () => {
-    console.log("🔍 handleReview called - validating form...");
     if (!validateAllFields()) {
       alert("Please fill all required fields correctly before submitting.");
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
-    console.log("✅ Validation passed - showing preview");
     setFormStep("review");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSubmit = async () => {
-    console.log("🚀 handleSubmit called - creating application...");
     setApplying(true);
     try {
       const photoBase64 = await convertFileToBase64(photo);
@@ -2603,13 +2538,6 @@ export default function JobDetail() {
 
       if (feeAmount <= 0) {
         // No payment required, redirect to success page
-        // Include photo and signature in formData for PDF generation
-        const formDataWithImages = {
-          ...formData,
-          photo: photoBase64, // Add photo base64
-          signature: signatureBase64, // Add signature base64
-        };
-        
         sessionStorage.setItem(
           "pendingApplication",
           JSON.stringify({
@@ -2620,7 +2548,7 @@ export default function JobDetail() {
               applyData.data.application.applicationNumber ||
               formData.applicationNumber,
             token: applyData.data.token,
-            formData: formDataWithImages, // Store form data with images
+            formData: formData,
           }),
         );
         navigate(
@@ -2629,14 +2557,11 @@ export default function JobDetail() {
         return;
       }
 
-      // Create order - returnUrl will be constructed after we get orderId
-      // Pass origin as returnUrl base, backend will handle it
       const orderResponse = await paymentsAPI.createOrder(
         id,
         formData.gender,
         formData.category,
         token,
-        `${window.location.origin}/payment-success`, // Base URL without params
       );
       if (!orderResponse.success)
         throw new Error(
@@ -2644,17 +2569,8 @@ export default function JobDetail() {
         );
       const { orderId, paymentSessionId, amount, amountInRupees, appId } =
         orderResponse.data;
-      
-      console.log("💰 Payment order created, orderId:", orderId, "applicationId:", applicationId);
 
       // Store application data in sessionStorage for after payment redirect
-      // Include photo and signature in formData for PDF generation
-      const formDataWithImages = {
-        ...formData,
-        photo: photoBase64, // Add photo base64
-        signature: signatureBase64, // Add signature base64
-      };
-      
       sessionStorage.setItem(
         "pendingApplication",
         JSON.stringify({
@@ -2665,13 +2581,12 @@ export default function JobDetail() {
             applyData.data.application.applicationNumber ||
             formData.applicationNumber,
           token: token,
-          formData: formDataWithImages, // Store form data with images for PDF
+          formData: formData, // Store form data for PDF
         }),
       );
 
-      // Note: returnUrl is already set when creating order, but we'll use it here for reference
-      const finalReturnUrl = `${window.location.origin}/payment-success?orderId=${orderId}&applicationId=${applicationId}`;
-      console.log("💰 Payment order created, returnUrl:", finalReturnUrl);
+      // Redirect to Cashfree payment page - will redirect to payment success page after payment
+      const returnUrl = `${window.location.origin}/payment-success?orderId=${orderId}&applicationId=${applicationId}`;
 
       // Load Cashfree Checkout.js and redirect
       const script = document.createElement("script");
@@ -2934,14 +2849,7 @@ export default function JobDetail() {
     <SharedLayout navigate={navigate}>
       {/* ✅ FIX: margin top 24px added so content doesn't touch header */}
       <div
-        style={{ 
-          maxWidth: 1200, 
-          margin: "24px auto 40px", 
-          padding: "0 2%",
-          width: "100%",
-          boxSizing: "border-box"
-        }}
-        className="job-detail-container"
+        style={{ maxWidth: 1200, margin: "24px auto 40px", padding: "0 2%" }}
       >
         {formStep !== "review" && (
           <div
@@ -3210,7 +3118,7 @@ export default function JobDetail() {
                     <div className="jobs-detail-colon">:</div>
                     <div
                       className="jobs-detail-val"
-                      title={rowsEn[i]?.[1] || ""}
+                      style={isFee ? { whiteSpace: "pre-line" } : {}}
                     >
                       {rowsEn[i]?.[1] || ""}
                     </div>
@@ -3222,7 +3130,7 @@ export default function JobDetail() {
                     <div className="jobs-detail-colon">:</div>
                     <div
                       className="jobs-detail-val"
-                      title={rowsHi[i]?.[1] || ""}
+                      style={isFee ? { whiteSpace: "pre-line" } : {}}
                     >
                       {rowsHi[i]?.[1] || ""}
                     </div>
@@ -3249,22 +3157,7 @@ export default function JobDetail() {
             ⚠️ This vacancy is closed. / यह भर्ती बंद हो चुकी है।
           </div>
         ) : formStep === "review" ? (
-          <>
-            {console.log("📄 Rendering InlineReview preview component, formStep:", formStep)}
-            <div style={{ 
-              background: "#e8f5e9", 
-              padding: "12px", 
-              marginBottom: "16px", 
-              borderRadius: "4px",
-              border: `2px solid ${GREEN}`,
-              textAlign: "center",
-              fontWeight: 700,
-              fontSize: 14,
-              color: "#1a2a4a"
-            }}>
-              📋 FORM PREVIEW - Please review your details before submitting
-            </div>
-            <InlineReview
+          <InlineReview
             formData={formData}
             photoPreview={photoPreview}
             signaturePreview={signaturePreview}
@@ -3280,7 +3173,6 @@ export default function JobDetail() {
             job={job}
             indianStates={indianStates}
           />
-          </>
         ) : (
           <>
             <div
@@ -3431,17 +3323,8 @@ export default function JobDetail() {
                 </div>
               </div>
               <div style={{ textAlign: "center", marginTop: 22 }}>
-                <button 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log("🔘 SUBMIT & CONTINUE button clicked");
-                    handleReview();
-                  }} 
-                  className="jobs-submit-btn"
-                  type="button"
-                >
-                  SUBMIT &amp; CONTINUE / सबमिट और जारी रखें
+                <button onClick={handleReview} className="jobs-submit-btn">
+                  SUBMIT &amp; CONTINUE
                 </button>
               </div>
             </div>
