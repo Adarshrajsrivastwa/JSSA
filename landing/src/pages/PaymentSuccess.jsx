@@ -60,6 +60,42 @@ const responsiveStyles = `
       flex: 1 !important;
     }
     
+    /* Payment Status Table - Desktop view (default) */
+    #application-slip-pdf .payment-status-table-container table {
+      display: table !important;
+    }
+    
+    #application-slip-pdf .payment-status-mobile-view {
+      display: none !important;
+    }
+    
+    /* Payment Status Table - Convert to 4 lines on mobile */
+    @media (max-width: 768px) {
+      #application-slip-pdf .payment-status-table-container table {
+        display: none !important;
+      }
+      
+      #application-slip-pdf .payment-status-mobile-view {
+        display: block !important;
+      }
+      
+      #application-slip-pdf .payment-status-mobile-view > div {
+        padding: 10px 0 !important;
+        border-bottom: 1px solid #e0e0e0 !important;
+        font-size: 13px !important;
+      }
+      
+      #application-slip-pdf .payment-status-mobile-view > div:last-child {
+        border-bottom: none !important;
+      }
+      
+      #application-slip-pdf .payment-status-mobile-view strong {
+        font-weight: 700 !important;
+        color: #1a2a4a !important;
+        margin-right: 8px !important;
+      }
+    }
+    
     #application-slip-pdf {
       font-size: 11px !important;
       padding: 10px !important;
@@ -1012,15 +1048,20 @@ function PaymentSuccess() {
           </div>
           {/* Signature moved to Educational Details section - removed from here */}
         </div>
-        <div style={{ 
-          marginTop: 12, 
-          padding: "0 20px 15px", 
-          overflowX: "auto",
-          overflowY: "visible",
-          width: "100%",
-          boxSizing: "border-box",
-        }}>
+        <div 
+          className="payment-status-table-container"
+          style={{ 
+            marginTop: 12, 
+            padding: "0 20px 15px", 
+            overflowX: "auto",
+            overflowY: "visible",
+            width: "100%",
+            boxSizing: "border-box",
+          }}
+        >
+          {/* Desktop Table View */}
           <table
+            className="payment-status-table-desktop"
             style={{
               width: "100%",
               borderCollapse: "collapse",
@@ -1154,6 +1195,44 @@ function PaymentSuccess() {
               </tr>
             </tbody>
           </table>
+          
+          {/* Mobile View - 4 Lines */}
+          <div 
+            className="payment-status-mobile-view"
+            style={{
+              display: "none", // Hidden on desktop, shown on mobile via CSS
+              background: "#fff",
+              border: "1px solid #e0e0e0",
+              borderRadius: 4,
+              padding: "15px",
+              marginTop: "12px",
+            }}
+          >
+            <div style={{ padding: "10px 0", borderBottom: "1px solid #e0e0e0" }}>
+              <strong style={{ color: "#1a2a4a", fontWeight: 700 }}>Application No.:</strong>{" "}
+              <span>{applicationNumber}</span>
+            </div>
+            <div style={{ padding: "10px 0", borderBottom: "1px solid #e0e0e0" }}>
+              <strong style={{ color: "#1a2a4a", fontWeight: 700 }}>Email:</strong>{" "}
+              <span>{finalFormData.email || ""}</span>
+            </div>
+            <div style={{ padding: "10px 0", borderBottom: "1px solid #e0e0e0" }}>
+              <strong style={{ color: "#1a2a4a", fontWeight: 700 }}>Payment Status:</strong>{" "}
+              <span style={{ color: GREEN, fontWeight: 700 }}>Complete</span>
+            </div>
+            <div style={{ padding: "10px 0" }}>
+              <strong style={{ color: "#1a2a4a", fontWeight: 700 }}>Date:</strong>{" "}
+              <span>{new Date().toLocaleString("en-US", {
+                month: "numeric",
+                day: "numeric",
+                year: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: true,
+              })}</span>
+            </div>
+          </div>
         </div>
         <div
           style={{
