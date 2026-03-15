@@ -1226,13 +1226,26 @@ Thank you for applying!
     let pdfBuffer = null;
     let pdfFileName = `Application_Slip_${applicationData.applicationNumber || 'JSSA'}.pdf`;
     
-    if (pdfFilePath && fs.existsSync(pdfFilePath)) {
-      // Use saved PDF file
-      console.log("📧 Using saved PDF file:", pdfFilePath);
-      pdfBuffer = fs.readFileSync(pdfFilePath);
-      pdfFileName = path.basename(pdfFilePath);
-      console.log("✅ PDF loaded from file");
-    } else {
+    console.log("📧 PDF file path check:", pdfFilePath || "Not provided");
+    if (pdfFilePath) {
+      console.log("📧 PDF file path exists check:", fs.existsSync(pdfFilePath));
+      if (fs.existsSync(pdfFilePath)) {
+        // Use saved PDF file
+        console.log("📧 Using saved PDF file:", pdfFilePath);
+        try {
+          pdfBuffer = fs.readFileSync(pdfFilePath);
+          pdfFileName = path.basename(pdfFilePath);
+          console.log("✅ PDF loaded from file, size:", pdfBuffer.length, "bytes");
+        } catch (readErr) {
+          console.error("❌ Error reading PDF file:", readErr.message);
+          pdfBuffer = null;
+        }
+      } else {
+        console.log("⚠️ PDF file path provided but file does not exist:", pdfFilePath);
+      }
+    }
+    
+    if (!pdfBuffer) {
       // Generate PDF on-the-fly (fallback)
       console.log("📧 PDF file not found, generating on-the-fly...");
       console.log("📧 Photo available:", !!photoSrc);
@@ -1844,10 +1857,17 @@ Thank you for applying!
  */
 export async function generateAndSaveApplicationPDF(applicationData, jobPosting) {
   console.log("📄 generateAndSaveApplicationPDF called");
+  console.log("📄 Application Number:", applicationData.applicationNumber);
+  console.log("📄 Job Posting:", jobPosting ? "Found" : "Not found");
   try {
     const uploadsDir = path.resolve(__dirname, '../uploads/pdfs');
+    console.log("📄 Uploads directory:", uploadsDir);
     if (!fs.existsSync(uploadsDir)) {
+      console.log("📄 Creating uploads directory...");
       fs.mkdirSync(uploadsDir, { recursive: true });
+      console.log("✅ Uploads directory created");
+    } else {
+      console.log("✅ Uploads directory exists");
     }
 
     const timestamp = Date.now();
@@ -2147,11 +2167,24 @@ export async function generateAndSaveApplicationPDF(applicationData, jobPosting)
     });
 
     await browser.close();
+    console.log("📄 PDF buffer generated, size:", pdfBuffer.length, "bytes");
+    console.log("📄 Writing PDF to file:", filePath);
     fs.writeFileSync(filePath, pdfBuffer);
     console.log("✅ PDF generated and saved to:", filePath);
-    return { success: true, filePath, fileName };
+    
+    // Verify file was written
+    if (fs.existsSync(filePath)) {
+      const stats = fs.statSync(filePath);
+      console.log("✅ PDF file verified, size:", stats.size, "bytes");
+      return { success: true, filePath, fileName };
+    } else {
+      console.error("❌ PDF file was not created at:", filePath);
+      return { success: false, error: "PDF file was not created" };
+    }
   } catch (error) {
     console.error("❌ Error generating and saving PDF:", error);
+    console.error("❌ Error message:", error.message);
+    console.error("❌ Error stack:", error.stack);
     return { success: false, error: error.message };
   }
 }
