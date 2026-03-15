@@ -1737,7 +1737,7 @@ Thank you for applying!
       await page.waitForTimeout(1000);
 
       // Generate PDF
-      pdfBuffer = await page.pdf({
+      const generatedPdfBuffer = await page.pdf({
         format: 'A4',
         printBackground: true,
         margin: {
@@ -1748,9 +1748,9 @@ Thank you for applying!
         },
       });
 
-        await browser.close();
-        console.log("✅ PDF generated successfully");
-        return pdfBuffer;
+      await browser.close();
+      console.log("✅ PDF generated successfully");
+      return generatedPdfBuffer;
       } catch (pdfError) {
         console.error("⚠️ Error generating PDF:", pdfError);
         console.error("⚠️ PDF error details:", pdfError.message);
@@ -1761,11 +1761,12 @@ Thank you for applying!
 
     // Wait for PDF with timeout (max 15 seconds), then send email
     try {
-      pdfBuffer = await Promise.race([
+      const generatedBuffer = await Promise.race([
         pdfGenerationPromise,
         new Promise((resolve) => setTimeout(() => resolve(null), 15000)), // 15 second timeout
       ]);
-      if (pdfBuffer) {
+      if (generatedBuffer) {
+        pdfBuffer = generatedBuffer;
         console.log("✅ PDF ready for attachment");
       } else {
         console.log("⚠️ PDF generation timed out or failed, sending email without PDF");
@@ -1773,6 +1774,7 @@ Thank you for applying!
     } catch (pdfTimeoutError) {
       console.error("⚠️ PDF generation timeout:", pdfTimeoutError);
       pdfBuffer = null;
+    }
     }
 
     // Prepare email attachments
@@ -1826,5 +1828,323 @@ Thank you for applying!
       success: false,
       error: error.message,
     };
+  }
+}
+
+/**
+ * Generate and save application PDF to file system
+ * Returns the file path for email attachment
+ */
+export async function generateAndSaveApplicationPDF(applicationData, jobPosting) {
+  console.log("📄 generateAndSaveApplicationPDF called");
+  try {
+    const uploadsDir = path.resolve(__dirname, '../uploads/pdfs');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    const timestamp = Date.now();
+    const fileName = `Application_Slip_${applicationData.applicationNumber || 'JSSA'}_${timestamp}.pdf`;
+    const filePath = path.join(uploadsDir, fileName);
+
+    const photoSrc = applicationData.photo 
+      ? (applicationData.photo.startsWith('data:') ? applicationData.photo : `data:image/jpeg;base64,${applicationData.photo}`)
+      : "";
+    const signatureSrc = applicationData.signature
+      ? (applicationData.signature.startsWith('data:') ? applicationData.signature : `data:image/png;base64,${applicationData.signature}`)
+      : "";
+
+    let logoForPdf = "https://jssabhiyan.com/assets/jss.png"; // Default to URL
+    try {
+      const logoPath = path.resolve(process.cwd(), 'landing/src/assets/jss.png');
+      if (fs.existsSync(logoPath)) {
+        const logoBuffer = fs.readFileSync(logoPath);
+        const logoBase64 = logoBuffer.toString('base64');
+        logoForPdf = `data:image/png;base64,${logoBase64}`;
+      }
+    } catch (logoErr) {
+      console.log("⚠️ Could not load logo file for PDF generation, using URL:", logoErr.message);
+    }
+
+    const formatDate = (dateString) => {
+      if (!dateString) return "N/A";
+      try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+      } catch {
+        return dateString;
+      }
+    };
+
+    const formatCategory = (cat) => (cat ? cat.toUpperCase() : "N/A");
+    const formatGender = (gender) => (gender ? gender.charAt(0).toUpperCase() + gender.slice(1) : "N/A");
+    const formatNationality = (nat) => (nat ? nat.charAt(0).toUpperCase() + nat.slice(1) : "N/A");
+
+    const pdfHtmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.5; color: #333; margin: 0; padding: 0; background-color: #fff; }
+    .application-slip { background: #fff; font-size: 14px; line-height: 1.5; }
+    .header-section { display: flex; align-items: center; gap: 15px; padding: 15px 20px; background: #0aca00; color: white; }
+    .logo-circle { width: 80px; height: 80px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 2px solid #fff; overflow: hidden; padding: 6px; box-sizing: border-box; }
+    .logo-circle img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .header-text { flex: 1; }
+    .header-title { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 4px; line-height: 1.2; }
+    .header-subtitle { font-size: 12px; color: #fff; margin-bottom: 2px; font-weight: 600; }
+    .header-note { font-size: 10px; color: #fff; margin-bottom: 4px; }
+    .header-reg { font-size: 12px; font-weight: 700; color: #fff; }
+    .recruitment-title { background: #fff; color: #000; padding: 10px 20px; text-align: center; font-weight: 700; font-size: 14px; border-bottom: 1px solid #e0e0e0; }
+    .advt-section { background: #000; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .advt-text { font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .app-slip-title { font-size: 14px; font-weight: 700; text-align: center; flex: 1; min-width: 150px; }
+    .date-text { font-size: 13px; white-space: nowrap; }
+    .post-section { display: flex; justify-content: space-between; padding: 12px 20px; background: #f9f9f9; border-bottom: 1px solid #e0e0e0; flex-wrap: wrap; gap: 8px; }
+    .post-text { font-size: 12px; font-weight: 600; }
+    .app-no-text { font-size: 12px; font-weight: 700; }
+    .details-section { padding: 15px 20px; background: #fff; position: relative; }
+    .section-title { font-size: 16px; font-weight: 900; color: #000; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid #e0e0e0; }
+    .detail-item { font-size: 15px; line-height: 2.2; margin-bottom: 4px; }
+    .detail-item strong { color: #333; }
+    .detail-value { color: #000; font-weight: 700; }
+    .photo-container { position: absolute; top: 70px; right: 20px; width: 110px; text-align: center; z-index: 10; }
+    .photo-container img { width: 100%; height: 130px; object-fit: cover; border: 2px solid #000; border-radius: 4px; display: block; background: #fff; }
+    .signature-container { position: absolute; bottom: 15px; right: 20px; text-align: right; z-index: 10; }
+    .signature-box { display: inline-block; border: 1px solid #e0e0e0; background: #f0f8ff; padding: 10px 16px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .signature-box img { width: 180px; height: 70px; object-fit: contain; display: block; margin-bottom: 6px; background: #fff; }
+    .signature-label { font-size: 13px; font-weight: 600; color: #000; text-align: center; }
+    .declarations-section { padding: 15px 20px; background: #fff; border-top: 1px solid #e0e0e0; }
+    .declaration-item { margin-bottom: 12px; font-size: 11px; line-height: 1.6; }
+    .payment-table { width: 100%; border-collapse: collapse; font-size: 13px; border: 1px solid #e0e0e0; margin-top: 12px; }
+    .payment-table th { padding: 10px; text-align: left; font-weight: 700; border: 1px solid #1a2a4a; background: #1a2a4a; color: #fff; font-size: 13px; }
+    .payment-table td { padding: 10px; border: 1px solid #e0e0e0; color: #000; font-size: 13px; }
+    .payment-table tr { background: #f9f9f9; }
+    .status-complete { color: #0aca00; font-weight: 700; }
+    .status-pending { color: #ffc107; font-weight: 700; }
+    .footer-section { padding: 12px 20px; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #666; background: #f9f9f9; flex-wrap: wrap; gap: 8px; }
+    .footer-url { word-break: break-all; flex: 1; min-width: 200px; }
+    .footer-page { white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <div class="application-slip">
+    <!-- Header -->
+    <div class="header-section">
+      <div class="logo-circle">
+        <img src="${logoForPdf}" alt="JSSA Logo" style="width: 100%; height: 100%; object-fit: contain; padding: 6px;" />
+      </div>
+      <div class="header-text">
+        <div class="header-title">जन स्वास्थ्य सहायता अभियान</div>
+        <div class="header-subtitle">A Project Of Healthcare Research & Development Board</div>
+        <div class="header-note">(HRDB is Division of social welfare organization "NAC India")</div>
+        <div class="header-reg">Registration No. : 053083</div>
+      </div>
+    </div>
+
+    <!-- Recruitment Title -->
+    <div class="recruitment-title">
+      ${jobPosting?.postTitle?.en || jobPosting?.post?.en || ""} Recruitment
+    </div>
+
+    <!-- Advertisement Section -->
+    <div class="advt-section">
+      <div class="advt-text">Advt. No.: ${jobPosting?.advtNo || ""}</div>
+      <div class="app-slip-title">Application Slip</div>
+      <div class="date-text">
+        Date: ${new Date().toLocaleString("en-US", {
+          month: "numeric", day: "numeric", year: "numeric",
+          hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true,
+        })}
+      </div>
+    </div>
+
+    <!-- Post Applied Section -->
+    <div class="post-section">
+      <div class="post-text">Post Applied for: ${jobPosting?.postTitle?.en || jobPosting?.post?.en || ""}</div>
+      <div class="app-no-text">Application No.: ${applicationData.applicationNumber || "N/A"}</div>
+    </div>
+
+    <!-- Personal Details -->
+    <div class="details-section" style="padding: 15px 20px; background: #fff; position: relative;">
+      <h3 style="font-size: 16px; font-weight: 900; color: #000; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid #e0e0e0;">Personal Details</h3>
+      ${photoSrc ? `
+      <div style="position: absolute; top: 70px; right: 20px; width: 110px; text-align: center; z-index: 10;">
+        <img src="${photoSrc}" alt="Applicant Photo" style="width: 100%; height: 130px; object-fit: cover; border: 2px solid #000; border-radius: 4px; display: block; background: #fff;" />
+      </div>
+      ` : ''}
+      <div style="font-size: 15px; line-height: 2.2; margin-right: ${photoSrc ? '130px' : '0'};">
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Name:</strong> <strong style="color: #000; font-weight: 700;">${(applicationData.candidateName || "").toUpperCase()}</strong>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Application No.:</strong> <span>${applicationData.applicationNumber || "N/A"}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Father's Name:</strong> <span>${(applicationData.fatherName || "").toUpperCase()}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Mother's Name:</strong> <span>${(applicationData.motherName || "").toUpperCase()}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Date of Birth:</strong> <span>${formatDate(applicationData.dob)}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Gender:</strong> <span>${formatGender(applicationData.gender)}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Nationality:</strong> <span>${formatNationality(applicationData.nationality)}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Category:</strong> <span>${formatCategory(applicationData.category)}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Aadhar Number:</strong> <span>${applicationData.aadhar || ""}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">PAN Number:</strong> <span>${(applicationData.pan || "").toUpperCase()}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Mobile Number:</strong> <span>${applicationData.mobile || ""}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Email ID:</strong> <span>${applicationData.email || ""}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Permanent Address:</strong> <span>${(applicationData.address || "").toUpperCase()}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">State:</strong> <span>${applicationData.state || ""}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">District:</strong> <span>${applicationData.district || ""}</span>
+        </div>
+        ${applicationData.block ? `
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Block:</strong> <span>${applicationData.block}</span>
+        </div>
+        ` : ''}
+        ${applicationData.panchayat ? `
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Panchayat:</strong> <span>${applicationData.panchayat}</span>
+        </div>
+        ` : ''}
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Pin Code:</strong> <span>${applicationData.pincode || ""}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Educational Details -->
+    <div class="details-section" style="padding: 15px 20px; padding-bottom: ${signatureSrc ? '100px' : '15px'}; background: #fff; border-top: 1px solid #e0e0e0; position: relative; min-height: ${signatureSrc ? '200px' : 'auto'};">
+      <h3 style="font-size: 16px; font-weight: 900; color: #000; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid #e0e0e0;">Educational Details</h3>
+      <div style="font-size: 15px; line-height: 2.2; margin-right: ${signatureSrc ? '220px' : '0'}; padding-bottom: ${signatureSrc ? '10px' : '0'};">
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Higher Education:</strong> <span>${applicationData.higherEducation || ""}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Board/University:</strong> <span>${applicationData.board || ""}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Total Marks:</strong> <span>${applicationData.marks || ""}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Marks in Percentage:</strong> <span>${applicationData.markPercentage || ""}</span>
+        </div>
+      </div>
+      ${signatureSrc ? `
+      <div style="position: absolute; bottom: 20px; right: 20px; text-align: right; z-index: 10; pointer-events: none;">
+        <div style="display: inline-block; border: 1px solid #e0e0e0; background: #f0f8ff; padding: 10px 16px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+          <img src="${signatureSrc}" alt="Signature" style="width: 180px; height: 70px; object-fit: contain; display: block; margin-bottom: 6px; background: #fff;" />
+          <div style="font-size: 13px; font-weight: 600; color: #000; text-align: center;">Candidate's Signature</div>
+        </div>
+      </div>
+      ` : ''}
+    </div>
+
+    <!-- Declarations -->
+    <div class="declarations-section">
+      <div class="declaration-item">
+        <input type="checkbox" checked readonly style="margin-right: 8px;" /> I have read and agree to the Terms and Conditions.
+      </div>
+      <div class="declaration-item">
+        <input type="checkbox" checked readonly style="margin-right: 8px;" /> I declare that all the information given in this application form is correct to the best of my knowledge and belief. If any information provided is found false, my candidature may be rejected at any point of time. I have read and understood the conditions which I would abide by. Thus, I have given the above declaration in my full consciousness without any pressure.
+      </div>
+    </div>
+
+    <!-- Payment Status Table -->
+    <div style="margin-top: 12px; padding: 0 20px 15px;">
+      <table class="payment-table">
+        <thead>
+          <tr>
+            <th>Application No.</th>
+            <th>Email</th>
+            <th>Payment Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>${applicationData.applicationNumber || "N/A"}</td>
+            <td>${applicationData.email || ""}</td>
+            <td class="${applicationData.paymentStatus === 'paid' ? 'status-complete' : 'status-pending'}">${applicationData.paymentStatus === 'paid' ? 'Complete' : 'Pending'}</td>
+            <td>${new Date().toLocaleString("en-US", {
+              month: "numeric", day: "numeric", year: "numeric",
+              hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true,
+            })}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-section">
+      <div class="footer-url">https://www.jssabhiyan-nac.in/fill_application_print?oid=${applicationData._id || applicationData.id || ""}</div>
+      <div class="footer-page">1/1</div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
+    const page = await browser.newPage();
+    await page.setContent(pdfHtmlContent, { waitUntil: 'networkidle0' });
+    
+    await page.evaluateHandle(() => {
+      return Promise.all(
+        Array.from(document.images).map((img) => {
+          if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+          return new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+            setTimeout(resolve, 5000);
+          });
+        })
+      );
+    });
+    await page.waitForTimeout(1000);
+
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '5mm', right: '5mm', bottom: '5mm', left: '5mm' },
+    });
+
+    await browser.close();
+    fs.writeFileSync(filePath, pdfBuffer);
+    console.log("✅ PDF generated and saved to:", filePath);
+    return { success: true, filePath, fileName };
+  } catch (error) {
+    console.error("❌ Error generating and saving PDF:", error);
+    return { success: false, error: error.message };
   }
 }
