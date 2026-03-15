@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { galleryAPI } from "../utils/api.js";
+import { galleryAPI } from "../../utils/api.js";
 
 // Fallback images if API fails
 const fallbackImages = [

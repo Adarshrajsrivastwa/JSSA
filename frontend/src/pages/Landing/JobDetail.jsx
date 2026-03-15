@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { jobPostingsAPI, paymentsAPI } from "../utils/api.js";
-import logo from "../assets/img0.png";
-import logo1 from "../assets/jss.png";
-import swachhBharat from "../assets/Swachh.png";
-import brochurePDF from "../assets/broucher.pdf";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { jobPostingsAPI, paymentsAPI } from "../../utils/api.js";
+import logo from "../../assets/img0.png";
+import logo1 from "../../assets/jss.png";
+import swachhBharat from "../../assets/Swachh.png";
+import brochurePDF from "../../assets/broucher.pdf";
 
-const GREEN = "#0aca00";
+const GREEN = "#3AB000";
 
 const indianStates = [
   "Andhra Pradesh",
@@ -42,8 +42,10 @@ const indianStates = [
   "Ladakh",
 ];
 
+/* ══════════════════════════════════════════════
+   CSS — exact match to screenshot design
+   ══════════════════════════════════════════════ */
 const jobsCSS = `
-  html, body, #root { margin: 0 !important; padding: 0 !important; }
   * { box-sizing: border-box; }
 
   .jobs-section-heading {
@@ -58,6 +60,7 @@ const jobsCSS = `
   .jobs-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .jobs-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
 
+  /* ── Title row — light green centered ── */
   .jobs-detail-title-row {
     background: #c2fbd7;
     padding: 10px 14px;
@@ -66,6 +69,7 @@ const jobsCSS = `
     font-size: 13px; font-weight: 700; color: #000000; line-height: 1.6;
   }
 
+  /* ── Download row — #9ddfaf ── */
   .jobs-detail-download-row {
     display: grid; grid-template-columns: 1fr 1fr;
     border-bottom: 2px solid ${GREEN}; background: #9ddfaf;
@@ -85,7 +89,9 @@ const jobsCSS = `
     cursor: pointer; padding: 0;
     display: inline-flex; align-items: center; gap: 5px; justify-content: center;
   }
-  .jobs-detail-download-cell .dl-link span { font-weight: 900 !important; }
+  .jobs-detail-download-cell .dl-link span {
+    font-weight: 900 !important;
+  }
   .jobs-detail-download-cell .dl-link:disabled { opacity: 0.6; cursor: not-allowed; }
   .jobs-detail-download-cell .new-badge {
     display: inline-block; color: #fff; font-size: 9px; font-weight: 900;
@@ -102,6 +108,7 @@ const jobsCSS = `
     100% { background: #ff0000; }
   }
 
+  /* ── Data rows — all #c2fbd7, colon col #9ddfaf ── */
   .jobs-detail-row {
     display: grid; grid-template-columns: 1fr 1fr;
     border-bottom: 1px solid #5cb87a;
@@ -110,6 +117,7 @@ const jobsCSS = `
   .jobs-detail-row.row-odd  { background: #c2fbd7; }
   .jobs-detail-row.row-even { background: #c2fbd7; }
 
+  /* ── 3-col inner: key | : | value ── */
   .jobs-detail-lang-cell {
     display: grid; grid-template-columns: 160px 28px 1fr; padding: 0;
   }
@@ -132,17 +140,12 @@ const jobsCSS = `
     background: #c2fbd7;
   }
 
+  /* review table */
   .review-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .review-table td { padding: 8px 12px; border: 1px solid #e0e0e0; vertical-align: top; }
   .review-table td:first-child { font-weight: 700; color: #1a2a4a; width: 40%; background: #f5f5f5; }
 
-  @keyframes blink-red-green {
-    0%   { background: #e53e3e; }
-    50%  { background: #0aca00; }
-    100% { background: #e53e3e; }
-  }
-  .login-blink { animation: blink-red-green 2s ease-in-out infinite; }
-
+  /* ── Nav/header classes ── */
   @keyframes marquee-scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
   nav::-webkit-scrollbar { height: 3px; }
   nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 2px; }
@@ -166,26 +169,26 @@ const jobsCSS = `
   .ft-contact-link { font-size: 16px; font-weight: 500; margin-top: 6px; }
   .ft-copyright  { font-size: 14px; padding: 16px 0; margin-top: 40px; }
 
+  /* ── Mobile ── */
   @media (max-width: 768px) {
     .hdr-desktop { display: none !important; }
     .hdr-mobile  { display: flex !important; flex-direction: column !important; padding: 4px 8px !important; }
-    .green-divider { display: none !important; }
 
-    .tb-topbar { flex-wrap: nowrap !important; padding: 4px 6px !important; gap: 4px !important; justify-content: space-between !important; height: auto !important; min-height: 36px !important; position: relative !important; width: 100% !important; box-sizing: border-box !important; }
-    .tb-left   { display: flex !important; gap: 4px !important; flex-shrink: 0 !important; margin-left: 0 !important; align-items: center !important; }
-    .tb-phone  { display: flex !important; font-size: 7px !important; gap: 2px !important; white-space: nowrap !important; font-weight: 600 !important; color: #000000 !important; align-items: center !important; }
+    .tb-topbar { flex-wrap: nowrap !important; padding: 0 6px !important; gap: 4px !important; justify-content: space-between !important; height: 36px !important; position: relative !important; }
+    .tb-left   { display: flex !important; gap: 8px !important; flex-shrink: 0 !important; margin-left: 2% !important; }
+    .tb-phone  { font-size: 8px !important; gap: 3px !important; }
     .tb-phone svg { width: 8px !important; height: 8px !important; }
-    .tb-email  { display: flex !important; font-size: 7px !important; gap: 2px !important; white-space: nowrap !important; font-weight: 600 !important; color: #000000 !important; align-items: center !important; }
+    .tb-email  { font-size: 8px !important; gap: 3px !important; }
     .tb-email svg { width: 8px !important; height: 8px !important; }
-    .tb-search { position: absolute !important; left: 55% !important; transform: translateX(-50%) !important; display: flex !important; align-items: center !important; }
-    .tb-search input { width: 80px !important; font-size: 7px !important; height: 22px !important; padding: 2px 18px 2px 5px !important; border: 1px solid #000 !important; border-radius: 3px !important; }
-    .tb-search svg { width: 10px !important; height: 10px !important; right: 4px !important; position: absolute !important; pointer-events: none !important; }
-    .tb-dl-btn { font-size: 6px !important; padding: 3px 5px !important; white-space: nowrap !important; flex-shrink: 0 !important; height: 22px !important; font-weight: 700 !important; border-radius: 3px !important; margin-right: 0 !important; }
+    .tb-search { position: absolute !important; left: 55% !important; transform: translateX(-50%) !important; }
+    .tb-search input { width: 80px !important; font-size: 8px !important; height: 22px !important; }
+    .tb-dl-btn { font-size: 8px !important; height: 22px !important; padding: 0 8px !important; margin-right: 2% !important; }
 
     .nav-list { flex-wrap: nowrap !important; }
     .nav-item  { flex: 1 1 0 !important; }
     .nav-btn   { font-size: 5.5px !important; padding: 4px 1px !important; }
 
+    /* ── Detail table mobile — EN|HI same row, smaller font ── */
     .jobs-detail-title-row { font-size: 7px; padding: 6px; line-height: 1.4; }
     .jobs-detail-download-row { grid-template-columns: 1fr 1fr !important; }
     .jobs-detail-download-cell { padding: 6px 4px; }
@@ -410,16 +413,16 @@ async function downloadJobPDF(job, lang) {
   }
 }
 
-/* ── SHARED LAYOUT ── */
-function SharedLayout({ children, navigate }) {
+/* ══════════════════════════════════════════════
+   SHARED LAYOUT
+   ══════════════════════════════════════════════ */
+function SharedLayout({ children, navigate, activePath = "/jobs" }) {
   return (
     <div
       style={{
         background: "#fff",
         fontFamily: "'Segoe UI','Noto Sans Devanagari','Noto Sans',sans-serif",
         minHeight: "100vh",
-        margin: 0,
-        padding: 0,
       }}
     >
       {/* Top Bar */}
@@ -494,7 +497,7 @@ function SharedLayout({ children, navigate }) {
               <rect x="2" y="4" width="20" height="16" rx="2" />
               <path d="M2 7l10 7 10-7" />
             </svg>
-            support@jssabhiyan-nac.in
+            support@jssabhiyan.com
           </span>
         </div>
         <div
@@ -555,30 +558,6 @@ function SharedLayout({ children, navigate }) {
         </button>
       </div>
 
-      {/* Green Divider Bar */}
-      <div
-        className="green-divider"
-        style={{
-          width: "100%",
-          height: "8px",
-          background: GREEN,
-          position: "relative",
-          boxShadow: "0 2px 8px rgba(10, 202, 0, 0.3)",
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: "100%",
-            background: `linear-gradient(to bottom, rgba(10, 202, 0, 0.1) 0%, ${GREEN} 50%, rgba(10, 202, 0, 0.1) 100%)`,
-            filter: "blur(2px)",
-          }}
-        />
-      </div>
-
       {/* Desktop Header */}
       <div
         className="hdr-desktop"
@@ -618,9 +597,8 @@ function SharedLayout({ children, navigate }) {
           }}
         >
           <div style={{ display: "flex", gap: 14, marginTop: -8 }}>
-            <a
-              href="https://frontend.jssabhiyan.com/login"
-              className="login-blink"
+            <Link
+              to="/login"
               style={{
                 background: "#e53e3e",
                 color: "#fff",
@@ -633,14 +611,14 @@ function SharedLayout({ children, navigate }) {
               }}
             >
               LOGIN
-            </a>
+            </Link>
             <a
               href={brochurePDF}
               target="_blank"
               rel="noopener noreferrer"
               style={{
                 background: GREEN,
-                color: "white",
+                color: "#000",
                 fontWeight: 900,
                 fontSize: 20,
                 padding: "12px 50px",
@@ -728,9 +706,8 @@ function SharedLayout({ children, navigate }) {
             />
           </button>
           <div style={{ display: "flex", gap: 5 }}>
-            <a
-              href="https://frontend.jssabhiyan.com/login"
-              className="login-blink"
+            <Link
+              to="/login"
               style={{
                 background: "#e53e3e",
                 color: "#fff",
@@ -743,7 +720,7 @@ function SharedLayout({ children, navigate }) {
               }}
             >
               LOGIN
-            </a>
+            </Link>
             <a
               href={brochurePDF}
               target="_blank"
@@ -826,7 +803,10 @@ function SharedLayout({ children, navigate }) {
                   fontWeight: 700,
                   letterSpacing: "0.02em",
                   textAlign: "center",
-                  background: "transparent",
+                  background:
+                    activePath === item.page
+                      ? "rgba(0,0,0,0.25)"
+                      : "transparent",
                   border: "none",
                   borderRight:
                     i < navLinks.length - 1
@@ -836,12 +816,6 @@ function SharedLayout({ children, navigate }) {
                   whiteSpace: "nowrap",
                   outline: "none",
                 }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "transparent")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "transparent")
-                }
               >
                 {item.label}
               </button>
@@ -1495,9 +1469,7 @@ function FormFields({
               onChange={handleInputChange}
               style={{
                 ...iStyle,
-                borderColor: validationErrors.higherEducation
-                  ? "#e53e3e"
-                  : "#ccc",
+                borderColor: validationErrors.higherEducation ? "#e53e3e" : "#ccc",
               }}
             />
             {validationErrors.higherEducation && (
@@ -1553,9 +1525,7 @@ function FormFields({
               max="100"
               style={{
                 ...iStyle,
-                borderColor: validationErrors.markPercentage
-                  ? "#e53e3e"
-                  : "#ccc",
+                borderColor: validationErrors.markPercentage ? "#e53e3e" : "#ccc",
               }}
             />
             {validationErrors.markPercentage && (
@@ -1602,6 +1572,7 @@ function InlineReview({
     color: "#444",
     marginBottom: 5,
   };
+
   const titleEn = job?.postTitle?.en || job?.post?.en || "";
   const titleHi = job?.postTitle?.hi || job?.post?.hi || "";
 
@@ -1615,6 +1586,7 @@ function InlineReview({
         border: "1px solid #e0e0e0",
       }}
     >
+      {/* Main Title */}
       <h1
         style={{
           fontSize: 24,
@@ -1626,8 +1598,15 @@ function InlineReview({
       >
         Form Preview / प्रपत्र पूर्वावलोकन
       </h1>
+
+      {/* Subtitle with green lines */}
       <div style={{ marginBottom: 24 }}>
-        <div style={{ borderTop: `2px solid ${GREEN}`, marginBottom: 12 }} />
+        <div
+          style={{
+            borderTop: `2px solid ${GREEN}`,
+            marginBottom: 12,
+          }}
+        />
         <h2
           style={{
             fontSize: 18,
@@ -1638,11 +1617,17 @@ function InlineReview({
             margin: 0,
           }}
         >
-          {titleEn} के लिए एमओयू और सहमति का ऑनलाइन फॉर्म / {titleHi} के लिए
-          एमओयू और सहमति का ऑनलाइन फॉर्म
+          {titleEn} के लिए एमओयू और सहमति का ऑनलाइन फॉर्म / {titleHi} के लिए एमओयू और सहमति का ऑनलाइन फॉर्म
         </h2>
-        <div style={{ borderBottom: `2px solid ${GREEN}`, marginTop: 12 }} />
+        <div
+          style={{
+            borderBottom: `2px solid ${GREEN}`,
+            marginTop: 12,
+          }}
+        />
       </div>
+
+      {/* Instructions */}
       <div
         style={{
           background: "#f9f9f9",
@@ -1661,16 +1646,25 @@ function InlineReview({
           }}
         >
           <strong>English:</strong> You are requested to please check all the
-          columns, photograph and signature are correct, If there is any error,
-          correct it and submit the form by clicking on Update and Continue
-          below.
+          columns, photograph and signature are correct, If there is any
+          error, correct it and submit the form by clicking on Update and
+          Continue below.
         </p>
-        <p style={{ fontSize: 13, lineHeight: 1.7, color: "#333", margin: 0 }}>
+        <p
+          style={{
+            fontSize: 13,
+            lineHeight: 1.7,
+            color: "#333",
+            margin: 0,
+          }}
+        >
           <strong>हिंदी:</strong> आपसे अनुरोध है कि कृपया सभी कॉलम, फोटो और
           हस्ताक्षर सही से जांच लें, यदि कोई त्रुटि हो तो उसे सुधार लें और नीचे
           दिए गए अपडेट एंड कंटिन्यू पर क्लिक करके फॉर्म सबमिट कर दें।
         </p>
       </div>
+
+      {/* Section Heading */}
       <h3
         className="jobs-section-heading"
         style={{
@@ -1682,9 +1676,13 @@ function InlineReview({
       >
         PERSONAL DETAILS / व्यक्तिगत विवरण
       </h3>
+
+      {/* Editable Form Fields */}
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
-          <label style={lStyle}>Candidate's Name / अभ्यर्थी का नाम :</label>
+          <label style={lStyle}>
+            Candidate's Name / अभ्यर्थी का नाम :
+          </label>
           <input
             name="candidateName"
             value={formData.candidateName}
@@ -1938,6 +1936,7 @@ function InlineReview({
           </div>
         </div>
       </div>
+
       <h3 className="jobs-section-heading" style={{ marginTop: 24 }}>
         EDUCATION DETAILS / शैक्षणिक विवरण
       </h3>
@@ -2003,18 +2002,21 @@ function InlineReview({
         >
           {applying
             ? "Processing..."
-            : "Update and Continue / अपडेट एंड कंटिन्यू"}
+            : feeAmount > 0
+              ? "Update and Continue / अपडेट एंड कंटिन्यू"
+              : "Update and Continue / अपडेट एंड कंटिन्यू"}
         </button>
       </div>
     </div>
   );
 }
 
-/* ── MAIN EXPORT ── */
+/* ══════════════════════════════════════════════
+   MAIN EXPORT
+   ══════════════════════════════════════════════ */
 export default function JobDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -2058,25 +2060,12 @@ export default function JobDetail() {
     markPercentage: "",
   });
 
-  // COMMENTED: Razorpay script loading - replaced with Cashfree
-  // useEffect(() => {
-  //   const script = document.createElement("script");
-  //   script.src = "https://checkout.razorpay.com/v1/checkout.js";
-  //   script.async = true;
-  //   document.body.appendChild(script);
-  //   return () => document.body.removeChild(script);
-  // }, []);
-
   useEffect(() => {
     const script = document.createElement("script");
-    script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
     document.body.appendChild(script);
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
+    return () => document.body.removeChild(script);
   }, []);
 
   useEffect(() => {
@@ -2084,6 +2073,7 @@ export default function JobDetail() {
     else setFeeAmount(0);
   }, [formData.gender, formData.category, id]);
 
+  // Validate age when DOB changes
   useEffect(() => {
     if (formData.dob && job?.ageLimit?.en) {
       const dob = new Date(formData.dob);
@@ -2091,14 +2081,14 @@ export default function JobDetail() {
       const age = ageAsOn.getFullYear() - dob.getFullYear();
       const monthDiff = ageAsOn.getMonth() - dob.getMonth();
       const dayDiff = ageAsOn.getDate() - dob.getDate();
-      const actualAge =
-        monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+      const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+      
       const ageLimitText = job.ageLimit.en;
       const maxAgeMatch = ageLimitText.match(/(\d+)/g);
       if (maxAgeMatch && maxAgeMatch.length > 0) {
         const maxAge = Math.max(...maxAgeMatch.map(Number));
-        const minAge =
-          maxAgeMatch.length > 1 ? Math.min(...maxAgeMatch.map(Number)) : 18;
+        const minAge = maxAgeMatch.length > 1 ? Math.min(...maxAgeMatch.map(Number)) : 18;
+        
         if (actualAge < minAge) {
           setValidationErrors((prev) => ({
             ...prev,
@@ -2111,12 +2101,18 @@ export default function JobDetail() {
           }));
         } else if (validationErrors.dob) {
           setValidationErrors((prev) => {
-            const u = { ...prev };
-            delete u.dob;
-            return u;
+            const updated = { ...prev };
+            delete updated.dob;
+            return updated;
           });
         }
       }
+    } else if (validationErrors.dob && !formData.dob) {
+      setValidationErrors((prev) => {
+        const updated = { ...prev };
+        delete updated.dob;
+        return updated;
+      });
     }
   }, [formData.dob, job?.ageLimit?.en, job?.ageAsOn]);
 
@@ -2153,245 +2149,43 @@ export default function JobDetail() {
     if (id) fetchJob();
   }, [id]);
 
-  // Handle Cashfree payment redirect
-  useEffect(() => {
-    const payment = searchParams.get("payment");
-    const orderId = searchParams.get("orderId");
-    const applicationId = searchParams.get("applicationId");
-    
-    // Check if we're returning from Cashfree payment
-    if (payment === "success" || orderId || applicationId) {
-      const pendingData = sessionStorage.getItem("pendingApplication");
-      
-      if (pendingData) {
-        try {
-          const data = JSON.parse(pendingData);
-          const { token, applicationData, defaultPassword, applicationNumber, formData: storedFormData, applicationId: storedApplicationId } = data;
-          
-          // Use applicationId from URL or stored data
-          const finalApplicationId = applicationId || storedApplicationId;
-          
-          // Get payment details from URL (Cashfree redirects with these params)
-          const paymentId = searchParams.get("paymentId") || 
-                           searchParams.get("referenceId") || 
-                           searchParams.get("cf_payment_id");
-          const signature = searchParams.get("signature") || 
-                           searchParams.get("cf_signature");
-          const orderAmount = searchParams.get("orderAmount") || 
-                             searchParams.get("order_amount");
-          const txStatus = searchParams.get("txStatus") || 
-                          searchParams.get("tx_status") || 
-                          searchParams.get("payment_status") || 
-                          "SUCCESS";
-          const paymentMode = searchParams.get("paymentMode") || 
-                            searchParams.get("payment_mode") || 
-                            "";
-          const txMsg = searchParams.get("txMsg") || 
-                       searchParams.get("tx_msg") || 
-                       searchParams.get("payment_message") || 
-                       "";
-          const txTime = searchParams.get("txTime") || 
-                        searchParams.get("tx_time") || 
-                        "";
-
-          console.log("Payment redirect detected:", { payment, orderId, finalApplicationId, paymentId, signature, txStatus });
-
-          // If we have paymentId and signature, verify payment
-          if (paymentId && signature && orderId) {
-            paymentsAPI.verifyPayment(
-              orderId,
-              paymentId,
-              signature,
-              finalApplicationId,
-              orderAmount,
-              txStatus,
-              paymentMode,
-              txMsg,
-              txTime,
-              token,
-            ).then((verifyResponse) => {
-              if (verifyResponse.success) {
-                setSubmittedApplication({
-                  ...applicationData,
-                  defaultPassword: defaultPassword,
-                  applicationNumber: applicationNumber,
-                });
-                // Restore form data if available
-                if (storedFormData) {
-                  Object.keys(storedFormData).forEach(key => {
-                    if (storedFormData[key]) {
-                      setFormData(prev => ({ ...prev, [key]: storedFormData[key] }));
-                    }
-                  });
-                }
-                setShowSuccessPage(true);
-                // Clean up
-                sessionStorage.removeItem("pendingApplication");
-                // Remove payment params from URL
-                window.history.replaceState({}, "", window.location.pathname);
-              } else {
-                alert(`Payment verification failed: ${verifyResponse.message || "Please contact support."}`);
-              }
-            }).catch((err) => {
-              console.error("Payment verification error:", err);
-              alert(`Payment verification failed: ${err.message}`);
-            });
-          } else if (txStatus === "SUCCESS" || payment === "success") {
-            // If payment status is SUCCESS but we don't have all params, 
-            // still show success page (payment might be verified via webhook)
-            // But first try to get payment status from backend
-            if (orderId && finalApplicationId) {
-              // Try to verify payment status from backend
-              const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "";
-              fetch(`${apiUrl}/payments/status?orderId=${orderId}&applicationId=${finalApplicationId}`, {
-                headers: {
-                  "Authorization": `Bearer ${token}`,
-                },
-              })
-              .then(res => res.json())
-              .then(result => {
-                console.log("Payment status check result:", result);
-                if (result.success && result.data.paymentStatus === "paid") {
-                  setSubmittedApplication({
-                    ...applicationData,
-                    defaultPassword: defaultPassword,
-                    applicationNumber: applicationNumber,
-                  });
-                  // Restore form data if available
-                  if (storedFormData) {
-                    Object.keys(storedFormData).forEach(key => {
-                      if (storedFormData[key]) {
-                        setFormData(prev => ({ ...prev, [key]: storedFormData[key] }));
-                      }
-                    });
-                  }
-                  setShowSuccessPage(true);
-                  sessionStorage.removeItem("pendingApplication");
-                  window.history.replaceState({}, "", window.location.pathname);
-                } else {
-                  // Show success page anyway if payment=success in URL
-                  setSubmittedApplication({
-                    ...applicationData,
-                    defaultPassword: defaultPassword,
-                    applicationNumber: applicationNumber,
-                  });
-                  // Restore form data if available
-                  if (storedFormData) {
-                    Object.keys(storedFormData).forEach(key => {
-                      if (storedFormData[key]) {
-                        setFormData(prev => ({ ...prev, [key]: storedFormData[key] }));
-                      }
-                    });
-                  }
-                  setShowSuccessPage(true);
-                  sessionStorage.removeItem("pendingApplication");
-                  window.history.replaceState({}, "", window.location.pathname);
-                }
-              })
-              .catch(() => {
-                // If API call fails, still show success page if payment=success
-                if (payment === "success") {
-                  setSubmittedApplication({
-                    ...applicationData,
-                    defaultPassword: defaultPassword,
-                    applicationNumber: applicationNumber,
-                  });
-                  // Restore form data if available
-                  if (storedFormData) {
-                    Object.keys(storedFormData).forEach(key => {
-                      if (storedFormData[key]) {
-                        setFormData(prev => ({ ...prev, [key]: storedFormData[key] }));
-                      }
-                    });
-                  }
-                  setShowSuccessPage(true);
-                  sessionStorage.removeItem("pendingApplication");
-                  window.history.replaceState({}, "", window.location.pathname);
-                }
-              });
-            } else if (payment === "success") {
-              // If we have payment=success but no orderId, still show success
-              setSubmittedApplication({
-                ...applicationData,
-                defaultPassword: defaultPassword,
-                applicationNumber: applicationNumber,
-              });
-              // Restore form data if available
-              if (storedFormData) {
-                Object.keys(storedFormData).forEach(key => {
-                  if (storedFormData[key]) {
-                    setFormData(prev => ({ ...prev, [key]: storedFormData[key] }));
-                  }
-                });
-              }
-              setShowSuccessPage(true);
-              sessionStorage.removeItem("pendingApplication");
-              window.history.replaceState({}, "", window.location.pathname);
-            }
-          }
-        } catch (err) {
-          console.error("Payment redirect handling error:", err);
-        }
-      } else {
-        // If no pendingData but we have payment=success, check if application exists
-        // This handles cases where sessionStorage was cleared
-        if (payment === "success" && applicationId) {
-          const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "";
-          if (apiUrl) {
-            fetch(`${apiUrl}/applications/${applicationId}`)
-              .then(res => res.json())
-              .then(result => {
-                if (result.success && result.data.application) {
-                  const app = result.data.application;
-                  if (app.paymentStatus === "paid") {
-                    // Get form data from somewhere or show success with available data
-                    setSubmittedApplication({
-                      ...app,
-                      applicationNumber: app.applicationNumber || "",
-                    });
-                    setShowSuccessPage(true);
-                    window.history.replaceState({}, "", window.location.pathname);
-                  }
-                }
-              })
-              .catch(err => console.error("Error fetching application:", err));
-          }
-        }
-      }
-    }
-  }, [searchParams]);
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (validationErrors[name])
+    
+    // Clear validation error for this field
+    if (validationErrors[name]) {
       setValidationErrors((prev) => {
-        const u = { ...prev };
-        delete u[name];
-        return u;
+        const updated = { ...prev };
+        delete updated[name];
+        return updated;
       });
+    }
+    
+    // Handle mobile number - only digits
     let processedValue = value;
-    if (name === "mobile")
+    if (name === "mobile") {
       processedValue = value.replace(/\D/g, "").substring(0, 10);
-    if (name === "aadhar")
+    }
+    // Handle Aadhar - only digits
+    if (name === "aadhar") {
       processedValue = value.replace(/\D/g, "").substring(0, 12);
-    if (name === "pincode")
+    }
+    // Handle Pincode - only digits
+    if (name === "pincode") {
       processedValue = value.replace(/\D/g, "").substring(0, 6);
-    if (name === "pan")
-      processedValue = value
-        .replace(/[^A-Z0-9]/gi, "")
-        .toUpperCase()
-        .substring(0, 10);
+    }
+    // Handle PAN - uppercase alphanumeric
+    if (name === "pan") {
+      processedValue = value.replace(/[^A-Z0-9]/gi, "").toUpperCase().substring(0, 10);
+    }
+    
     setFormData((prev) => {
       const updated = { ...prev, [name]: processedValue };
-      if (
-        name === "candidateName" &&
-        processedValue &&
-        !updated.applicationNumber
-      ) {
-        updated.applicationNumber = String(
-          Math.floor(100000000 + Math.random() * 900000000),
-        );
+      if (name === "candidateName" && processedValue && !updated.applicationNumber) {
+        // Generate random 9-digit number (100000000 to 999999999)
+        updated.applicationNumber = String(Math.floor(100000000 + Math.random() * 900000000));
       }
+      
       return updated;
     });
   };
@@ -2403,12 +2197,16 @@ export default function JobDetail() {
       alert("File size must be less than 3MB");
       return;
     }
-    if (validationErrors[type])
+    
+    // Clear validation error for this file
+    if (validationErrors[type]) {
       setValidationErrors((prev) => {
-        const u = { ...prev };
-        delete u[type];
-        return u;
+        const updated = { ...prev };
+        delete updated[type];
+        return updated;
       });
+    }
+    
     const reader = new FileReader();
     if (type === "photo") {
       setPhoto(file);
@@ -2428,81 +2226,171 @@ export default function JobDetail() {
       reader.onerror = (error) => reject(error);
     });
 
+  // Validation functions
   const validateAge = () => {
     if (!formData.dob || !job.ageLimit?.en) return null;
+    
     const dob = new Date(formData.dob);
     const ageAsOn = job.ageAsOn ? new Date(job.ageAsOn) : new Date();
     const age = ageAsOn.getFullYear() - dob.getFullYear();
     const monthDiff = ageAsOn.getMonth() - dob.getMonth();
     const dayDiff = ageAsOn.getDate() - dob.getDate();
-    const actualAge =
-      monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
-    const maxAgeMatch = job.ageLimit.en.match(/(\d+)/g);
+    const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+    
+    // Extract max age from ageLimit (e.g., "18-40" or "40 years" or "Maximum 40")
+    const ageLimitText = job.ageLimit.en;
+    const maxAgeMatch = ageLimitText.match(/(\d+)/g);
     if (!maxAgeMatch || maxAgeMatch.length === 0) return null;
+    
     const maxAge = Math.max(...maxAgeMatch.map(Number));
-    const minAge =
-      maxAgeMatch.length > 1 ? Math.min(...maxAgeMatch.map(Number)) : 18;
-    if (actualAge < minAge)
+    const minAge = maxAgeMatch.length > 1 ? Math.min(...maxAgeMatch.map(Number)) : 18;
+    
+    if (actualAge < minAge) {
       return `Age must be at least ${minAge} years. Your age is ${actualAge} years.`;
-    if (actualAge > maxAge)
+    }
+    if (actualAge > maxAge) {
       return `Age must not exceed ${maxAge} years. Your age is ${actualAge} years.`;
+    }
+    return null;
+  };
+
+  const validateMobile = () => {
+    if (!formData.mobile) return "Mobile number is required";
+    const mobile = formData.mobile.replace(/\D/g, "");
+    if (mobile.length !== 10) {
+      return "Mobile number must be exactly 10 digits";
+    }
+    if (!/^[6-9]/.test(mobile)) {
+      return "Mobile number must start with 6, 7, 8, or 9";
+    }
+    return null;
+  };
+
+  const validateEmail = () => {
+    if (!formData.email) return "Email is required";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      return "Please enter a valid email address";
+    }
+    return null;
+  };
+
+  const validateAadhar = () => {
+    if (!formData.aadhar) return "Aadhar number is required";
+    const aadhar = formData.aadhar.replace(/\D/g, "");
+    if (aadhar.length !== 12) {
+      return "Aadhar number must be exactly 12 digits";
+    }
+    return null;
+  };
+
+  const validatePAN = () => {
+    if (!formData.pan) return "PAN number is required";
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+    if (!panRegex.test(formData.pan.toUpperCase())) {
+      return "PAN must be in format: ABCDE1234F";
+    }
+    return null;
+  };
+
+  const validatePincode = () => {
+    if (!formData.pincode) return "Pin code is required";
+    const pincode = formData.pincode.replace(/\D/g, "");
+    if (pincode.length !== 6) {
+      return "Pin code must be exactly 6 digits";
+    }
     return null;
   };
 
   const validateAllFields = () => {
     const errors = {};
-    if (!formData.candidateName?.trim())
+    
+    // Required fields
+    if (!formData.candidateName?.trim()) {
       errors.candidateName = "Candidate name is required";
-    if (!formData.fatherName?.trim())
-      errors.fatherName = "Father's name is required";
-    if (!formData.motherName?.trim())
-      errors.motherName = "Mother's name is required";
-    if (!formData.dob) errors.dob = "Date of birth is required";
-    if (!formData.gender) errors.gender = "Gender is required";
-    if (!formData.nationality) errors.nationality = "Nationality is required";
-    if (!formData.category) errors.category = "Category is required";
-    if (!formData.address?.trim()) errors.address = "Address is required";
-    if (!formData.state) errors.state = "State is required";
-    if (!formData.district?.trim()) errors.district = "District is required";
-    if (!formData.higherEducation?.trim())
-      errors.higherEducation = "Higher education is required";
-    if (!formData.board?.trim()) errors.board = "Board/University is required";
-    if (!formData.marks?.trim()) errors.marks = "Marks are required";
-    if (!formData.markPercentage?.trim())
-      errors.markPercentage = "Percentage is required";
-    if (!formData.mobile) {
-      errors.mobile = "Mobile number is required";
-    } else {
-      const m = formData.mobile.replace(/\D/g, "");
-      if (m.length !== 10)
-        errors.mobile = "Mobile number must be exactly 10 digits";
-      else if (!/^[6-9]/.test(m))
-        errors.mobile = "Mobile number must start with 6, 7, 8, or 9";
     }
-    if (!formData.email) {
-      errors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
-      errors.email = "Please enter a valid email address";
-    if (!formData.aadhar) {
-      errors.aadhar = "Aadhar number is required";
-    } else if (formData.aadhar.replace(/\D/g, "").length !== 12)
-      errors.aadhar = "Aadhar number must be exactly 12 digits";
-    if (!formData.pan) {
-      errors.pan = "PAN number is required";
-    } else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.pan.toUpperCase()))
-      errors.pan = "PAN must be in format: ABCDE1234F";
-    if (!formData.pincode) {
-      errors.pincode = "Pin code is required";
-    } else if (formData.pincode.replace(/\D/g, "").length !== 6)
-      errors.pincode = "Pin code must be exactly 6 digits";
+    if (!formData.fatherName?.trim()) {
+      errors.fatherName = "Father's name is required";
+    }
+    if (!formData.motherName?.trim()) {
+      errors.motherName = "Mother's name is required";
+    }
+    if (!formData.dob) {
+      errors.dob = "Date of birth is required";
+    }
+    if (!formData.gender) {
+      errors.gender = "Gender is required";
+    }
+    if (!formData.nationality) {
+      errors.nationality = "Nationality is required";
+    }
+    if (!formData.category) {
+      errors.category = "Category is required";
+    }
+    if (!formData.address?.trim()) {
+      errors.address = "Address is required";
+    }
+    if (!formData.state) {
+      errors.state = "State is required";
+    }
+    if (!formData.district?.trim()) {
+      errors.district = "District is required";
+    }
+    if (!formData.higherEducation?.trim()) {
+      errors.higherEducation = "Higher education is required";
+    }
+    if (!formData.board?.trim()) {
+      errors.board = "Board/University is required";
+    }
+    if (!formData.marks?.trim()) {
+      errors.marks = "Marks are required";
+    }
+    if (!formData.markPercentage?.trim()) {
+      errors.markPercentage = "Percentage is required";
+    }
+    
+    // Validate mobile
+    const mobileError = validateMobile();
+    if (mobileError) errors.mobile = mobileError;
+    
+    // Validate email
+    const emailError = validateEmail();
+    if (emailError) errors.email = emailError;
+    
+    // Validate Aadhar
+    const aadharError = validateAadhar();
+    if (aadharError) errors.aadhar = aadharError;
+    
+    // Validate PAN
+    const panError = validatePAN();
+    if (panError) errors.pan = panError;
+    
+    // Validate Pincode
+    const pincodeError = validatePincode();
+    if (pincodeError) errors.pincode = pincodeError;
+    
+    // Validate age
     if (formData.dob) {
       const ageError = validateAge();
       if (ageError) errors.dob = ageError;
     }
-    if (!photo) errors.photo = "Photo is required";
-    if (!signature) errors.signature = "Signature is required";
-    if (!agreed1) errors.agreed1 = "Please accept the terms and conditions";
-    if (!agreed2) errors.agreed2 = "Please accept the declaration";
+    
+    // Validate files
+    if (!photo) {
+      errors.photo = "Photo is required";
+    }
+    if (!signature) {
+      errors.signature = "Signature is required";
+    }
+    
+    // Validate checkboxes
+    if (!agreed1) {
+      errors.agreed1 = "Please accept the terms and conditions";
+    }
+    if (!agreed2) {
+      errors.agreed2 = "Please accept the declaration";
+    }
+    
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -2550,6 +2438,7 @@ export default function JobDetail() {
         body: JSON.stringify(requestBody),
       });
       const applyData = await applyResponse.json();
+
       if (!applyResponse.ok) {
         if (applyData.errors && Array.isArray(applyData.errors))
           throw new Error(
@@ -2593,45 +2482,8 @@ export default function JobDetail() {
         throw new Error(
           orderResponse.error || "Failed to create payment order",
         );
-      const { orderId, paymentSessionId, amount, amountInRupees, appId } = orderResponse.data;
+      const { orderId, amount, amountInRupees, keyId } = orderResponse.data;
 
-      // Store application data in sessionStorage for after payment redirect
-      sessionStorage.setItem("pendingApplication", JSON.stringify({
-        applicationId: applicationId,
-        applicationData: applyData.data.application,
-        defaultPassword: applyData.data.defaultPassword,
-        applicationNumber: applyData.data.application.applicationNumber || formData.applicationNumber,
-        token: token,
-        formData: formData, // Store form data for PDF
-      }));
-
-      // Redirect to Cashfree payment page - will redirect to payment success page after payment
-      const returnUrl = `${window.location.origin}/payment-success?orderId=${orderId}&applicationId=${applicationId}`;
-      
-      // Load Cashfree Checkout.js and redirect
-      const script = document.createElement("script");
-      script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
-      script.onload = () => {
-        if (window.Cashfree) {
-          const cashfree = new window.Cashfree({
-            mode: "production",
-          });
-          cashfree.checkout({
-            paymentSessionId: paymentSessionId,
-            redirectTarget: "_self",
-          });
-        } else {
-          // Fallback: redirect directly to Cashfree payment URL
-          window.location.href = `https://www.cashfree.com/checkout/payment/${paymentSessionId}`;
-        }
-      };
-      script.onerror = () => {
-        // Fallback: redirect directly to Cashfree payment URL
-        window.location.href = `https://www.cashfree.com/checkout/payment/${paymentSessionId}`;
-      };
-      document.body.appendChild(script);
-
-      /* COMMENTED: Razorpay payment code
       let retries = 0;
       while (!window.Razorpay && retries < 10) {
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -2699,7 +2551,6 @@ export default function JobDetail() {
         setApplying(false);
       });
       razorpay.open();
-      */
     } catch (err) {
       alert("Error: " + err.message);
       setApplying(false);
@@ -2756,25 +2607,34 @@ export default function JobDetail() {
       { key: "st", label: "ST" },
       { key: "ews", label: "EWS" },
     ];
+    
+    // Check if all fees are the same
     const allFees = [];
     categories.forEach((cat) => {
-      const mf = feeStructure[`male_${cat.key}`];
-      const ff = feeStructure[`female_${cat.key}`];
-      if (mf) allFees.push(parseFloat(mf));
-      if (ff) allFees.push(parseFloat(ff));
+      const maleFee = feeStructure[`male_${cat.key}`];
+      const femaleFee = feeStructure[`female_${cat.key}`];
+      if (maleFee) allFees.push(parseFloat(maleFee));
+      if (femaleFee) allFees.push(parseFloat(femaleFee));
     });
+    
     const uniqueFees = [...new Set(allFees)];
-    if (uniqueFees.length === 1 && allFees.length > 0)
+    const allSame = uniqueFees.length === 1 && allFees.length > 0;
+    
+    if (allSame) {
       return `₹${uniqueFees[0]} (FOR ALL CATEGORIES)`;
+    }
+    
+    // If not all same, show detailed format
     const parts = [];
     categories.forEach((cat) => {
-      const mf = feeStructure[`male_${cat.key}`];
-      const ff = feeStructure[`female_${cat.key}`];
-      if (mf || ff) {
-        const fp = [];
-        if (mf) fp.push(`Male: ${mf}`);
-        if (ff) fp.push(`Female: ${ff}`);
-        if (fp.length > 0) parts.push(`${cat.label} (${fp.join(", ")})`);
+      const maleFee = feeStructure[`male_${cat.key}`];
+      const femaleFee = feeStructure[`female_${cat.key}`];
+      if (maleFee || femaleFee) {
+        const feeParts = [];
+        if (maleFee) feeParts.push(`Male: ${maleFee}`);
+        if (femaleFee) feeParts.push(`Female: ${femaleFee}`);
+        if (feeParts.length > 0)
+          parts.push(`${cat.label} (${feeParts.join(", ")})`);
       }
     });
     return parts.length > 0 ? parts.join("\n") : "";
@@ -2793,25 +2653,34 @@ export default function JobDetail() {
       { key: "st", label: "ST" },
       { key: "ews", label: "EWS" },
     ];
+    
+    // Check if all fees are the same
     const allFees = [];
     categories.forEach((cat) => {
-      const mf = feeStructure[`male_${cat.key}`];
-      const ff = feeStructure[`female_${cat.key}`];
-      if (mf) allFees.push(parseFloat(mf));
-      if (ff) allFees.push(parseFloat(ff));
+      const maleFee = feeStructure[`male_${cat.key}`];
+      const femaleFee = feeStructure[`female_${cat.key}`];
+      if (maleFee) allFees.push(parseFloat(maleFee));
+      if (femaleFee) allFees.push(parseFloat(femaleFee));
     });
+    
     const uniqueFees = [...new Set(allFees)];
-    if (uniqueFees.length === 1 && allFees.length > 0)
+    const allSame = uniqueFees.length === 1 && allFees.length > 0;
+    
+    if (allSame) {
       return `₹${uniqueFees[0]} (सभी श्रेणियों के लिए)`;
+    }
+    
+    // If not all same, show detailed format
     const parts = [];
     categories.forEach((cat) => {
-      const mf = feeStructure[`male_${cat.key}`];
-      const ff = feeStructure[`female_${cat.key}`];
-      if (mf || ff) {
-        const fp = [];
-        if (mf) fp.push(`पुरुष: ${mf}`);
-        if (ff) fp.push(`महिला: ${ff}`);
-        if (fp.length > 0) parts.push(`${cat.label} (${fp.join(", ")})`);
+      const maleFee = feeStructure[`male_${cat.key}`];
+      const femaleFee = feeStructure[`female_${cat.key}`];
+      if (maleFee || femaleFee) {
+        const feeParts = [];
+        if (maleFee) feeParts.push(`पुरुष: ${maleFee}`);
+        if (femaleFee) feeParts.push(`महिला: ${femaleFee}`);
+        if (feeParts.length > 0)
+          parts.push(`${cat.label} (${feeParts.join(", ")})`);
       }
     });
     return parts.length > 0 ? parts.join("\n") : "";
@@ -2864,10 +2733,9 @@ export default function JobDetail() {
   const titleHi = job.postTitle?.hi || job.post?.hi || "";
 
   return (
-    <SharedLayout navigate={navigate}>
-      {/* ✅ FIX: margin top 24px added so content doesn't touch header */}
+    <SharedLayout navigate={navigate} activePath="/jobs">
       <div
-        style={{ maxWidth: 1200, margin: "24px auto 40px", padding: "0 2%" }}
+        style={{ maxWidth: 1200, margin: "20px auto 40px", padding: "0 2%" }}
       >
         {formStep !== "review" && (
           <div
@@ -2877,11 +2745,14 @@ export default function JobDetail() {
               overflow: "hidden",
             }}
           >
+            {/* ── Title row ── */}
             <div className="jobs-detail-title-row">
               Recruitment for the Post of {titleEn} Advt. No. {job.advtNo}{" "}
               /&nbsp;
               {titleHi} विज्ञापन संख्या: {job.advtNo}
             </div>
+
+            {/* ── Download row ── */}
             <div className="jobs-detail-download-row">
               <div
                 className="jobs-detail-download-cell"
@@ -2903,89 +2774,22 @@ export default function JobDetail() {
                   }}
                   disabled={!!downloading}
                 >
-                  <span
-                    style={{
-                      marginRight: "6px",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      verticalAlign: "middle",
-                    }}
-                  >
-                    <svg
-                      width="28"
-                      height="34"
-                      viewBox="0 0 28 34"
-                      style={{ marginRight: "4px", flexShrink: 0 }}
-                    >
-                      {/* Paper body */}
-                      <path
-                        d="M4 2 L20 2 L24 6 L24 32 L4 32 Z"
-                        fill="#fff"
-                        stroke="#ccc"
-                        strokeWidth="0.8"
-                      />
+                  <span style={{ marginRight: "6px", display: "inline-flex", alignItems: "center", verticalAlign: "middle" }}>
+                    <svg width="22" height="26" viewBox="0 0 22 26" style={{ marginRight: "4px", flexShrink: 0 }}>
+                      {/* White paper background */}
+                      <rect width="18" height="22" x="2" y="2" fill="#ffffff" stroke="#d0d0d0" strokeWidth="0.5" rx="0.5"/>
                       {/* Folded corner */}
-                      <path
-                        d="M20 2 L20 6 L24 6 Z"
-                        fill="#e0e0e0"
-                        stroke="#ccc"
-                        strokeWidth="0.8"
-                      />
-                      {/* Red banner */}
-                      <rect
-                        x="4"
-                        y="13"
-                        width="20"
-                        height="10"
-                        fill="#c0392b"
-                      />
-                      {/* PDF text */}
-                      <text
-                        x="14"
-                        y="21"
-                        fontSize="6.5"
-                        fill="#fff"
-                        fontWeight="900"
-                        fontFamily="Arial,sans-serif"
-                        textAnchor="middle"
-                        letterSpacing="0.5"
-                      >
-                        PDF
-                      </text>
-                      {/* Lines on paper top */}
-                      <line
-                        x1="7"
-                        y1="8"
-                        x2="17"
-                        y2="8"
-                        stroke="#ccc"
-                        strokeWidth="1"
-                      />
-                      <line
-                        x1="7"
-                        y1="11"
-                        x2="19"
-                        y2="11"
-                        stroke="#ccc"
-                        strokeWidth="1"
-                      />
-                      {/* Lines on paper bottom */}
-                      <line
-                        x1="7"
-                        y1="26"
-                        x2="19"
-                        y2="26"
-                        stroke="#ccc"
-                        strokeWidth="1"
-                      />
-                      <line
-                        x1="7"
-                        y1="29"
-                        x2="15"
-                        y2="29"
-                        stroke="#ccc"
-                        strokeWidth="1"
-                      />
+                      <path d="M 18 2 L 20 2 L 20 4 L 18 2 Z" fill="#e0e0e0" stroke="#d0d0d0" strokeWidth="0.5"/>
+                      {/* Red PDF header banner */}
+                      <rect width="18" height="4" x="2" y="2" fill="#c0392b" rx="0.5"/>
+                      {/* PDF text - PD in one box, F in separate */}
+                      <rect width="6" height="2.5" x="3" y="2.5" fill="#c0392b"/>
+                      <text x="3.5" y="4" fontSize="5" fill="#ffffff" fontWeight="900" fontFamily="Arial, sans-serif" letterSpacing="0.2">PD</text>
+                      <rect width="3.5" height="2.5" x="9.5" y="2.5" fill="#c0392b"/>
+                      <text x="10" y="4" fontSize="5" fill="#ffffff" fontWeight="900" fontFamily="Arial, sans-serif">F</text>
+                      {/* Adobe Acrobat logo (stylized A) */}
+                      <path d="M 9 9 L 11 13 L 13 9 M 10 11 L 12 11" stroke="#c0392b" strokeWidth="0.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M 11 9 L 11 13" stroke="#c0392b" strokeWidth="0.8" strokeLinecap="round"/>
                     </svg>
                   </span>
                   {downloading === "en" ? (
@@ -3019,89 +2823,22 @@ export default function JobDetail() {
                   }}
                   disabled={!!downloading}
                 >
-                  <span
-                    style={{
-                      marginRight: "6px",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      verticalAlign: "middle",
-                    }}
-                  >
-                    <svg
-                      width="28"
-                      height="34"
-                      viewBox="0 0 28 34"
-                      style={{ marginRight: "4px", flexShrink: 0 }}
-                    >
-                      {/* Paper body */}
-                      <path
-                        d="M4 2 L20 2 L24 6 L24 32 L4 32 Z"
-                        fill="#fff"
-                        stroke="#ccc"
-                        strokeWidth="0.8"
-                      />
+                  <span style={{ marginRight: "6px", display: "inline-flex", alignItems: "center", verticalAlign: "middle" }}>
+                    <svg width="22" height="26" viewBox="0 0 22 26" style={{ marginRight: "4px", flexShrink: 0 }}>
+                      {/* White paper background */}
+                      <rect width="18" height="22" x="2" y="2" fill="#ffffff" stroke="#d0d0d0" strokeWidth="0.5" rx="0.5"/>
                       {/* Folded corner */}
-                      <path
-                        d="M20 2 L20 6 L24 6 Z"
-                        fill="#e0e0e0"
-                        stroke="#ccc"
-                        strokeWidth="0.8"
-                      />
-                      {/* Red banner */}
-                      <rect
-                        x="4"
-                        y="13"
-                        width="20"
-                        height="10"
-                        fill="#c0392b"
-                      />
-                      {/* PDF text */}
-                      <text
-                        x="14"
-                        y="21"
-                        fontSize="6.5"
-                        fill="#fff"
-                        fontWeight="900"
-                        fontFamily="Arial,sans-serif"
-                        textAnchor="middle"
-                        letterSpacing="0.5"
-                      >
-                        PDF
-                      </text>
-                      {/* Lines on paper top */}
-                      <line
-                        x1="7"
-                        y1="8"
-                        x2="17"
-                        y2="8"
-                        stroke="#ccc"
-                        strokeWidth="1"
-                      />
-                      <line
-                        x1="7"
-                        y1="11"
-                        x2="19"
-                        y2="11"
-                        stroke="#ccc"
-                        strokeWidth="1"
-                      />
-                      {/* Lines on paper bottom */}
-                      <line
-                        x1="7"
-                        y1="26"
-                        x2="19"
-                        y2="26"
-                        stroke="#ccc"
-                        strokeWidth="1"
-                      />
-                      <line
-                        x1="7"
-                        y1="29"
-                        x2="15"
-                        y2="29"
-                        stroke="#ccc"
-                        strokeWidth="1"
-                      />
+                      <path d="M 18 2 L 20 2 L 20 4 L 18 2 Z" fill="#e0e0e0" stroke="#d0d0d0" strokeWidth="0.5"/>
+                      {/* Red PDF header banner */}
+                      <rect width="18" height="4" x="2" y="2" fill="#c0392b" rx="0.5"/>
+                      {/* PDF text - PD in one box, F in separate */}
+                      <rect width="6" height="2.5" x="3" y="2.5" fill="#c0392b"/>
+                      <text x="3.5" y="4" fontSize="5" fill="#ffffff" fontWeight="900" fontFamily="Arial, sans-serif" letterSpacing="0.2">PD</text>
+                      <rect width="3.5" height="2.5" x="9.5" y="2.5" fill="#c0392b"/>
+                      <text x="10" y="4" fontSize="5" fill="#ffffff" fontWeight="900" fontFamily="Arial, sans-serif">F</text>
+                      {/* Adobe Acrobat logo (stylized A) */}
+                      <path d="M 9 9 L 11 13 L 13 9 M 10 11 L 12 11" stroke="#c0392b" strokeWidth="0.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M 11 9 L 11 13" stroke="#c0392b" strokeWidth="0.8" strokeLinecap="round"/>
                     </svg>
                   </span>
                   {downloading === "hi" ? (
@@ -3117,6 +2854,8 @@ export default function JobDetail() {
                 </button>
               </div>
             </div>
+
+            {/* ── Data rows — key | : | value ── */}
             {Array.from({ length: rows }).map((_, i) => {
               const isFee =
                 rowsEn[i]?.[0] === "Fee Structure" ||
@@ -3126,6 +2865,7 @@ export default function JobDetail() {
                   key={i}
                   className={`jobs-detail-row ${i % 2 === 0 ? "row-odd" : "row-even"}`}
                 >
+                  {/* English half */}
                   <div
                     className="jobs-detail-lang-cell"
                     style={{ borderRight: `1px solid #5cb87a` }}
@@ -3141,6 +2881,7 @@ export default function JobDetail() {
                       {rowsEn[i]?.[1] || ""}
                     </div>
                   </div>
+                  {/* Hindi half */}
                   <div className="jobs-detail-lang-cell">
                     <div className="jobs-detail-key">
                       {rowsHi[i]?.[0] || ""}
@@ -3159,6 +2900,7 @@ export default function JobDetail() {
           </div>
         )}
 
+        {/* Form / Closed / Review */}
         {!isActive ? (
           <div
             style={{
@@ -3246,12 +2988,13 @@ export default function JobDetail() {
                       checked={agreed1}
                       onChange={(e) => {
                         setAgreed1(e.target.checked);
-                        if (e.target.checked && validationErrors.agreed1)
+                        if (e.target.checked && validationErrors.agreed1) {
                           setValidationErrors((prev) => {
-                            const u = { ...prev };
-                            delete u.agreed1;
-                            return u;
+                            const updated = { ...prev };
+                            delete updated.agreed1;
+                            return updated;
                           });
+                        }
                       }}
                       style={{
                         width: 15,
@@ -3275,14 +3018,7 @@ export default function JobDetail() {
                     </a>
                   </label>
                   {validationErrors.agreed1 && (
-                    <div
-                      style={{
-                        color: "#e53e3e",
-                        fontSize: 11,
-                        marginTop: 4,
-                        marginLeft: 23,
-                      }}
-                    >
+                    <div style={{ color: "#e53e3e", fontSize: 11, marginTop: 4, marginLeft: 23 }}>
                       {validationErrors.agreed1}
                     </div>
                   )}
@@ -3303,12 +3039,13 @@ export default function JobDetail() {
                       checked={agreed2}
                       onChange={(e) => {
                         setAgreed2(e.target.checked);
-                        if (e.target.checked && validationErrors.agreed2)
+                        if (e.target.checked && validationErrors.agreed2) {
                           setValidationErrors((prev) => {
-                            const u = { ...prev };
-                            delete u.agreed2;
-                            return u;
+                            const updated = { ...prev };
+                            delete updated.agreed2;
+                            return updated;
                           });
+                        }
                       }}
                       style={{
                         width: 15,
@@ -3322,14 +3059,7 @@ export default function JobDetail() {
                     form is correct to the best of my knowledge and belief.
                   </label>
                   {validationErrors.agreed2 && (
-                    <div
-                      style={{
-                        color: "#e53e3e",
-                        fontSize: 11,
-                        marginTop: 4,
-                        marginLeft: 23,
-                      }}
-                    >
+                    <div style={{ color: "#e53e3e", fontSize: 11, marginTop: 4, marginLeft: 23 }}>
                       {validationErrors.agreed2}
                     </div>
                   )}
@@ -3345,7 +3075,7 @@ export default function JobDetail() {
         )}
       </div>
 
-      {/* Success Modal */}
+      {/* Payment Success Popup Modal */}
       {showSuccessPage && submittedApplication && (
         <div
           style={{
@@ -3354,7 +3084,7 @@ export default function JobDetail() {
             left: 0,
             right: 0,
             bottom: 0,
-            background: "rgba(0,0,0,0.7)",
+            background: "rgba(0, 0, 0, 0.7)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -3362,7 +3092,9 @@ export default function JobDetail() {
             padding: "20px",
           }}
           onClick={(e) => {
-            if (e.target === e.currentTarget) navigate("/");
+            if (e.target === e.currentTarget) {
+              navigate("/");
+            }
           }}
         >
           <div
@@ -3380,13 +3112,15 @@ export default function JobDetail() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Top Header with timestamp and title */}
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: "8px 20px",
+                padding: "12px 20px",
                 background: "#fff",
+                borderBottom: "1px solid #e0e0e0",
               }}
             >
               <div style={{ fontSize: 12, color: "#666" }}>
@@ -3401,57 +3135,68 @@ export default function JobDetail() {
               </div>
               <div
                 style={{
-                  fontSize: 14,
+                  fontSize: 16,
                   fontWeight: 700,
                   color: "#000",
                   textAlign: "center",
                 }}
               >
-                Application Slip - {job?.postTitle?.en || job?.post?.en || ""}{" "}
-                Recruitment 2024
+                Application Slip - {job?.postTitle?.en || job?.post?.en || ""} Recruitment 2024
               </div>
             </div>
+
+            {/* Logo and Organization Section */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 20,
+                gap: 16,
                 padding: "20px",
-                background: GREEN,
+                background: "#fff",
+                borderBottom: "1px solid #e0e0e0",
               }}
             >
+              {/* Circular Logo */}
               <div
                 style={{
-                  width: 100,
-                  height: 100,
+                  width: 80,
+                  height: 80,
                   borderRadius: "50%",
-                  background: "#fff",
+                  background: `linear-gradient(135deg, ${GREEN} 0%, #2d7a4d 100%)`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  color: "#fff",
+                  fontSize: 24,
+                  fontWeight: 900,
                   flexShrink: 0,
                   border: "3px solid #fff",
-                  overflow: "hidden",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  position: "relative",
                 }}
               >
-                <img
-                  src={logo1}
-                  alt="JSSA Logo"
+                <div
                   style={{
+                    position: "absolute",
                     width: "100%",
                     height: "100%",
-                    objectFit: "contain",
-                    padding: "8px",
+                    borderRadius: "50%",
+                    border: "2px solid #fff",
                   }}
                 />
+                <div style={{ zIndex: 1, textAlign: "center", lineHeight: 1.1 }}>
+                  JSSA
+                </div>
               </div>
+
+              {/* Organization Text */}
               <div style={{ flex: 1 }}>
                 <div
                   style={{
-                    fontSize: 28,
+                    fontSize: 24,
                     fontWeight: 900,
-                    color: "#fff",
-                    marginBottom: 8,
+                    color: GREEN,
+                    marginBottom: 6,
                     lineHeight: 1.2,
                   }}
                 >
@@ -3459,48 +3204,56 @@ export default function JobDetail() {
                 </div>
                 <div
                   style={{
-                    fontSize: 14,
-                    color: "#fff",
+                    fontSize: 13,
+                    color: "#000",
                     marginBottom: 4,
                     fontWeight: 600,
                   }}
                 >
                   A Project Of Healthcare Research & Development Board
                 </div>
-                <div style={{ fontSize: 11, color: "#fff", marginBottom: 6 }}>
+                <div style={{ fontSize: 11, color: "#666", marginBottom: 6 }}>
                   (HRDB is Division of social welfare organization "NAC India")
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>
-                  Registration No. : 053083
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: GREEN,
+                  }}
+                >
+                  Registration No.: 053083
                 </div>
               </div>
             </div>
-            <div
-              style={{
-                background: "#fff",
-                color: "#000",
-                padding: "12px 20px",
-                textAlign: "center",
-                fontWeight: 700,
-                fontSize: 16,
-                borderBottom: "1px solid #e0e0e0",
-              }}
-            >
-              {job?.postTitle?.en || job?.post?.en || ""} Recruitment
-            </div>
+
+            {/* Black Recruitment Title Bar */}
             <div
               style={{
                 background: "#000",
                 color: "#fff",
                 padding: "12px 20px",
+                textAlign: "center",
+                fontWeight: 700,
+                fontSize: 15,
+                letterSpacing: 0.5,
+              }}
+            >
+              {job?.postTitle?.en || job?.post?.en || ""} Recruitment
+            </div>
+
+            {/* Application Details Black Bar */}
+            <div
+              style={{
+                background: "#000",
+                color: "#fff",
+                padding: "10px 20px",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
               }}
             >
-              <div
-                style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}
-              >
+              <div style={{ fontSize: 13, fontWeight: 600 }}>
                 Advt. No.: {job?.advtNo || ""}
               </div>
               <div
@@ -3513,9 +3266,8 @@ export default function JobDetail() {
               >
                 Application Slip
               </div>
-              <div style={{ fontSize: 12, whiteSpace: "nowrap" }}>
-                Date:{" "}
-                {new Date().toLocaleString("en-US", {
+              <div style={{ fontSize: 12 }}>
+                Date: {new Date().toLocaleString("en-US", {
                   month: "numeric",
                   day: "numeric",
                   year: "numeric",
@@ -3526,6 +3278,8 @@ export default function JobDetail() {
                 })}
               </div>
             </div>
+
+            {/* Post Applied and Application Number */}
             <div
               style={{
                 display: "flex",
@@ -3539,12 +3293,17 @@ export default function JobDetail() {
                 Post Applied for: {job?.postTitle?.en || job?.post?.en || ""}
               </div>
               <div style={{ fontSize: 13, fontWeight: 700 }}>
-                Application No.:{" "}
-                {submittedApplication.applicationNumber ||
-                  formData.applicationNumber}
+                Application No.: {submittedApplication.applicationNumber || formData.applicationNumber}
               </div>
             </div>
-            <div style={{ padding: "20px", background: "#fff" }}>
+
+            {/* Personal Details Section with Photo */}
+            <div
+              style={{
+                padding: "20px",
+                background: "#fff",
+              }}
+            >
               <h3
                 style={{
                   fontSize: 16,
@@ -3557,7 +3316,9 @@ export default function JobDetail() {
               >
                 Personal Details
               </h3>
+
               <div style={{ display: "flex", gap: 24 }}>
+                {/* Left side - Details */}
                 <div
                   style={{
                     flex: 1,
@@ -3570,26 +3331,31 @@ export default function JobDetail() {
                 >
                   <div>
                     <strong style={{ color: "#333" }}>Name:</strong>{" "}
-                    <span>{formData.candidateName?.toUpperCase() || ""}</span>
+                    <span style={{ color: "#000" }}>
+                      {formData.candidateName?.toUpperCase() || ""}
+                    </span>
                   </div>
                   <div>
                     <strong style={{ color: "#333" }}>Application No.:</strong>{" "}
-                    <span>
-                      {submittedApplication.applicationNumber ||
-                        formData.applicationNumber}
+                    <span style={{ color: "#000" }}>
+                      {submittedApplication.applicationNumber || formData.applicationNumber}
                     </span>
                   </div>
                   <div>
                     <strong style={{ color: "#333" }}>Father's Name:</strong>{" "}
-                    <span>{formData.fatherName?.toUpperCase() || ""}</span>
+                    <span style={{ color: "#000" }}>
+                      {formData.fatherName?.toUpperCase() || ""}
+                    </span>
                   </div>
                   <div>
                     <strong style={{ color: "#333" }}>Mother's Name:</strong>{" "}
-                    <span>{formData.motherName?.toUpperCase() || ""}</span>
+                    <span style={{ color: "#000" }}>
+                      {formData.motherName?.toUpperCase() || ""}
+                    </span>
                   </div>
                   <div>
                     <strong style={{ color: "#333" }}>Date of Birth:</strong>{" "}
-                    <span>
+                    <span style={{ color: "#000" }}>
                       {formData.dob
                         ? new Date(formData.dob).toLocaleDateString("en-GB", {
                             day: "2-digit",
@@ -3601,72 +3367,84 @@ export default function JobDetail() {
                   </div>
                   <div>
                     <strong style={{ color: "#333" }}>Gender:</strong>{" "}
-                    <span>
+                    <span style={{ color: "#000" }}>
                       {formData.gender?.charAt(0).toUpperCase() +
                         formData.gender?.slice(1) || ""}
                     </span>
                   </div>
                   <div>
                     <strong style={{ color: "#333" }}>Nationality:</strong>{" "}
-                    <span>
+                    <span style={{ color: "#000" }}>
                       {formData.nationality?.charAt(0).toUpperCase() +
                         formData.nationality?.slice(1) || ""}
                     </span>
                   </div>
                   <div>
                     <strong style={{ color: "#333" }}>Category:</strong>{" "}
-                    <span>{formData.category?.toUpperCase() || ""}</span>
+                    <span style={{ color: "#000" }}>
+                      {formData.category?.toUpperCase() || ""}
+                    </span>
                   </div>
                   <div>
                     <strong style={{ color: "#333" }}>Aadhar Number:</strong>{" "}
-                    <span>{formData.aadhar || ""}</span>
+                    <span style={{ color: "#000" }}>{formData.aadhar || ""}</span>
                   </div>
                   <div>
                     <strong style={{ color: "#333" }}>PAN Number:</strong>{" "}
-                    <span>{formData.pan?.toUpperCase() || ""}</span>
+                    <span style={{ color: "#000" }}>
+                      {formData.pan?.toUpperCase() || ""}
+                    </span>
                   </div>
                   <div>
                     <strong style={{ color: "#333" }}>Mobile Number:</strong>{" "}
-                    <span>{formData.mobile || ""}</span>
+                    <span style={{ color: "#000" }}>{formData.mobile || ""}</span>
                   </div>
                   <div>
                     <strong style={{ color: "#333" }}>Email ID:</strong>{" "}
-                    <span>{formData.email || ""}</span>
+                    <span style={{ color: "#000" }}>{formData.email || ""}</span>
                   </div>
                   <div style={{ gridColumn: "1 / -1" }}>
-                    <strong style={{ color: "#333" }}>
-                      Permanent Address:
-                    </strong>{" "}
-                    <span>{formData.address?.toUpperCase() || ""}</span>
+                    <strong style={{ color: "#333" }}>Permanent Address:</strong>{" "}
+                    <span style={{ color: "#000" }}>
+                      {formData.address?.toUpperCase() || ""}
+                    </span>
                   </div>
                   <div>
                     <strong style={{ color: "#333" }}>State:</strong>{" "}
-                    <span>{formData.state || ""}</span>
+                    <span style={{ color: "#000" }}>{formData.state || ""}</span>
                   </div>
                   <div>
                     <strong style={{ color: "#333" }}>District:</strong>{" "}
-                    <span>{formData.district || ""}</span>
+                    <span style={{ color: "#000" }}>
+                      {formData.district || ""}
+                    </span>
                   </div>
                   {formData.block && (
                     <div>
                       <strong style={{ color: "#333" }}>Block:</strong>{" "}
-                      <span>{formData.block}</span>
+                      <span style={{ color: "#000" }}>{formData.block}</span>
                     </div>
                   )}
                   {formData.panchayat && (
                     <div>
                       <strong style={{ color: "#333" }}>Panchayat:</strong>{" "}
-                      <span>{formData.panchayat}</span>
+                      <span style={{ color: "#000" }}>{formData.panchayat}</span>
                     </div>
                   )}
                   <div>
                     <strong style={{ color: "#333" }}>Pin Code:</strong>{" "}
-                    <span>{formData.pincode || ""}</span>
+                    <span style={{ color: "#000" }}>{formData.pincode || ""}</span>
                   </div>
                 </div>
+
+                {/* Right side - Photo */}
                 {photoPreview && (
                   <div
-                    style={{ width: 140, flexShrink: 0, textAlign: "center" }}
+                    style={{
+                      width: 140,
+                      flexShrink: 0,
+                      textAlign: "center",
+                    }}
                   >
                     <img
                       src={photoPreview}
@@ -3684,6 +3462,8 @@ export default function JobDetail() {
                 )}
               </div>
             </div>
+
+            {/* Educational Details */}
             <div
               style={{
                 padding: "20px",
@@ -3714,104 +3494,70 @@ export default function JobDetail() {
               >
                 <div>
                   <strong style={{ color: "#333" }}>Higher Education:</strong>{" "}
-                  <span>{formData.higherEducation || ""}</span>
+                  <span style={{ color: "#000" }}>
+                    {formData.higherEducation || ""}
+                  </span>
                 </div>
                 <div>
                   <strong style={{ color: "#333" }}>Board/University:</strong>{" "}
-                  <span>{formData.board || ""}</span>
+                  <span style={{ color: "#000" }}>{formData.board || ""}</span>
                 </div>
                 <div>
                   <strong style={{ color: "#333" }}>Total Marks:</strong>{" "}
-                  <span>{formData.marks || ""}</span>
+                  <span style={{ color: "#000" }}>{formData.marks || ""}</span>
                 </div>
                 <div>
-                  <strong style={{ color: "#333" }}>
-                    Marks in Percentage:
-                  </strong>{" "}
-                  <span>{formData.markPercentage || ""}</span>
+                  <strong style={{ color: "#333" }}>Marks in Percentage:</strong>{" "}
+                  <span style={{ color: "#000" }}>
+                    {formData.markPercentage || ""}
+                  </span>
                 </div>
               </div>
             </div>
-            <div
-              style={{
-                padding: "20px",
-                background: "#fff",
-                borderTop: "1px solid #e0e0e0",
-              }}
-            >
+
+            {/* Signature Section */}
+            {signaturePreview && (
               <div
                 style={{
-                  marginBottom: 16,
-                  fontSize: 13,
-                  lineHeight: 1.8,
+                  padding: "20px",
+                  background: "#fff",
+                  borderTop: "1px solid #e0e0e0",
+                  textAlign: "right",
                 }}
               >
-                <div style={{ marginBottom: 12 }}>
-                  <input
-                    type="checkbox"
-                    checked
-                    readOnly
-                    style={{ marginRight: 8, cursor: "default" }}
-                  />
-                  <span>
-                    I have read and agree to the Terms and Conditions.
-                  </span>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    checked
-                    readOnly
-                    style={{ marginRight: 8, cursor: "default" }}
-                  />
-                  <span>
-                    I declare that all the information given in this application
-                    form is correct to the best of my knowledge and belief. If
-                    any information provided is found false, my candidature may
-                    be rejected at any point of time. I have read and understood
-                    the conditions which I would abide by. Thus, I have given the
-                    above declaration in my full consciousness without any
-                    pressure.
-                  </span>
+                <img
+                  src={signaturePreview}
+                  alt="Signature"
+                  style={{
+                    width: 200,
+                    height: 80,
+                    objectFit: "contain",
+                    border: "1px solid #ccc",
+                    background: "#fff",
+                    padding: 8,
+                    display: "inline-block",
+                  }}
+                />
+                <div
+                  style={{
+                    fontSize: 12,
+                    marginTop: 6,
+                    fontWeight: 600,
+                    color: "#000",
+                  }}
+                >
+                  Candidate's Signature
                 </div>
               </div>
-              {signaturePreview && (
-                <div style={{ textAlign: "right", marginTop: 20 }}>
-                  <div
-                    style={{
-                      display: "inline-block",
-                      border: "1px solid #e0e0e0",
-                      background: "#f0f8ff",
-                      padding: "12px 20px",
-                      borderRadius: 4,
-                    }}
-                  >
-                    <img
-                      src={signaturePreview}
-                      alt="Signature"
-                      style={{
-                        width: 200,
-                        height: 80,
-                        objectFit: "contain",
-                        display: "block",
-                        marginBottom: 8,
-                      }}
-                    />
-                    <div
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: "#000",
-                        textAlign: "center",
-                      }}
-                    >
-                      Candidate's Signature
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div style={{ marginTop: 20, padding: "0 20px 20px" }}>
+            )}
+
+            {/* Application Status Table */}
+            <div
+              style={{
+                marginTop: 20,
+                padding: "0 20px 20px",
+              }}
+            >
               <table
                 style={{
                   width: "100%",
@@ -3850,7 +3596,7 @@ export default function JobDetail() {
                         border: "1px solid #1a2a4a",
                       }}
                     >
-                      Payment Status
+                      Payment Status:
                     </th>
                     <th
                       style={{
@@ -3916,6 +3662,8 @@ export default function JobDetail() {
                 </tbody>
               </table>
             </div>
+
+            {/* Footer */}
             <div
               style={{
                 padding: "16px 20px",
@@ -3934,6 +3682,8 @@ export default function JobDetail() {
               </div>
               <div>1/1</div>
             </div>
+
+            {/* Action Buttons */}
             <div
               style={{
                 display: "flex",
@@ -3948,45 +3698,62 @@ export default function JobDetail() {
               <button
                 onClick={async (e) => {
                   try {
-                    if (!window.html2canvas)
+                    // Load libraries if not already loaded
+                    if (!window.html2canvas) {
                       await loadScript(
                         "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
                       );
-                    if (!window.jspdf)
+                    }
+                    if (!window.jspdf) {
                       await loadScript(
                         "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
                       );
+                    }
+
+                    // Wait a bit for libraries to initialize
                     await new Promise((resolve) => setTimeout(resolve, 500));
-                    const container = document.getElementById(
-                      "application-slip-pdf",
-                    );
-                    if (!container || !window.html2canvas || !window.jspdf) {
+
+                    const container = document.getElementById("application-slip-pdf");
+                    if (!container) {
+                      alert("Application slip container not found.");
+                      return;
+                    }
+
+                    if (!window.html2canvas || !window.jspdf) {
                       alert(
-                        "PDF libraries not loaded. Please wait and try again.",
+                        "PDF libraries not loaded. Please wait a moment and try again.",
                       );
                       return;
                     }
+
+                    // Show loading message
                     const button = e.target;
                     const originalText = button.innerHTML;
                     button.innerHTML = "⏳ Generating PDF...";
                     button.disabled = true;
+
                     try {
+                      // Ensure container is fully visible and expanded
                       const originalOverflow = container.style.overflow;
                       const originalMaxHeight = container.style.maxHeight;
                       container.style.overflow = "visible";
                       container.style.maxHeight = "none";
                       container.style.height = "auto";
+
+                      // Wait for any images to load
                       const images = container.querySelectorAll("img");
                       await Promise.all(
                         Array.from(images).map((img) => {
                           if (img.complete) return Promise.resolve();
-                          return new Promise((resolve) => {
+                          return new Promise((resolve, reject) => {
                             img.onload = resolve;
-                            img.onerror = resolve;
-                            setTimeout(resolve, 2000);
+                            img.onerror = resolve; // Continue even if image fails
+                            setTimeout(resolve, 2000); // Timeout after 2 seconds
                           });
                         }),
                       );
+
+                      // Get full height including all content
                       const fullHeight = Math.max(
                         container.scrollHeight,
                         container.offsetHeight,
@@ -3997,6 +3764,7 @@ export default function JobDetail() {
                         container.offsetWidth,
                         container.clientWidth,
                       );
+
                       const canvas = await window.html2canvas(container, {
                         scale: 2,
                         useCORS: true,
@@ -4011,23 +3779,29 @@ export default function JobDetail() {
                         scrollY: 0,
                         removeContainer: false,
                       });
+
+                      // Restore original styles
                       container.style.overflow = originalOverflow;
                       container.style.maxHeight = originalMaxHeight;
                       container.style.height = "";
+
                       const { jsPDF } = window.jspdf;
                       const imgData = canvas.toDataURL("image/png", 1.0);
+
                       const pdf = new jsPDF({
                         unit: "mm",
                         format: "a4",
                         orientation: "portrait",
                       });
+
                       const pdfWidth = pdf.internal.pageSize.getWidth();
                       const pdfHeight = pdf.internal.pageSize.getHeight();
                       const margin = 10;
                       const imgWidth = pdfWidth - 2 * margin;
-                      const imgHeight =
-                        (canvas.height * imgWidth) / canvas.width;
+                      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
                       if (imgHeight <= pdfHeight - 2 * margin) {
+                        // Single page
                         pdf.addImage(
                           imgData,
                           "PNG",
@@ -4037,45 +3811,58 @@ export default function JobDetail() {
                           imgHeight,
                         );
                       } else {
+                        // Multiple pages
                         const ratio = canvas.width / imgWidth;
                         const sliceHeight = (pdfHeight - 2 * margin) * ratio;
                         let yOffset = 0;
                         let page = 0;
+
                         while (yOffset < canvas.height) {
-                          if (page > 0) pdf.addPage();
+                          if (page > 0) {
+                            pdf.addPage();
+                          }
+
                           const sliceCanvas = document.createElement("canvas");
                           sliceCanvas.width = canvas.width;
                           sliceCanvas.height = Math.min(
                             sliceHeight,
                             canvas.height - yOffset,
                           );
-                          sliceCanvas
-                            .getContext("2d")
-                            .drawImage(canvas, 0, -yOffset);
+
+                          const ctx = sliceCanvas.getContext("2d");
+                          ctx.drawImage(canvas, 0, -yOffset);
+
+                          const sliceData = sliceCanvas.toDataURL("image/png", 1.0);
+                          const sliceImgHeight =
+                            (sliceCanvas.height * imgWidth) / canvas.width;
+
                           pdf.addImage(
-                            sliceCanvas.toDataURL("image/png", 1.0),
+                            sliceData,
                             "PNG",
                             margin,
                             margin,
                             imgWidth,
-                            (sliceCanvas.height * imgWidth) / canvas.width,
+                            sliceImgHeight,
                           );
+
                           yOffset += sliceHeight;
                           page++;
                         }
                       }
+
                       pdf.save(
-                        `Application_Slip_${submittedApplication.applicationNumber || formData.applicationNumber}.pdf`,
+                        `Application_Slip_${
+                          submittedApplication.applicationNumber ||
+                          formData.applicationNumber
+                        }.pdf`,
                       );
                     } finally {
                       button.innerHTML = originalText;
                       button.disabled = false;
                     }
                   } catch (err) {
-                    alert(
-                      "Failed to generate PDF: " +
-                        (err.message || "Unknown error"),
-                    );
+                    console.error("PDF generation error:", err);
+                    alert("Failed to generate PDF: " + (err.message || "Unknown error"));
                   }
                 }}
                 style={{
@@ -4094,7 +3881,7 @@ export default function JobDetail() {
               </button>
               <button
                 onClick={() => {
-                  navigate("/");
+                  navigate("/login");
                 }}
                 style={{
                   background: "#1a2a4a",
@@ -4108,7 +3895,25 @@ export default function JobDetail() {
                   boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
                 }}
               >
-                🏠 Home
+                🔐 Login
+              </button>
+              <button
+                onClick={() => {
+                  navigate("/");
+                }}
+                style={{
+                  background: "#6c757d",
+                  color: "#fff",
+                  border: "none",
+                  padding: "12px 24px",
+                  borderRadius: 4,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                }}
+              >
+                ✖ Cancel
               </button>
             </div>
           </div>

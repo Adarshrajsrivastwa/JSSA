@@ -160,7 +160,7 @@
 //   );
 // }
 import { useState, useEffect } from "react";
-import { notificationsAPI } from "../utils/api.js";
+import { notificationsAPI } from "../../utils/api.js";
 
 const GREEN = "#3AB000";
 

@@ -9,6 +9,9 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 // NOTE: BrowserRouter is in main.jsx — DO NOT add it here
 
 function App() {
+  // Log to identify landing app
+  console.log("🌐 Landing App Running on Port 5174");
+  
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
