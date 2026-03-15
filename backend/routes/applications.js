@@ -214,14 +214,34 @@ router.post(
         };
 
         // Send email using payment success email function (same format)
-        sendPaymentSuccessEmail(
-          applicationDataForEmail,
-          loginCredentials,
-          jobPosting
-        ).catch((err) => {
-          console.error("Failed to send application email:", err);
+        console.log("📧 ========== EMAIL SEND PROCESS START (FORM SUBMISSION) ==========");
+        console.log("📧 Preparing to send application email...");
+        console.log("📧 Application email:", email);
+        console.log("📧 Application Number:", generatedApplicationNumber);
+        console.log("📧 User ID:", user._id);
+        console.log("📧 Job Posting ID:", jobPostingId);
+        console.log("📧 SMTP_USER configured:", !!process.env.SMTP_USER);
+        console.log("📧 SMTP_PASS configured:", !!process.env.SMTP_PASS);
+        
+        try {
+          const emailResult = await sendPaymentSuccessEmail(
+            applicationDataForEmail,
+            loginCredentials,
+            jobPosting
+          );
+          
+          if (emailResult && emailResult.success) {
+            console.log("✅ Application email sent successfully to:", email);
+            console.log("✅ Message ID:", emailResult.messageId);
+          } else {
+            console.error("❌ Application email failed:", emailResult?.message || emailResult?.error || "Unknown error");
+          }
+        } catch (emailErr) {
+          console.error("❌ Exception while sending application email:", emailErr);
+          console.error("❌ Error message:", emailErr.message);
+          console.error("❌ Error stack:", emailErr.stack);
           // Don't fail the request if email fails
-        });
+        }
       } else {
         console.log("⚠️ No email provided, skipping email send");
       }
