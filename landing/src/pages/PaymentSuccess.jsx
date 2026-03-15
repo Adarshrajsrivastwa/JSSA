@@ -827,9 +827,11 @@ function PaymentSuccess() {
         <div
           style={{
             padding: "15px 20px",
+            paddingBottom: signaturePreview ? "100px" : "15px", // Add bottom padding for signature
             background: "#fff",
             borderTop: "1px solid #e0e0e0",
             position: "relative",
+            minHeight: signaturePreview ? "200px" : "auto", // Ensure minimum height for signature space
           }}
         >
           <h3
@@ -850,6 +852,7 @@ function PaymentSuccess() {
               fontSize: 15,
               lineHeight: 2.2,
               marginRight: signaturePreview ? "220px" : "0",
+              paddingBottom: signaturePreview ? "10px" : "0", // Extra padding to prevent overlap
             }}
           >
             <div style={{ marginBottom: 4 }}>
@@ -874,10 +877,11 @@ function PaymentSuccess() {
             <div
               style={{
                 position: "absolute",
-                bottom: "15px",
+                bottom: "20px", // Increased from 15px for more space
                 right: "20px",
                 textAlign: "right",
                 zIndex: 10,
+                pointerEvents: "none", // Prevent signature from blocking interactions
               }}
             >
               <div
