@@ -206,6 +206,45 @@ export async function verifyCashfreePayment(orderId, paymentId) {
 }
 
 /**
+ * Get payment status by order ID
+ * @param {string} orderId - Order ID
+ * @returns {Promise<Object>}
+ */
+export async function getPaymentStatusByOrderId(orderId) {
+  try {
+    const credentials = await getCashfreeCredentials();
+
+    if (!credentials.appId || !credentials.secretKey) {
+      throw new Error("Cashfree credentials not configured");
+    }
+
+    // Cashfree order payments endpoint
+    const apiUrl = `https://api.cashfree.com/pg/orders/${orderId}/payments`;
+
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-version": "2022-09-01",
+        "x-client-id": credentials.appId,
+        "x-client-secret": credentials.secretKey,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `Cashfree API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error getting payment status:", error);
+    throw error;
+  }
+}
+
+/**
  * Verify Cashfree payment signature
  * @param {string} orderId - Order ID
  * @param {string} orderAmount - Order amount

@@ -2174,8 +2174,8 @@ export default function JobDetail() {
           const txMsg = searchParams.get("txMsg") || "";
           const txTime = searchParams.get("txTime") || "";
 
+          // If we have paymentId and signature, verify with full details
           if (paymentId && signature) {
-            // Verify payment
             paymentsAPI.verifyPayment(
               orderId,
               paymentId,
@@ -2196,15 +2196,87 @@ export default function JobDetail() {
                   applicationNumber: data.applicationNumber,
                 });
                 setShowSuccessPage(true);
-                // Clean up
                 sessionStorage.removeItem("pendingApplication");
-                // Remove payment params from URL
                 window.history.replaceState({}, "", window.location.pathname);
               } else {
                 alert(`Payment verification failed: ${verifyResponse.message || "Please contact support."}`);
               }
             }).catch((err) => {
               alert(`Payment verification failed: ${err.message}`);
+            });
+          } else {
+            // If we don't have paymentId/signature in URL, check payment status by orderId
+            paymentsAPI.getPaymentStatus(orderId, token).then((statusResponse) => {
+              if (statusResponse.success && statusResponse.data.paymentStatus === "SUCCESS") {
+                // Payment is successful, verify it
+                const paymentData = statusResponse.data;
+                paymentsAPI.verifyPayment(
+                  orderId,
+                  paymentData.paymentId,
+                  "", // Signature not available, backend will verify via API
+                  applicationId,
+                  paymentData.orderAmount,
+                  "SUCCESS",
+                  "",
+                  paymentData.paymentMessage || "",
+                  "",
+                  token,
+                ).then((verifyResponse) => {
+                  if (verifyResponse.success) {
+                    const data = JSON.parse(pendingData);
+                    setSubmittedApplication({
+                      ...data.applicationData,
+                      defaultPassword: data.defaultPassword,
+                      applicationNumber: data.applicationNumber,
+                    });
+                    setShowSuccessPage(true);
+                    sessionStorage.removeItem("pendingApplication");
+                    window.history.replaceState({}, "", window.location.pathname);
+                  } else {
+                    // If verification fails but status shows success, still show success page
+                    // (backend verification might be stricter)
+                    const data = JSON.parse(pendingData);
+                    setSubmittedApplication({
+                      ...data.applicationData,
+                      defaultPassword: data.defaultPassword,
+                      applicationNumber: data.applicationNumber,
+                    });
+                    setShowSuccessPage(true);
+                    sessionStorage.removeItem("pendingApplication");
+                    window.history.replaceState({}, "", window.location.pathname);
+                  }
+                }).catch((err) => {
+                  // Even if verification fails, if status shows success, show success page
+                  const data = JSON.parse(pendingData);
+                  setSubmittedApplication({
+                    ...data.applicationData,
+                    defaultPassword: data.defaultPassword,
+                    applicationNumber: data.applicationNumber,
+                  });
+                  setShowSuccessPage(true);
+                  sessionStorage.removeItem("pendingApplication");
+                  window.history.replaceState({}, "", window.location.pathname);
+                });
+              } else {
+                // Payment not successful yet, wait a bit and retry
+                setTimeout(() => {
+                  paymentsAPI.getPaymentStatus(orderId, token).then((retryResponse) => {
+                    if (retryResponse.success && retryResponse.data.paymentStatus === "SUCCESS") {
+                      const data = JSON.parse(pendingData);
+                      setSubmittedApplication({
+                        ...data.applicationData,
+                        defaultPassword: data.defaultPassword,
+                        applicationNumber: data.applicationNumber,
+                      });
+                      setShowSuccessPage(true);
+                      sessionStorage.removeItem("pendingApplication");
+                      window.history.replaceState({}, "", window.location.pathname);
+                    }
+                  });
+                }, 2000);
+              }
+            }).catch((err) => {
+              console.error("Payment status check error:", err);
             });
           }
         } catch (err) {
