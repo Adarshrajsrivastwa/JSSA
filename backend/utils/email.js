@@ -673,6 +673,10 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
     const signatureSrc = signatureBase64
       ? (signatureBase64.startsWith('data:') ? signatureBase64 : `data:image/png;base64,${signatureBase64}`)
       : "";
+    
+    // Logo URL - use public URL for email, file path for PDF
+    const logoUrl = "https://jssabhiyan.com/assets/jss.png";
+    const logoPathForPdf = "./landing/src/assets/jss.png"; // For Puppeteer PDF generation
 
     // Email HTML template - matching PDF design
     const htmlContent = `
@@ -1313,6 +1317,27 @@ Thank you for applying!
     const pdfGenerationPromise = (async () => {
       try {
         console.log("📧 Starting PDF generation...");
+        console.log("📧 Photo available:", !!photoSrc);
+        console.log("📧 Signature available:", !!signatureSrc);
+        
+        // Try to read logo file for PDF (fallback to URL if file not found)
+        let logoForPdf = logoUrl;
+        try {
+          const fs = await import('fs');
+          const path = await import('path');
+          const logoPath = path.resolve(process.cwd(), 'landing/src/assets/jss.png');
+          if (fs.existsSync(logoPath)) {
+            const logoBuffer = fs.readFileSync(logoPath);
+            const logoBase64 = logoBuffer.toString('base64');
+            logoForPdf = `data:image/png;base64,${logoBase64}`;
+            console.log("📧 Logo loaded from file for PDF");
+          } else {
+            console.log("📧 Logo file not found, using URL");
+          }
+        } catch (logoErr) {
+          console.log("📧 Could not load logo file, using URL:", logoErr.message);
+        }
+        
         // Create HTML for PDF (only application slip, no email banner/credentials)
       const pdfHtmlContent = `
 <!DOCTYPE html>
@@ -1576,7 +1601,7 @@ Thank you for applying!
     <!-- Header -->
     <div class="header-section">
       <div class="logo-circle">
-        <img src="https://jssabhiyan.com/assets/jss.png" alt="JSSA Logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\\'width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; color: #0aca00;\\'>JSSA</div>';" />
+        <img src="${logoForPdf}" alt="JSSA Logo" style="width: 100%; height: 100%; object-fit: contain; padding: 6px;" />
       </div>
       <div class="header-text">
         <div class="header-title">जन स्वास्थ्य सहायता अभियान</div>
@@ -1615,95 +1640,97 @@ Thank you for applying!
     </div>
 
     <!-- Personal Details -->
-    <div class="details-section" style="position: relative; margin-right: ${photoSrc ? '130px' : '0'};">
-      <div class="section-title">Personal Details</div>
+    <div class="details-section" style="padding: 15px 20px; background: #fff; position: relative;">
+      <h3 style="font-size: 16px; font-weight: 900; color: #000; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid #e0e0e0;">Personal Details</h3>
       ${photoSrc ? `
-      <div class="photo-container" style="position: absolute; top: 70px; right: 20px; width: 110px; text-align: center; z-index: 10;">
+      <div style="position: absolute; top: 70px; right: 20px; width: 110px; text-align: center; z-index: 10;">
         <img src="${photoSrc}" alt="Applicant Photo" style="width: 100%; height: 130px; object-fit: cover; border: 2px solid #000; border-radius: 4px; display: block; background: #fff;" />
       </div>
       ` : ''}
-      <div class="detail-item">
-        <strong>Name:</strong> <span class="detail-value">${(applicationData.candidateName || "").toUpperCase()}</span>
-      </div>
-      <div class="detail-item">
-        <strong>Application No.:</strong> <span>${applicationData.applicationNumber || "N/A"}</span>
-      </div>
-      <div class="detail-item">
-        <strong>Father's Name:</strong> <span>${(applicationData.fatherName || "").toUpperCase()}</span>
-      </div>
-      <div class="detail-item">
-        <strong>Mother's Name:</strong> <span>${(applicationData.motherName || "").toUpperCase()}</span>
-      </div>
-      <div class="detail-item">
-        <strong>Date of Birth:</strong> <span>${formatDate(applicationData.dob)}</span>
-      </div>
-      <div class="detail-item">
-        <strong>Gender:</strong> <span>${formatGender(applicationData.gender)}</span>
-      </div>
-      <div class="detail-item">
-        <strong>Nationality:</strong> <span>${formatNationality(applicationData.nationality)}</span>
-      </div>
-      <div class="detail-item">
-        <strong>Category:</strong> <span>${formatCategory(applicationData.category)}</span>
-      </div>
-      <div class="detail-item">
-        <strong>Aadhar Number:</strong> <span>${applicationData.aadhar || ""}</span>
-      </div>
-      <div class="detail-item">
-        <strong>PAN Number:</strong> <span>${(applicationData.pan || "").toUpperCase()}</span>
-      </div>
-      <div class="detail-item">
-        <strong>Mobile Number:</strong> <span>${applicationData.mobile || ""}</span>
-      </div>
-      <div class="detail-item">
-        <strong>Email ID:</strong> <span>${applicationData.email || ""}</span>
-      </div>
-      <div class="detail-item">
-        <strong>Permanent Address:</strong> <span>${(applicationData.address || "").toUpperCase()}</span>
-      </div>
-      <div class="detail-item">
-        <strong>State:</strong> <span>${applicationData.state || ""}</span>
-      </div>
-      <div class="detail-item">
-        <strong>District:</strong> <span>${applicationData.district || ""}</span>
-      </div>
-      ${applicationData.block ? `
-      <div class="detail-item">
-        <strong>Block:</strong> <span>${applicationData.block}</span>
-      </div>
-      ` : ''}
-      ${applicationData.panchayat ? `
-      <div class="detail-item">
-        <strong>Panchayat:</strong> <span>${applicationData.panchayat}</span>
-      </div>
-      ` : ''}
-      <div class="detail-item">
-        <strong>Pin Code:</strong> <span>${applicationData.pincode || ""}</span>
+      <div style="font-size: 15px; line-height: 2.2; margin-right: ${photoSrc ? '130px' : '0'};">
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Name:</strong> <strong style="color: #000; font-weight: 700;">${(applicationData.candidateName || "").toUpperCase()}</strong>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Application No.:</strong> <span>${applicationData.applicationNumber || "N/A"}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Father's Name:</strong> <span>${(applicationData.fatherName || "").toUpperCase()}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Mother's Name:</strong> <span>${(applicationData.motherName || "").toUpperCase()}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Date of Birth:</strong> <span>${formatDate(applicationData.dob)}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Gender:</strong> <span>${formatGender(applicationData.gender)}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Nationality:</strong> <span>${formatNationality(applicationData.nationality)}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Category:</strong> <span>${formatCategory(applicationData.category)}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Aadhar Number:</strong> <span>${applicationData.aadhar || ""}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">PAN Number:</strong> <span>${(applicationData.pan || "").toUpperCase()}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Mobile Number:</strong> <span>${applicationData.mobile || ""}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Email ID:</strong> <span>${applicationData.email || ""}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Permanent Address:</strong> <span>${(applicationData.address || "").toUpperCase()}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">State:</strong> <span>${applicationData.state || ""}</span>
+        </div>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">District:</strong> <span>${applicationData.district || ""}</span>
+        </div>
+        ${applicationData.block ? `
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Block:</strong> <span>${applicationData.block}</span>
+        </div>
+        ` : ''}
+        ${applicationData.panchayat ? `
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Panchayat:</strong> <span>${applicationData.panchayat}</span>
+        </div>
+        ` : ''}
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Pin Code:</strong> <span>${applicationData.pincode || ""}</span>
+        </div>
       </div>
     </div>
 
     <!-- Educational Details -->
-    <div class="details-section" style="position: relative; margin-right: ${signatureSrc ? '220px' : '0'}; padding-bottom: ${signatureSrc ? '100px' : '15px'}; min-height: ${signatureSrc ? '200px' : 'auto'};">
-      <div class="section-title">Educational Details</div>
+    <div class="details-section" style="padding: 15px 20px; padding-bottom: ${signatureSrc ? '100px' : '15px'}; background: #fff; border-top: 1px solid #e0e0e0; position: relative; min-height: ${signatureSrc ? '200px' : 'auto'};">
+      <h3 style="font-size: 16px; font-weight: 900; color: #000; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid #e0e0e0;">Educational Details</h3>
       <div style="font-size: 15px; line-height: 2.2; margin-right: ${signatureSrc ? '220px' : '0'}; padding-bottom: ${signatureSrc ? '10px' : '0'};">
-        <div class="detail-item">
-          <strong>Higher Education:</strong> <span>${applicationData.higherEducation || ""}</span>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Higher Education:</strong> <span>${applicationData.higherEducation || ""}</span>
         </div>
-        <div class="detail-item">
-          <strong>Board/University:</strong> <span>${applicationData.board || ""}</span>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Board/University:</strong> <span>${applicationData.board || ""}</span>
         </div>
-        <div class="detail-item">
-          <strong>Total Marks:</strong> <span>${applicationData.marks || ""}</span>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Total Marks:</strong> <span>${applicationData.marks || ""}</span>
         </div>
-        <div class="detail-item">
-          <strong>Marks in Percentage:</strong> <span>${applicationData.markPercentage || ""}</span>
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #333;">Marks in Percentage:</strong> <span>${applicationData.markPercentage || ""}</span>
         </div>
       </div>
       ${signatureSrc ? `
-      <div class="signature-container" style="position: absolute; bottom: 20px; right: 20px; text-align: right; z-index: 10; pointer-events: none;">
-        <div class="signature-box" style="display: inline-block; border: 1px solid #e0e0e0; background: #f0f8ff; padding: 10px 16px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+      <div style="position: absolute; bottom: 20px; right: 20px; text-align: right; z-index: 10; pointer-events: none;">
+        <div style="display: inline-block; border: 1px solid #e0e0e0; background: #f0f8ff; padding: 10px 16px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
           <img src="${signatureSrc}" alt="Signature" style="width: 180px; height: 70px; object-fit: contain; display: block; margin-bottom: 6px; background: #fff;" />
-          <div class="signature-label" style="font-size: 13px; font-weight: 600; color: #000; text-align: center;">Candidate's Signature</div>
+          <div style="font-size: 13px; font-weight: 600; color: #000; text-align: center;">Candidate's Signature</div>
         </div>
       </div>
       ` : ''}
@@ -1767,19 +1794,32 @@ Thank you for applying!
       const page = await browser.newPage();
       await page.setContent(pdfHtmlContent, { waitUntil: 'networkidle0' });
       
-      // Wait for images to load
+      // Wait for images to load - increased timeout for base64 images
       await page.evaluateHandle(() => {
         return Promise.all(
           Array.from(document.images).map((img) => {
-            if (img.complete) return Promise.resolve();
+            if (img.complete && img.naturalWidth > 0) return Promise.resolve();
             return new Promise((resolve) => {
-              img.onload = resolve;
-              img.onerror = resolve;
-              setTimeout(resolve, 2000);
+              img.onload = () => {
+                console.log('Image loaded:', img.src.substring(0, 50));
+                resolve();
+              };
+              img.onerror = () => {
+                console.log('Image failed to load:', img.src.substring(0, 50));
+                resolve(); // Resolve anyway to not block PDF generation
+              };
+              // Increased timeout to 5 seconds for base64 images
+              setTimeout(() => {
+                console.log('Image load timeout:', img.src.substring(0, 50));
+                resolve();
+              }, 5000);
             });
           })
         );
       });
+      
+      // Additional wait to ensure all images are rendered
+      await page.waitForTimeout(1000);
 
       // Generate PDF
       pdfBuffer = await page.pdf({
