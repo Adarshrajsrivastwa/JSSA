@@ -499,10 +499,11 @@ function PaymentSuccess() {
             <div
               style={{ 
                 position: "absolute",
-                top: "50px", // Below header
+                top: "50px", // Below "Personal Details" header
                 right: "20px",
-                width: 100,
+                width: 110,
                 textAlign: "center",
+                zIndex: 10,
               }}
             >
               <img
@@ -510,11 +511,12 @@ function PaymentSuccess() {
                 alt="Applicant Photo"
                 style={{
                   width: "100%",
-                  height: 120,
+                  height: 130,
                   objectFit: "cover",
                   border: "2px solid #000",
                   borderRadius: 4,
                   display: "block",
+                  background: "#fff",
                 }}
               />
             </div>
@@ -715,6 +717,7 @@ function PaymentSuccess() {
                 bottom: "15px",
                 right: "20px",
                 textAlign: "right",
+                zIndex: 10,
               }}
             >
               <div
@@ -722,24 +725,26 @@ function PaymentSuccess() {
                   display: "inline-block",
                   border: "1px solid #e0e0e0",
                   background: "#f0f8ff",
-                  padding: "8px 14px",
+                  padding: "10px 16px",
                   borderRadius: 4,
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                 }}
               >
                 <img
                   src={signaturePreview}
                   alt="Signature"
                   style={{
-                    width: 160,
-                    height: 60,
+                    width: 180,
+                    height: 70,
                     objectFit: "contain",
                     display: "block",
-                    marginBottom: 4,
+                    marginBottom: 6,
+                    background: "#fff",
                   }}
                 />
                 <div
                   style={{
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: 600,
                     color: "#000",
                     textAlign: "center",
