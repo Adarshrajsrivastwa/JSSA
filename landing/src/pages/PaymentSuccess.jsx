@@ -494,12 +494,12 @@ function PaymentSuccess() {
           >
             Personal Details
           </h3>
-          {/* Photo in top right */}
+          {/* Photo in top right - below header */}
           {photoPreview && (
             <div
               style={{ 
                 position: "absolute",
-                top: "15px",
+                top: "50px", // Below header
                 right: "20px",
                 width: 100,
                 textAlign: "center",
@@ -519,34 +519,33 @@ function PaymentSuccess() {
               />
             </div>
           )}
-          {/* Personal details in single row format */}
+          {/* Personal details - one field per line */}
           <div
             style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "8px 20px",
               fontSize: 11,
-              lineHeight: 1.5,
+              lineHeight: 1.8,
               marginRight: photoPreview ? "130px" : "0",
             }}
           >
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>Name:</strong>{" "}
-              <span>{finalFormData.candidateName?.toUpperCase() || ""}</span>
+              <strong style={{ color: "#000", fontWeight: 700 }}>
+                {finalFormData.candidateName?.toUpperCase() || ""}
+              </strong>
             </div>
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>Application No.:</strong>{" "}
               <span>{applicationNumber}</span>
             </div>
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>Father's Name:</strong>{" "}
               <span>{finalFormData.fatherName?.toUpperCase() || ""}</span>
             </div>
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>Mother's Name:</strong>{" "}
               <span>{finalFormData.motherName?.toUpperCase() || ""}</span>
             </div>
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>Date of Birth:</strong>{" "}
               <span>
                 {finalFormData.dob
@@ -558,65 +557,65 @@ function PaymentSuccess() {
                   : ""}
               </span>
             </div>
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>Gender:</strong>{" "}
               <span>
                 {finalFormData.gender?.charAt(0).toUpperCase() +
                   finalFormData.gender?.slice(1) || ""}
               </span>
             </div>
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>Nationality:</strong>{" "}
               <span>
                 {finalFormData.nationality?.charAt(0).toUpperCase() +
                   finalFormData.nationality?.slice(1) || ""}
               </span>
             </div>
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>Category:</strong>{" "}
               <span>{finalFormData.category?.toUpperCase() || ""}</span>
             </div>
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>Aadhar Number:</strong>{" "}
               <span>{finalFormData.aadhar || ""}</span>
             </div>
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>PAN Number:</strong>{" "}
               <span>{finalFormData.pan?.toUpperCase() || ""}</span>
             </div>
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>Mobile Number:</strong>{" "}
               <span>{finalFormData.mobile || ""}</span>
             </div>
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>Email ID:</strong>{" "}
               <span>{finalFormData.email || ""}</span>
             </div>
-            <div style={{ width: "100%" }}>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>Permanent Address:</strong>{" "}
               <span>{finalFormData.address?.toUpperCase() || ""}</span>
             </div>
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>State:</strong>{" "}
               <span>{finalFormData.state || ""}</span>
             </div>
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>District:</strong>{" "}
               <span>{finalFormData.district || ""}</span>
             </div>
             {finalFormData.block && (
-              <div>
+              <div style={{ marginBottom: 4 }}>
                 <strong style={{ color: "#333" }}>Block:</strong>{" "}
                 <span>{finalFormData.block}</span>
               </div>
             )}
             {finalFormData.panchayat && (
-              <div>
+              <div style={{ marginBottom: 4 }}>
                 <strong style={{ color: "#333" }}>Panchayat:</strong>{" "}
                 <span>{finalFormData.panchayat}</span>
               </div>
             )}
-            <div>
+            <div style={{ marginBottom: 4 }}>
               <strong style={{ color: "#333" }}>Pin Code:</strong>{" "}
               <span>{finalFormData.pincode || ""}</span>
             </div>
