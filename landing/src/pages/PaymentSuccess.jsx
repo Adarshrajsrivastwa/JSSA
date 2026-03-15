@@ -42,6 +42,24 @@ const responsiveStyles = `
       font-size: 15px !important;
     }
     
+    /* Educational Details - Single line on mobile */
+    #application-slip-pdf .educational-details-content > div {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      margin-bottom: 8px !important;
+      line-height: 1.5 !important;
+    }
+    
+    #application-slip-pdf .educational-details-content > div strong {
+      margin-right: 8px !important;
+      flex-shrink: 0 !important;
+    }
+    
+    #application-slip-pdf .educational-details-content > div span {
+      flex: 1 !important;
+    }
+    
     #application-slip-pdf {
       font-size: 11px !important;
       padding: 10px !important;
@@ -99,6 +117,27 @@ const responsiveStyles = `
     
     .payment-success-banner p {
       font-size: 12px !important;
+    }
+    
+    /* Educational Details - Single line on small mobile */
+    #application-slip-pdf .educational-details-content > div {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      margin-bottom: 6px !important;
+      line-height: 1.4 !important;
+      font-size: 13px !important;
+    }
+    
+    #application-slip-pdf .educational-details-content > div strong {
+      margin-right: 6px !important;
+      flex-shrink: 0 !important;
+      font-size: 13px !important;
+    }
+    
+    #application-slip-pdf .educational-details-content > div span {
+      flex: 1 !important;
+      font-size: 13px !important;
     }
     
     #application-slip-pdf {
@@ -848,6 +887,7 @@ function PaymentSuccess() {
           </h3>
           {/* Educational details - one field per line (same format as Personal Details) */}
           <div
+            className="educational-details-content"
             style={{
               fontSize: 15,
               lineHeight: 2.2,
