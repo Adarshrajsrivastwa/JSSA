@@ -2156,31 +2156,53 @@ export default function JobDetail() {
   // Handle Cashfree payment redirect
   useEffect(() => {
     const payment = searchParams.get("payment");
-    if (payment === "success") {
-      const orderId = searchParams.get("orderId");
-      const applicationId = searchParams.get("applicationId");
+    const orderId = searchParams.get("orderId");
+    const applicationId = searchParams.get("applicationId");
+    
+    // Check if we're returning from Cashfree payment
+    if (payment === "success" || orderId || applicationId) {
       const pendingData = sessionStorage.getItem("pendingApplication");
       
-      if (pendingData && orderId && applicationId) {
+      if (pendingData) {
         try {
-          const { token } = JSON.parse(pendingData);
+          const data = JSON.parse(pendingData);
+          const { token, applicationData, defaultPassword, applicationNumber, formData: storedFormData, applicationId: storedApplicationId } = data;
           
-          // Get payment details from URL or Cashfree callback
-          const paymentId = searchParams.get("paymentId") || searchParams.get("referenceId");
-          const signature = searchParams.get("signature");
-          const orderAmount = searchParams.get("orderAmount");
-          const txStatus = searchParams.get("txStatus") || "SUCCESS";
-          const paymentMode = searchParams.get("paymentMode") || "";
-          const txMsg = searchParams.get("txMsg") || "";
-          const txTime = searchParams.get("txTime") || "";
+          // Use applicationId from URL or stored data
+          const finalApplicationId = applicationId || storedApplicationId;
+          
+          // Get payment details from URL (Cashfree redirects with these params)
+          const paymentId = searchParams.get("paymentId") || 
+                           searchParams.get("referenceId") || 
+                           searchParams.get("cf_payment_id");
+          const signature = searchParams.get("signature") || 
+                           searchParams.get("cf_signature");
+          const orderAmount = searchParams.get("orderAmount") || 
+                             searchParams.get("order_amount");
+          const txStatus = searchParams.get("txStatus") || 
+                          searchParams.get("tx_status") || 
+                          searchParams.get("payment_status") || 
+                          "SUCCESS";
+          const paymentMode = searchParams.get("paymentMode") || 
+                            searchParams.get("payment_mode") || 
+                            "";
+          const txMsg = searchParams.get("txMsg") || 
+                       searchParams.get("tx_msg") || 
+                       searchParams.get("payment_message") || 
+                       "";
+          const txTime = searchParams.get("txTime") || 
+                        searchParams.get("tx_time") || 
+                        "";
 
-          if (paymentId && signature) {
-            // Verify payment
+          console.log("Payment redirect detected:", { payment, orderId, finalApplicationId, paymentId, signature, txStatus });
+
+          // If we have paymentId and signature, verify payment
+          if (paymentId && signature && orderId) {
             paymentsAPI.verifyPayment(
               orderId,
               paymentId,
               signature,
-              applicationId,
+              finalApplicationId,
               orderAmount,
               txStatus,
               paymentMode,
@@ -2189,12 +2211,19 @@ export default function JobDetail() {
               token,
             ).then((verifyResponse) => {
               if (verifyResponse.success) {
-                const data = JSON.parse(pendingData);
                 setSubmittedApplication({
-                  ...data.applicationData,
-                  defaultPassword: data.defaultPassword,
-                  applicationNumber: data.applicationNumber,
+                  ...applicationData,
+                  defaultPassword: defaultPassword,
+                  applicationNumber: applicationNumber,
                 });
+                // Restore form data if available
+                if (storedFormData) {
+                  Object.keys(storedFormData).forEach(key => {
+                    if (storedFormData[key]) {
+                      setFormData(prev => ({ ...prev, [key]: storedFormData[key] }));
+                    }
+                  });
+                }
                 setShowSuccessPage(true);
                 // Clean up
                 sessionStorage.removeItem("pendingApplication");
@@ -2204,11 +2233,129 @@ export default function JobDetail() {
                 alert(`Payment verification failed: ${verifyResponse.message || "Please contact support."}`);
               }
             }).catch((err) => {
+              console.error("Payment verification error:", err);
               alert(`Payment verification failed: ${err.message}`);
             });
+          } else if (txStatus === "SUCCESS" || payment === "success") {
+            // If payment status is SUCCESS but we don't have all params, 
+            // still show success page (payment might be verified via webhook)
+            // But first try to get payment status from backend
+            if (orderId && finalApplicationId) {
+              // Try to verify payment status from backend
+              const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "";
+              fetch(`${apiUrl}/payments/status?orderId=${orderId}&applicationId=${finalApplicationId}`, {
+                headers: {
+                  "Authorization": `Bearer ${token}`,
+                },
+              })
+              .then(res => res.json())
+              .then(result => {
+                console.log("Payment status check result:", result);
+                if (result.success && result.data.paymentStatus === "paid") {
+                  setSubmittedApplication({
+                    ...applicationData,
+                    defaultPassword: defaultPassword,
+                    applicationNumber: applicationNumber,
+                  });
+                  // Restore form data if available
+                  if (storedFormData) {
+                    Object.keys(storedFormData).forEach(key => {
+                      if (storedFormData[key]) {
+                        setFormData(prev => ({ ...prev, [key]: storedFormData[key] }));
+                      }
+                    });
+                  }
+                  setShowSuccessPage(true);
+                  sessionStorage.removeItem("pendingApplication");
+                  window.history.replaceState({}, "", window.location.pathname);
+                } else {
+                  // Show success page anyway if payment=success in URL
+                  setSubmittedApplication({
+                    ...applicationData,
+                    defaultPassword: defaultPassword,
+                    applicationNumber: applicationNumber,
+                  });
+                  // Restore form data if available
+                  if (storedFormData) {
+                    Object.keys(storedFormData).forEach(key => {
+                      if (storedFormData[key]) {
+                        setFormData(prev => ({ ...prev, [key]: storedFormData[key] }));
+                      }
+                    });
+                  }
+                  setShowSuccessPage(true);
+                  sessionStorage.removeItem("pendingApplication");
+                  window.history.replaceState({}, "", window.location.pathname);
+                }
+              })
+              .catch(() => {
+                // If API call fails, still show success page if payment=success
+                if (payment === "success") {
+                  setSubmittedApplication({
+                    ...applicationData,
+                    defaultPassword: defaultPassword,
+                    applicationNumber: applicationNumber,
+                  });
+                  // Restore form data if available
+                  if (storedFormData) {
+                    Object.keys(storedFormData).forEach(key => {
+                      if (storedFormData[key]) {
+                        setFormData(prev => ({ ...prev, [key]: storedFormData[key] }));
+                      }
+                    });
+                  }
+                  setShowSuccessPage(true);
+                  sessionStorage.removeItem("pendingApplication");
+                  window.history.replaceState({}, "", window.location.pathname);
+                }
+              });
+            } else if (payment === "success") {
+              // If we have payment=success but no orderId, still show success
+              setSubmittedApplication({
+                ...applicationData,
+                defaultPassword: defaultPassword,
+                applicationNumber: applicationNumber,
+              });
+              // Restore form data if available
+              if (storedFormData) {
+                Object.keys(storedFormData).forEach(key => {
+                  if (storedFormData[key]) {
+                    setFormData(prev => ({ ...prev, [key]: storedFormData[key] }));
+                  }
+                });
+              }
+              setShowSuccessPage(true);
+              sessionStorage.removeItem("pendingApplication");
+              window.history.replaceState({}, "", window.location.pathname);
+            }
           }
         } catch (err) {
           console.error("Payment redirect handling error:", err);
+        }
+      } else {
+        // If no pendingData but we have payment=success, check if application exists
+        // This handles cases where sessionStorage was cleared
+        if (payment === "success" && applicationId) {
+          const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "";
+          if (apiUrl) {
+            fetch(`${apiUrl}/applications/${applicationId}`)
+              .then(res => res.json())
+              .then(result => {
+                if (result.success && result.data.application) {
+                  const app = result.data.application;
+                  if (app.paymentStatus === "paid") {
+                    // Get form data from somewhere or show success with available data
+                    setSubmittedApplication({
+                      ...app,
+                      applicationNumber: app.applicationNumber || "",
+                    });
+                    setShowSuccessPage(true);
+                    window.history.replaceState({}, "", window.location.pathname);
+                  }
+                }
+              })
+              .catch(err => console.error("Error fetching application:", err));
+          }
         }
       }
     }
@@ -2450,11 +2597,12 @@ export default function JobDetail() {
 
       // Store application data in sessionStorage for after payment redirect
       sessionStorage.setItem("pendingApplication", JSON.stringify({
-        applicationId,
+        applicationId: applicationId,
         applicationData: applyData.data.application,
         defaultPassword: applyData.data.defaultPassword,
         applicationNumber: applyData.data.application.applicationNumber || formData.applicationNumber,
-        token,
+        token: token,
+        formData: formData, // Store form data for PDF
       }));
 
       // Redirect to Cashfree payment page

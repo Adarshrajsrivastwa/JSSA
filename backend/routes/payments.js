@@ -504,4 +504,45 @@ router.post(
 );
 */
 
+/**
+ * GET /api/payments/status
+ * Get payment status by orderId and applicationId
+ * Optional authentication
+ */
+router.get("/status", async (req, res) => {
+  try {
+    const { orderId, applicationId } = req.query;
+
+    if (!orderId || !applicationId) {
+      return res.status(400).json({
+        error: "Missing parameters",
+        message: "orderId and applicationId are required",
+      });
+    }
+
+    // Get application
+    const application = await Application.findById(applicationId);
+    if (!application) {
+      return res.status(404).json({
+        error: "Application not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        paymentStatus: application.paymentStatus || "pending",
+        paymentId: application.paymentId || null,
+        orderId: application.orderId || orderId,
+      },
+    });
+  } catch (error) {
+    console.error("Get payment status error:", error);
+    res.status(500).json({
+      error: "Failed to get payment status",
+      message: error.message || "Payment status error",
+    });
+  }
+});
+
 export default router;
