@@ -2,7 +2,7 @@ import express from "express";
 import { body, validationResult } from "express-validator";
 import { authenticate } from "../middleware/auth.js";
 // import { getRazorpayInstance, getRazorpayKeyId } from "../utils/razorpay.js"; // COMMENTED: Razorpay replaced with Cashfree
-import { createCashfreeOrder, getCashfreeAppId, verifyCashfreePayment, verifyCashfreeSignature, getPaymentStatusByOrderId } from "../utils/cashfree.js";
+import { createCashfreeOrder, getCashfreeAppId, verifyCashfreePayment, verifyCashfreeSignature } from "../utils/cashfree.js";
 import JobPosting from "../models/JobPosting.js";
 import Application from "../models/Application.js";
 import crypto from "crypto";
@@ -264,8 +264,10 @@ router.post(
   [
     body("orderId").notEmpty().withMessage("Order ID is required"),
     body("paymentId").notEmpty().withMessage("Payment ID is required"),
+    body("signature").notEmpty().withMessage("Signature is required"),
     body("applicationId").notEmpty().withMessage("Application ID is required"),
-    // Signature, orderAmount, and txStatus are optional (for API-based verification)
+    body("orderAmount").notEmpty().withMessage("Order amount is required"),
+    body("txStatus").notEmpty().withMessage("Transaction status is required"),
   ],
   // Optional authentication - try to authenticate but don't fail if no token
   async (req, res, next) => {
@@ -310,6 +312,7 @@ router.post(
 
       // Verify ownership - allow if user is authenticated and owns the application
       // OR if no user is authenticated (public application from landing page)
+      // The signature verification will ensure security
       if (req.user) {
         // If user is authenticated, verify ownership
         if (application.createdBy && application.createdBy.toString() !== req.user.id) {
@@ -319,37 +322,36 @@ router.post(
           });
         }
       }
+      // If no user is authenticated (public application), proceed with signature verification only
 
-      // If signature is provided, verify it
-      if (signature && orderAmount && txStatus) {
-        const isValidSignature = await verifyCashfreeSignature(
-          orderId,
-          orderAmount,
-          paymentId,
-          txStatus,
-          paymentMode || "",
-          txMsg || "",
-          txTime || "",
-          signature
-        );
+      // Verify Cashfree signature
+      const isValidSignature = await verifyCashfreeSignature(
+        orderId,
+        orderAmount,
+        paymentId,
+        txStatus,
+        paymentMode || "",
+        txMsg || "",
+        txTime || "",
+        signature
+      );
 
-        if (!isValidSignature) {
-          return res.status(400).json({
-            error: "Payment verification failed",
-            message: "Invalid payment signature",
-          });
-        }
-
-        // Verify payment status
-        if (txStatus !== "SUCCESS") {
-          return res.status(400).json({
-            error: "Payment verification failed",
-            message: `Payment status is ${txStatus}. Payment must be successful.`,
-          });
-        }
+      if (!isValidSignature) {
+        return res.status(400).json({
+          error: "Payment verification failed",
+          message: "Invalid payment signature",
+        });
       }
 
-      // Verify payment with Cashfree API (this is the primary verification method)
+      // Verify payment status
+      if (txStatus !== "SUCCESS") {
+        return res.status(400).json({
+          error: "Payment verification failed",
+          message: `Payment status is ${txStatus}. Payment must be successful.`,
+        });
+      }
+
+      // Verify payment with Cashfree API
       try {
         const paymentDetails = await verifyCashfreePayment(orderId, paymentId);
         if (paymentDetails.payment_status !== "SUCCESS") {
@@ -360,14 +362,7 @@ router.post(
         }
       } catch (verifyError) {
         console.error("Cashfree payment verification error:", verifyError);
-        // If API verification fails and no signature was provided, fail the verification
-        if (!signature) {
-          return res.status(400).json({
-            error: "Payment verification failed",
-            message: "Unable to verify payment with Cashfree. Please try again.",
-          });
-        }
-        // If signature was provided and is valid, continue even if API call fails
+        // Continue with signature verification if API call fails
       }
 
       // Update application with payment details
@@ -508,63 +503,5 @@ router.post(
   }
 );
 */
-
-/**
- * GET /api/payments/status/:orderId
- * Get payment status by order ID (for redirect handling)
- * Public endpoint - used after Cashfree redirect
- */
-router.get("/status/:orderId", async (req, res) => {
-  try {
-    const { orderId } = req.params;
-
-    if (!orderId) {
-      return res.status(400).json({
-        error: "Order ID is required",
-      });
-    }
-
-    // Get payment status from Cashfree
-    const paymentData = await getPaymentStatusByOrderId(orderId);
-
-    // Cashfree returns an array of payments
-    const payments = Array.isArray(paymentData) ? paymentData : (paymentData?.payments || []);
-    const successfulPayment = payments.find(p => 
-      p.payment_status === "SUCCESS" || 
-      p.payment_status === "PAID" ||
-      (p.cf_payment_id && p.payment_status !== "FAILED")
-    );
-
-    if (successfulPayment) {
-      res.json({
-        success: true,
-        data: {
-          orderId: orderId,
-          paymentId: successfulPayment.cf_payment_id || successfulPayment.payment_id || successfulPayment.cf_payment_id,
-          paymentStatus: successfulPayment.payment_status || "SUCCESS",
-          orderAmount: successfulPayment.order_amount || successfulPayment.orderAmount,
-          paymentMessage: successfulPayment.payment_message || successfulPayment.paymentMessage || "Payment successful",
-        },
-      });
-    } else {
-      // Check if there's any payment at all
-      const latestPayment = payments[0] || paymentData;
-      res.json({
-        success: false,
-        data: {
-          orderId: orderId,
-          paymentStatus: latestPayment?.payment_status || "PENDING",
-          message: latestPayment?.payment_message || "Payment not completed yet",
-        },
-      });
-    }
-  } catch (error) {
-    console.error("Get payment status error:", error);
-    res.status(500).json({
-      error: "Failed to get payment status",
-      message: error.message || "Payment status check error",
-    });
-  }
-});
 
 export default router;

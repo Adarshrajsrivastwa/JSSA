@@ -2174,8 +2174,8 @@ export default function JobDetail() {
           const txMsg = searchParams.get("txMsg") || "";
           const txTime = searchParams.get("txTime") || "";
 
-          // If we have paymentId and signature, verify with full details
           if (paymentId && signature) {
+            // Verify payment
             paymentsAPI.verifyPayment(
               orderId,
               paymentId,
@@ -2196,87 +2196,15 @@ export default function JobDetail() {
                   applicationNumber: data.applicationNumber,
                 });
                 setShowSuccessPage(true);
+                // Clean up
                 sessionStorage.removeItem("pendingApplication");
+                // Remove payment params from URL
                 window.history.replaceState({}, "", window.location.pathname);
               } else {
                 alert(`Payment verification failed: ${verifyResponse.message || "Please contact support."}`);
               }
             }).catch((err) => {
               alert(`Payment verification failed: ${err.message}`);
-            });
-          } else {
-            // If we don't have paymentId/signature in URL, check payment status by orderId
-            paymentsAPI.getPaymentStatus(orderId, token).then((statusResponse) => {
-              if (statusResponse.success && statusResponse.data.paymentStatus === "SUCCESS") {
-                // Payment is successful, verify it
-                const paymentData = statusResponse.data;
-                paymentsAPI.verifyPayment(
-                  orderId,
-                  paymentData.paymentId,
-                  "", // Signature not available, backend will verify via API
-                  applicationId,
-                  paymentData.orderAmount,
-                  "SUCCESS",
-                  "",
-                  paymentData.paymentMessage || "",
-                  "",
-                  token,
-                ).then((verifyResponse) => {
-                  if (verifyResponse.success) {
-                    const data = JSON.parse(pendingData);
-                    setSubmittedApplication({
-                      ...data.applicationData,
-                      defaultPassword: data.defaultPassword,
-                      applicationNumber: data.applicationNumber,
-                    });
-                    setShowSuccessPage(true);
-                    sessionStorage.removeItem("pendingApplication");
-                    window.history.replaceState({}, "", window.location.pathname);
-                  } else {
-                    // If verification fails but status shows success, still show success page
-                    // (backend verification might be stricter)
-                    const data = JSON.parse(pendingData);
-                    setSubmittedApplication({
-                      ...data.applicationData,
-                      defaultPassword: data.defaultPassword,
-                      applicationNumber: data.applicationNumber,
-                    });
-                    setShowSuccessPage(true);
-                    sessionStorage.removeItem("pendingApplication");
-                    window.history.replaceState({}, "", window.location.pathname);
-                  }
-                }).catch((err) => {
-                  // Even if verification fails, if status shows success, show success page
-                  const data = JSON.parse(pendingData);
-                  setSubmittedApplication({
-                    ...data.applicationData,
-                    defaultPassword: data.defaultPassword,
-                    applicationNumber: data.applicationNumber,
-                  });
-                  setShowSuccessPage(true);
-                  sessionStorage.removeItem("pendingApplication");
-                  window.history.replaceState({}, "", window.location.pathname);
-                });
-              } else {
-                // Payment not successful yet, wait a bit and retry
-                setTimeout(() => {
-                  paymentsAPI.getPaymentStatus(orderId, token).then((retryResponse) => {
-                    if (retryResponse.success && retryResponse.data.paymentStatus === "SUCCESS") {
-                      const data = JSON.parse(pendingData);
-                      setSubmittedApplication({
-                        ...data.applicationData,
-                        defaultPassword: data.defaultPassword,
-                        applicationNumber: data.applicationNumber,
-                      });
-                      setShowSuccessPage(true);
-                      sessionStorage.removeItem("pendingApplication");
-                      window.history.replaceState({}, "", window.location.pathname);
-                    }
-                  });
-                }, 2000);
-              }
-            }).catch((err) => {
-              console.error("Payment status check error:", err);
             });
           }
         } catch (err) {
@@ -3656,40 +3584,85 @@ export default function JobDetail() {
                 </div>
               </div>
             </div>
-            {signaturePreview && (
+            <div
+              style={{
+                padding: "20px",
+                background: "#fff",
+                borderTop: "1px solid #e0e0e0",
+              }}
+            >
               <div
                 style={{
-                  padding: "20px",
-                  background: "#fff",
-                  borderTop: "1px solid #e0e0e0",
-                  textAlign: "right",
+                  marginBottom: 16,
+                  fontSize: 13,
+                  lineHeight: 1.8,
                 }}
               >
-                <img
-                  src={signaturePreview}
-                  alt="Signature"
-                  style={{
-                    width: 200,
-                    height: 80,
-                    objectFit: "contain",
-                    border: "1px solid #ccc",
-                    background: "#fff",
-                    padding: 8,
-                    display: "inline-block",
-                  }}
-                />
-                <div
-                  style={{
-                    fontSize: 12,
-                    marginTop: 6,
-                    fontWeight: 600,
-                    color: "#000",
-                  }}
-                >
-                  Candidate's Signature
+                <div style={{ marginBottom: 12 }}>
+                  <input
+                    type="checkbox"
+                    checked
+                    readOnly
+                    style={{ marginRight: 8, cursor: "default" }}
+                  />
+                  <span>
+                    I have read and agree to the Terms and Conditions.
+                  </span>
+                </div>
+                <div>
+                  <input
+                    type="checkbox"
+                    checked
+                    readOnly
+                    style={{ marginRight: 8, cursor: "default" }}
+                  />
+                  <span>
+                    I declare that all the information given in this application
+                    form is correct to the best of my knowledge and belief. If
+                    any information provided is found false, my candidature may
+                    be rejected at any point of time. I have read and understood
+                    the conditions which I would abide by. Thus, I have given the
+                    above declaration in my full consciousness without any
+                    pressure.
+                  </span>
                 </div>
               </div>
-            )}
+              {signaturePreview && (
+                <div style={{ textAlign: "right", marginTop: 20 }}>
+                  <div
+                    style={{
+                      display: "inline-block",
+                      border: "1px solid #e0e0e0",
+                      background: "#f0f8ff",
+                      padding: "12px 20px",
+                      borderRadius: 4,
+                    }}
+                  >
+                    <img
+                      src={signaturePreview}
+                      alt="Signature"
+                      style={{
+                        width: 200,
+                        height: 80,
+                        objectFit: "contain",
+                        display: "block",
+                        marginBottom: 8,
+                      }}
+                    />
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "#000",
+                        textAlign: "center",
+                      }}
+                    >
+                      Candidate's Signature
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
             <div style={{ marginTop: 20, padding: "0 20px 20px" }}>
               <table
                 style={{
@@ -3729,7 +3702,7 @@ export default function JobDetail() {
                         border: "1px solid #1a2a4a",
                       }}
                     >
-                      Payment Status:
+                      Payment Status
                     </th>
                     <th
                       style={{
@@ -3973,7 +3946,7 @@ export default function JobDetail() {
               </button>
               <button
                 onClick={() => {
-                  window.location.href = "https://frontend.jssabhiyan.com/";
+                  navigate("/");
                 }}
                 style={{
                   background: "#1a2a4a",
@@ -3987,25 +3960,7 @@ export default function JobDetail() {
                   boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
                 }}
               >
-                🔐 Login
-              </button>
-              <button
-                onClick={() => {
-                  navigate("/");
-                }}
-                style={{
-                  background: "#6c757d",
-                  color: "#fff",
-                  border: "none",
-                  padding: "12px 24px",
-                  borderRadius: 4,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                }}
-              >
-                ✖ Cancel
+                🏠 Home
               </button>
             </div>
           </div>

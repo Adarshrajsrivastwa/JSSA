@@ -174,13 +174,6 @@ export const paymentsAPI = {
       { method: "GET", token }
     );
   },
-
-  getPaymentStatus: async (orderId, token = null) => {
-    return apiRequest(`/payments/status/${orderId}`, {
-      method: "GET",
-      token,
-    });
-  },
 };
 
 export default apiRequest;
