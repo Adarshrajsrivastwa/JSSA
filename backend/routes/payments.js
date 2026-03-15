@@ -53,15 +53,14 @@ router.get("/calculate-fee", async (req, res) => {
   }
 });
 
-// All other routes require authentication
-router.use(authenticate);
-
 /**
  * POST /api/payments/create-order
  * Create Razorpay order for application fee payment
+ * Requires authentication
  */
 router.post(
   "/create-order",
+  authenticate,
   [
     body("jobPostingId").notEmpty().withMessage("Job posting ID is required"),
     body("gender").isIn(["male", "female", "other"]).withMessage("Valid gender is required"),
@@ -155,6 +154,8 @@ router.post(
 /**
  * POST /api/payments/verify
  * Verify payment and update application
+ * Supports both authenticated users and public applications (from landing page)
+ * Authentication is optional - signature verification provides security
  */
 router.post(
   "/verify",
@@ -164,6 +165,27 @@ router.post(
     body("razorpay_signature").notEmpty().withMessage("Signature is required"),
     body("applicationId").notEmpty().withMessage("Application ID is required"),
   ],
+  // Optional authentication - try to authenticate but don't fail if no token
+  async (req, res, next) => {
+    try {
+      // Try to authenticate if token is provided
+      const authHeader = req.headers.authorization;
+      if (authHeader) {
+        const { verifyToken, extractToken } = await import("../utils/jwt.js");
+        const token = extractToken(authHeader);
+        if (token) {
+          const decoded = verifyToken(token);
+          if (decoded) {
+            req.user = { id: decoded.id, role: decoded.role };
+          }
+        }
+      }
+      next();
+    } catch (err) {
+      // Continue without authentication if token is invalid
+      next();
+    }
+  },
   async (req, res) => {
     try {
       const errors = validationResult(req);
@@ -184,13 +206,19 @@ router.post(
         });
       }
 
-      // Verify ownership
-      if (application.createdBy.toString() !== req.user.id) {
-        return res.status(403).json({
-          error: "Access denied",
-          message: "You can only verify payments for your own applications",
-        });
+      // Verify ownership - allow if user is authenticated and owns the application
+      // OR if no user is authenticated (public application from landing page)
+      // The signature verification will ensure security
+      if (req.user) {
+        // If user is authenticated, verify ownership
+        if (application.createdBy && application.createdBy.toString() !== req.user.id) {
+          return res.status(403).json({
+            error: "Access denied",
+            message: "You can only verify payments for your own applications",
+          });
+        }
       }
+      // If no user is authenticated (public application), proceed with signature verification only
 
       // Get Razorpay credentials for signature verification
       const { getRazorpayCredentials } = await import("../utils/razorpay.js");
