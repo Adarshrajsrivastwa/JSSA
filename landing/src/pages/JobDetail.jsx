@@ -2473,16 +2473,19 @@ export default function JobDetail() {
   };
 
   const handleReview = () => {
+    console.log("🔍 handleReview called - validating form...");
     if (!validateAllFields()) {
       alert("Please fill all required fields correctly before submitting.");
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
+    console.log("✅ Validation passed - showing preview");
     setFormStep("review");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSubmit = async () => {
+    console.log("🚀 handleSubmit called - creating application...");
     setApplying(true);
     try {
       const photoBase64 = await convertFileToBase64(photo);
@@ -3157,7 +3160,22 @@ export default function JobDetail() {
             ⚠️ This vacancy is closed. / यह भर्ती बंद हो चुकी है।
           </div>
         ) : formStep === "review" ? (
-          <InlineReview
+          <>
+            {console.log("📄 Rendering InlineReview preview component, formStep:", formStep)}
+            <div style={{ 
+              background: "#e8f5e9", 
+              padding: "12px", 
+              marginBottom: "16px", 
+              borderRadius: "4px",
+              border: `2px solid ${GREEN}`,
+              textAlign: "center",
+              fontWeight: 700,
+              fontSize: 14,
+              color: "#1a2a4a"
+            }}>
+              📋 FORM PREVIEW - Please review your details before submitting
+            </div>
+            <InlineReview
             formData={formData}
             photoPreview={photoPreview}
             signaturePreview={signaturePreview}
@@ -3173,6 +3191,7 @@ export default function JobDetail() {
             job={job}
             indianStates={indianStates}
           />
+          </>
         ) : (
           <>
             <div
@@ -3323,8 +3342,17 @@ export default function JobDetail() {
                 </div>
               </div>
               <div style={{ textAlign: "center", marginTop: 22 }}>
-                <button onClick={handleReview} className="jobs-submit-btn">
-                  SUBMIT &amp; CONTINUE
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("🔘 SUBMIT & CONTINUE button clicked");
+                    handleReview();
+                  }} 
+                  className="jobs-submit-btn"
+                  type="button"
+                >
+                  SUBMIT &amp; CONTINUE / सबमिट और जारी रखें
                 </button>
               </div>
             </div>
