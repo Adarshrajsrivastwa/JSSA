@@ -770,17 +770,14 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
       flex-shrink: 0;
       border: 2px solid #fff;
       overflow: hidden;
+      padding: 6px;
+      box-sizing: border-box;
     }
-    .logo-circle div {
+    .logo-circle img {
       width: 100%;
       height: 100%;
-      background: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      font-weight: 900;
-      color: #0aca00;
+      object-fit: contain;
+      display: block;
     }
     .header-text {
       flex: 1;
@@ -1033,7 +1030,7 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
       <!-- Header -->
       <div class="header-section">
         <div class="logo-circle">
-          <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; color: #0aca00;">JSSA</div>
+          <img src="https://jssabhiyan.com/assets/jss.png" alt="JSSA Logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\\'width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; color: #0aca00;\\'>JSSA</div>';" />
         </div>
         <div class="header-text">
           <div class="header-title">जन स्वास्थ्य सहायता अभियान</div>
@@ -1072,11 +1069,11 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
       </div>
 
       <!-- Personal Details -->
-      <div class="details-section" style="margin-right: ${photoSrc ? '130px' : '0'};">
+      <div class="details-section" style="position: relative; margin-right: ${photoSrc ? '130px' : '0'};">
         <div class="section-title">Personal Details</div>
         ${photoSrc ? `
-        <div class="photo-container">
-          <img src="${photoSrc}" alt="Applicant Photo" />
+        <div class="photo-container" style="position: absolute; top: 70px; right: 20px; width: 110px; text-align: center; z-index: 10;">
+          <img src="${photoSrc}" alt="Applicant Photo" style="width: 100%; height: 130px; object-fit: cover; border: 2px solid #000; border-radius: 4px; display: block; background: #fff;" />
         </div>
         ` : ''}
         <div class="detail-item">
@@ -1140,28 +1137,30 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
       </div>
 
       <!-- Educational Details -->
-      <div class="details-section" style="margin-right: ${signatureSrc ? '220px' : '0'}; position: relative;">
+      <div class="details-section" style="position: relative; margin-right: ${signatureSrc ? '220px' : '0'}; padding-bottom: ${signatureSrc ? '100px' : '15px'}; min-height: ${signatureSrc ? '200px' : 'auto'};">
         <div class="section-title">Educational Details</div>
+        <div style="font-size: 15px; line-height: 2.2; margin-right: ${signatureSrc ? '220px' : '0'}; padding-bottom: ${signatureSrc ? '10px' : '0'};">
+          <div class="detail-item">
+            <strong>Higher Education:</strong> <span>${applicationData.higherEducation || ""}</span>
+          </div>
+          <div class="detail-item">
+            <strong>Board/University:</strong> <span>${applicationData.board || ""}</span>
+          </div>
+          <div class="detail-item">
+            <strong>Total Marks:</strong> <span>${applicationData.marks || ""}</span>
+          </div>
+          <div class="detail-item">
+            <strong>Marks in Percentage:</strong> <span>${applicationData.markPercentage || ""}</span>
+          </div>
+        </div>
         ${signatureSrc ? `
-        <div class="signature-container">
-          <div class="signature-box">
-            <img src="${signatureSrc}" alt="Signature" />
-            <div class="signature-label">Candidate's Signature</div>
+        <div class="signature-container" style="position: absolute; bottom: 20px; right: 20px; text-align: right; z-index: 10; pointer-events: none;">
+          <div class="signature-box" style="display: inline-block; border: 1px solid #e0e0e0; background: #f0f8ff; padding: 10px 16px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <img src="${signatureSrc}" alt="Signature" style="width: 180px; height: 70px; object-fit: contain; display: block; margin-bottom: 6px; background: #fff;" />
+            <div class="signature-label" style="font-size: 13px; font-weight: 600; color: #000; text-align: center;">Candidate's Signature</div>
           </div>
         </div>
         ` : ''}
-        <div class="detail-item">
-          <strong>Higher Education:</strong> <span>${applicationData.higherEducation || ""}</span>
-        </div>
-        <div class="detail-item">
-          <strong>Board/University:</strong> <span>${applicationData.board || ""}</span>
-        </div>
-        <div class="detail-item">
-          <strong>Total Marks:</strong> <span>${applicationData.marks || ""}</span>
-        </div>
-        <div class="detail-item">
-          <strong>Marks in Percentage:</strong> <span>${applicationData.markPercentage || ""}</span>
-        </div>
       </div>
 
       <!-- Declarations -->
@@ -1353,17 +1352,14 @@ Thank you for applying!
       flex-shrink: 0;
       border: 2px solid #fff;
       overflow: hidden;
+      padding: 6px;
+      box-sizing: border-box;
     }
-    .logo-circle div {
+    .logo-circle img {
       width: 100%;
       height: 100%;
-      background: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      font-weight: 900;
-      color: #0aca00;
+      object-fit: contain;
+      display: block;
     }
     .header-text {
       flex: 1;
@@ -1580,7 +1576,7 @@ Thank you for applying!
     <!-- Header -->
     <div class="header-section">
       <div class="logo-circle">
-        <div>JSSA</div>
+        <img src="https://jssabhiyan.com/assets/jss.png" alt="JSSA Logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\\'width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; color: #0aca00;\\'>JSSA</div>';" />
       </div>
       <div class="header-text">
         <div class="header-title">जन स्वास्थ्य सहायता अभियान</div>
@@ -1619,11 +1615,11 @@ Thank you for applying!
     </div>
 
     <!-- Personal Details -->
-    <div class="details-section" style="margin-right: ${photoSrc ? '130px' : '0'};">
+    <div class="details-section" style="position: relative; margin-right: ${photoSrc ? '130px' : '0'};">
       <div class="section-title">Personal Details</div>
       ${photoSrc ? `
-      <div class="photo-container">
-        <img src="${photoSrc}" alt="Applicant Photo" />
+      <div class="photo-container" style="position: absolute; top: 70px; right: 20px; width: 110px; text-align: center; z-index: 10;">
+        <img src="${photoSrc}" alt="Applicant Photo" style="width: 100%; height: 130px; object-fit: cover; border: 2px solid #000; border-radius: 4px; display: block; background: #fff;" />
       </div>
       ` : ''}
       <div class="detail-item">
@@ -1687,28 +1683,30 @@ Thank you for applying!
     </div>
 
     <!-- Educational Details -->
-    <div class="details-section" style="margin-right: ${signatureSrc ? '220px' : '0'}; position: relative;">
+    <div class="details-section" style="position: relative; margin-right: ${signatureSrc ? '220px' : '0'}; padding-bottom: ${signatureSrc ? '100px' : '15px'}; min-height: ${signatureSrc ? '200px' : 'auto'};">
       <div class="section-title">Educational Details</div>
+      <div style="font-size: 15px; line-height: 2.2; margin-right: ${signatureSrc ? '220px' : '0'}; padding-bottom: ${signatureSrc ? '10px' : '0'};">
+        <div class="detail-item">
+          <strong>Higher Education:</strong> <span>${applicationData.higherEducation || ""}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Board/University:</strong> <span>${applicationData.board || ""}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Total Marks:</strong> <span>${applicationData.marks || ""}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Marks in Percentage:</strong> <span>${applicationData.markPercentage || ""}</span>
+        </div>
+      </div>
       ${signatureSrc ? `
-      <div class="signature-container">
-        <div class="signature-box">
-          <img src="${signatureSrc}" alt="Signature" />
-          <div class="signature-label">Candidate's Signature</div>
+      <div class="signature-container" style="position: absolute; bottom: 20px; right: 20px; text-align: right; z-index: 10; pointer-events: none;">
+        <div class="signature-box" style="display: inline-block; border: 1px solid #e0e0e0; background: #f0f8ff; padding: 10px 16px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+          <img src="${signatureSrc}" alt="Signature" style="width: 180px; height: 70px; object-fit: contain; display: block; margin-bottom: 6px; background: #fff;" />
+          <div class="signature-label" style="font-size: 13px; font-weight: 600; color: #000; text-align: center;">Candidate's Signature</div>
         </div>
       </div>
       ` : ''}
-      <div class="detail-item">
-        <strong>Higher Education:</strong> <span>${applicationData.higherEducation || ""}</span>
-      </div>
-      <div class="detail-item">
-        <strong>Board/University:</strong> <span>${applicationData.board || ""}</span>
-      </div>
-      <div class="detail-item">
-        <strong>Total Marks:</strong> <span>${applicationData.marks || ""}</span>
-      </div>
-      <div class="detail-item">
-        <strong>Marks in Percentage:</strong> <span>${applicationData.markPercentage || ""}</span>
-      </div>
     </div>
 
     <!-- Declarations -->
