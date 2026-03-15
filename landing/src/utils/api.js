@@ -142,10 +142,14 @@ export const notificationsAPI = {
  * Payments API
  */
 export const paymentsAPI = {
-  createOrder: async (jobPostingId, gender, category, token = null) => {
+  createOrder: async (jobPostingId, gender, category, token = null, returnUrl = null) => {
+    const body = { jobPostingId, gender, category };
+    if (returnUrl) {
+      body.returnUrl = returnUrl;
+    }
     return apiRequest("/payments/create-order", {
       method: "POST",
-      body: JSON.stringify({ jobPostingId, gender, category }),
+      body: JSON.stringify(body),
       token,
     });
   },

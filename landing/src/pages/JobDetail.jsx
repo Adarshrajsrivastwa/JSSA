@@ -2158,12 +2158,16 @@ export default function JobDetail() {
   // Handle Cashfree payment redirect
   useEffect(() => {
     // Don't run this logic if we're already on payment-success page
-    if (location.pathname === "/payment-success") {
+    const currentPath = location.pathname || window.location.pathname;
+    if (currentPath === "/payment-success" || currentPath.includes("/payment-success")) {
+      console.log("🚫 Skipping payment redirect logic - already on payment-success page:", currentPath);
+      paymentRedirectProcessed.current = true; // Mark as processed to prevent any redirects
       return;
     }
 
     // Prevent multiple redirects
     if (paymentRedirectProcessed.current) {
+      console.log("🚫 Skipping payment redirect logic - already processed");
       return;
     }
 
@@ -2587,11 +2591,15 @@ export default function JobDetail() {
         return;
       }
 
+      // Set returnUrl for Cashfree redirect
+      const returnUrl = `${window.location.origin}/payment-success?orderId=PLACEHOLDER&applicationId=PLACEHOLDER`;
+      
       const orderResponse = await paymentsAPI.createOrder(
         id,
         formData.gender,
         formData.category,
         token,
+        returnUrl, // Pass returnUrl to backend
       );
       if (!orderResponse.success)
         throw new Error(
@@ -2615,8 +2623,9 @@ export default function JobDetail() {
         }),
       );
 
-      // Redirect to Cashfree payment page - will redirect to payment success page after payment
-      const returnUrl = `${window.location.origin}/payment-success?orderId=${orderId}&applicationId=${applicationId}`;
+      // Note: returnUrl is already set when creating order, but we'll use it here for reference
+      const finalReturnUrl = `${window.location.origin}/payment-success?orderId=${orderId}&applicationId=${applicationId}`;
+      console.log("💰 Payment order created, returnUrl:", finalReturnUrl);
 
       // Load Cashfree Checkout.js and redirect
       const script = document.createElement("script");

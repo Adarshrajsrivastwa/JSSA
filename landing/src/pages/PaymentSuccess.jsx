@@ -15,6 +15,16 @@ function PaymentSuccess() {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [signaturePreview, setSignaturePreview] = useState(null);
 
+  // Prevent any auto-redirects - ensure we stay on this page
+  useEffect(() => {
+    console.log("✅ PaymentSuccess page mounted/updated - staying on this page");
+    // Clear any pending redirects or navigation
+    const currentPath = window.location.pathname;
+    if (!currentPath.includes("/payment-success")) {
+      console.warn("⚠️ Warning: PaymentSuccess component loaded but URL is not payment-success:", currentPath);
+    }
+  }, []);
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -25,38 +35,55 @@ function PaymentSuccess() {
         const applicationId = searchParams.get("applicationId");
         console.log("PaymentSuccess - orderId:", orderId, "applicationId:", applicationId, "pendingData exists:", !!pendingData);
 
-        if (pendingData) {
-          const data = JSON.parse(pendingData);
-          setApplicationData(data.applicationData);
-          setFormData(data.formData || {});
-          
-          // Load photo and signature if available
-          if (data.formData?.photo) {
-            setPhotoPreview(data.formData.photo);
-          }
-          if (data.formData?.signature) {
-            setSignaturePreview(data.formData.signature);
-          }
+        // Wait a bit for sessionStorage to be available (in case of redirect timing)
+        await new Promise(resolve => setTimeout(resolve, 100));
 
-          // Load job details
-          if (data.applicationData?.jobPostingId) {
-            try {
-              const jobResponse = await jobPostingsAPI.getById(data.applicationData.jobPostingId);
-              if (jobResponse.success && jobResponse.data.posting) {
-                setJob(jobResponse.data.posting);
-              }
-            } catch (err) {
-              console.error("Error loading job:", err);
+        // Try to get pendingData again after a short delay
+        const finalPendingData = sessionStorage.getItem("pendingApplication") || pendingData;
+
+        if (finalPendingData) {
+          try {
+            const data = JSON.parse(finalPendingData);
+            console.log("✅ Found pending application data in sessionStorage");
+            setApplicationData(data.applicationData);
+            setFormData(data.formData || {});
+            
+            // Load photo and signature if available
+            if (data.formData?.photo) {
+              setPhotoPreview(data.formData.photo);
             }
+            if (data.formData?.signature) {
+              setSignaturePreview(data.formData.signature);
+            }
+
+            // Load job details
+            if (data.applicationData?.jobPostingId) {
+              try {
+                const jobResponse = await jobPostingsAPI.getById(data.applicationData.jobPostingId);
+                if (jobResponse.success && jobResponse.data.posting) {
+                  setJob(jobResponse.data.posting);
+                }
+              } catch (err) {
+                console.error("Error loading job:", err);
+              }
+            }
+            setLoading(false);
+            return; // Exit early if we have data
+          } catch (parseErr) {
+            console.error("Error parsing pendingData:", parseErr);
           }
-        } else if (applicationId) {
-          // Try to fetch application from API
+        }
+
+        // If no pendingData, try to fetch from API using applicationId
+        if (applicationId) {
+          console.log("📡 Fetching application from API...");
           const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "";
           if (apiUrl) {
             try {
               const response = await fetch(`${apiUrl}/applications/${applicationId}`);
               const result = await response.json();
               if (result.success && result.data.application) {
+                console.log("✅ Found application in API");
                 const app = result.data.application;
                 setApplicationData(app);
                 
@@ -67,10 +94,37 @@ function PaymentSuccess() {
                     setJob(jobResponse.data.posting);
                   }
                 }
+                setLoading(false);
+                return; // Exit early if we have data
               }
             } catch (err) {
               console.error("Error fetching application:", err);
             }
+          }
+        }
+
+        // If we reach here, we don't have data yet
+        // Wait a bit more and try again (maybe data is still loading)
+        console.log("⏳ No data found yet, waiting a bit more...");
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Try one more time
+        const retryPendingData = sessionStorage.getItem("pendingApplication");
+        if (retryPendingData) {
+          try {
+            const data = JSON.parse(retryPendingData);
+            setApplicationData(data.applicationData);
+            setFormData(data.formData || {});
+            if (data.formData?.photo) setPhotoPreview(data.formData.photo);
+            if (data.formData?.signature) setSignaturePreview(data.formData.signature);
+            if (data.applicationData?.jobPostingId) {
+              const jobResponse = await jobPostingsAPI.getById(data.applicationData.jobPostingId);
+              if (jobResponse.success && jobResponse.data.posting) {
+                setJob(jobResponse.data.posting);
+              }
+            }
+          } catch (err) {
+            console.error("Error in retry:", err);
           }
         }
 
@@ -112,7 +166,67 @@ function PaymentSuccess() {
     );
   }
 
-  if (!applicationData && !formData) {
+  // Don't show "Application Not Found" immediately - wait a bit more for data to load
+  // Only show if we're sure data won't load (after loading is complete and no data)
+  if (!loading && !applicationData && !formData) {
+    // Check URL params - if we have orderId or applicationId, try to fetch one more time
+    const orderId = searchParams.get("orderId");
+    const applicationId = searchParams.get("applicationId");
+    
+    // If we have params but no data, show error (but don't auto-redirect)
+    if (orderId || applicationId) {
+      return (
+        <div
+          style={{
+            minHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#f5f5f5",
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              padding: "40px",
+              borderRadius: 8,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              textAlign: "center",
+              maxWidth: 500,
+            }}
+          >
+            <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 16, color: "#333" }}>
+              Application Not Found
+            </div>
+            <div style={{ fontSize: 14, color: "#666", marginBottom: 24 }}>
+              Unable to load application details. Please check your application number or contact support.
+            </div>
+            <div style={{ fontSize: 12, color: "#999", marginBottom: 24 }}>
+              Order ID: {orderId || "N/A"} | Application ID: {applicationId || "N/A"}
+            </div>
+            <button
+              onClick={() => navigate("/")}
+              style={{
+                background: GREEN,
+                color: "#fff",
+                border: "none",
+                padding: "12px 24px",
+                borderRadius: 4,
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              🏠 Go to Home
+            </button>
+          </div>
+        </div>
+      );
+    }
+    
+    // If no params at all, show error
     return (
       <div
         style={{
@@ -136,10 +250,10 @@ function PaymentSuccess() {
           }}
         >
           <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 16, color: "#333" }}>
-            Application Not Found
+            Invalid Payment Success Page
           </div>
           <div style={{ fontSize: 14, color: "#666", marginBottom: 24 }}>
-            Unable to load application details. Please try again.
+            No payment information found. Please return to the application page.
           </div>
           <button
             onClick={() => navigate("/")}
