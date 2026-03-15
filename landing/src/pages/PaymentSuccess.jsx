@@ -527,6 +527,8 @@ function PaymentSuccess() {
           width: "100%",
           margin: "0 auto",
           padding: 0,
+          overflow: "hidden",
+          boxSizing: "border-box",
           position: "relative",
           fontFamily: "Arial, sans-serif",
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
@@ -966,13 +968,23 @@ function PaymentSuccess() {
           </div>
           {/* Signature moved to Educational Details section - removed from here */}
         </div>
-        <div style={{ marginTop: 12, padding: "0 20px 15px" }}>
+        <div style={{ 
+          marginTop: 12, 
+          padding: "0 20px 15px", 
+          overflowX: "auto",
+          overflowY: "visible",
+          width: "100%",
+          boxSizing: "border-box",
+        }}>
           <table
             style={{
               width: "100%",
               borderCollapse: "collapse",
               fontSize: 13,
               border: "1px solid #e0e0e0",
+              tableLayout: "fixed",
+              minWidth: "100%",
+              maxWidth: "100%",
             }}
           >
             <thead>
@@ -984,6 +996,8 @@ function PaymentSuccess() {
                     fontWeight: 700,
                     border: "1px solid #1a2a4a",
                     fontSize: 13,
+                    width: "20%",
+                    wordBreak: "break-word",
                   }}
                 >
                   Application No.
@@ -995,6 +1009,8 @@ function PaymentSuccess() {
                     fontWeight: 700,
                     border: "1px solid #1a2a4a",
                     fontSize: 13,
+                    width: "30%",
+                    wordBreak: "break-word",
                   }}
                 >
                   Email
@@ -1006,6 +1022,8 @@ function PaymentSuccess() {
                     fontWeight: 700,
                     border: "1px solid #1a2a4a",
                     fontSize: 13,
+                    width: "20%",
+                    wordBreak: "break-word",
                   }}
                 >
                   Payment Status
@@ -1017,6 +1035,8 @@ function PaymentSuccess() {
                     fontWeight: 700,
                     border: "1px solid #1a2a4a",
                     fontSize: 13,
+                    width: "30%",
+                    wordBreak: "break-word",
                   }}
                 >
                   Date
@@ -1031,6 +1051,9 @@ function PaymentSuccess() {
                     border: "1px solid #e0e0e0",
                     color: "#000",
                     fontSize: 13,
+                    wordBreak: "break-word",
+                    overflowWrap: "break-word",
+                    maxWidth: "0",
                   }}
                 >
                   {applicationNumber}
@@ -1041,6 +1064,9 @@ function PaymentSuccess() {
                     border: "1px solid #e0e0e0",
                     color: "#000",
                     fontSize: 13,
+                    wordBreak: "break-word",
+                    overflowWrap: "break-word",
+                    maxWidth: "0",
                   }}
                 >
                   {finalFormData.email || ""}
@@ -1052,6 +1078,9 @@ function PaymentSuccess() {
                     color: GREEN,
                     fontWeight: 700,
                     fontSize: 13,
+                    wordBreak: "break-word",
+                    overflowWrap: "break-word",
+                    maxWidth: "0",
                   }}
                 >
                   Complete
@@ -1062,6 +1091,10 @@ function PaymentSuccess() {
                     border: "1px solid #e0e0e0",
                     color: "#000",
                     fontSize: 13,
+                    wordBreak: "break-word",
+                    overflowWrap: "break-word",
+                    maxWidth: "0",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {new Date().toLocaleString("en-US", {
