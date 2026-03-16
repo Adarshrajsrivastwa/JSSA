@@ -2734,6 +2734,14 @@ export default function JobDetail() {
       const { orderId, amount, amountInRupees, keyId } =
         orderResponse.data;
 
+      // Store application data in sessionStorage for after payment redirect
+      // Include photoPreview and signaturePreview (base64 strings) in formData
+      const formDataWithImages = {
+        ...formData,
+        photo: photoPreview || formData.photo, // Use photoPreview if available, fallback to formData.photo
+        signature: signaturePreview || formData.signature, // Use signaturePreview if available, fallback to formData.signature
+      };
+
       // Load Razorpay Checkout.js
       const script = document.createElement("script");
       script.src = "https://checkout.razorpay.com/v1/checkout.js";
