@@ -11,6 +11,7 @@ import galleryRoutes from "./routes/gallery.js";
 import scrollerRoutes from "./routes/scroller.js";
 import paymentsRoutes from "./routes/payments.js";
 import notificationsRoutes from "./routes/notifications.js";
+import uploadRoutes from "./routes/upload.js";
 import { connectDB } from "./config/database.js";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -123,6 +124,7 @@ app.use("/api/gallery", galleryRoutes);
 app.use("/api/scroller", scrollerRoutes);
 app.use("/api/payments", paymentsRoutes);
 app.use("/api/notifications", notificationsRoutes);
+app.use("/api/upload", uploadRoutes);
 
 // 404 handler
 app.use((req, res) => {

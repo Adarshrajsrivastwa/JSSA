@@ -926,7 +926,8 @@ function VacancyItem({ job, onClick }) {
           &gt;&gt;
         </span>
         <span>
-          {job.title} Advt. No. {job.advt} / {job.titleHi} {job.advt}
+          {/* Show only the combined title text in English + Hindi */}
+          {job.title}
           {job.isNew && (
             <span
               style={{
@@ -991,15 +992,16 @@ function convertJobToComponentFormat(posting) {
     id: posting._id,
     advt: posting.advtNo,
     isNew: isActive && !isClosed,
-    title: posting.postTitle?.en || posting.post?.en || "",
-    titleHi: posting.postTitle?.hi || posting.post?.hi || "",
+    // Use title field (single combined string) from backend
+    title: posting.title || "",
+    titleHi: "", // Not used anymore since title is combined
     date: posting.date || "",
     invitationEn:
-      posting.title?.en ||
-      `Invitation for all eligible candidates on vacant posts of ${posting.postTitle?.en || posting.post?.en || ""} under Jan Swasthya Sahayata Abhiyan by Healthcare Research and Development Board (A Division of NAC India).`,
+      posting.title ||
+      `Invitation for all eligible candidates on vacant posts of ${posting.post?.en || ""} under Jan Swasthya Sahayata Abhiyan by Healthcare Research and Development Board (A Division of NAC India).`,
     invitationHi:
-      posting.title?.hi ||
-      `हेल्थ केयर रिसर्च एंड डेवलपमेंट बोर्ड (A Division Of NAC INDIA) द्वारा जन स्वास्थ्य सहायता अभियान के तहत ${posting.postTitle?.hi || posting.post?.hi || ""} के रिक्त पदों पर सभी पात्र उम्मीदवारों के लिए आमंत्रण`,
+      posting.title ||
+      `हेल्थ केयर रिसर्च एंड डेवलपमेंट बोर्ड (A Division Of NAC INDIA) द्वारा जन स्वास्थ्य सहायता अभियान के तहत ${posting.post?.hi || ""} के रिक्त पदों पर सभी पात्र उम्मीदवारों के लिए आमंत्रण`,
     rows: { en: rowsEn, hi: rowsHi },
   };
 }

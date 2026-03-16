@@ -457,4 +457,33 @@ export const notificationsAPI = {
   },
 };
 
+/**
+ * Upload API
+ */
+export const uploadAPI = {
+  uploadAdvertisement: async (file) => {
+    const token = getToken();
+    if (!token) {
+      throw new Error("Authentication required");
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(`${API_BASE_URL}/upload/advertisement`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || data.error || "Upload failed");
+    }
+    return data;
+  },
+};
+
 export default apiRequest;

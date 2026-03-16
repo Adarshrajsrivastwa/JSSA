@@ -73,21 +73,16 @@ router.get("/latest-vacancies", async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(20); // Limit to latest 20 vacancies
 
-    // Format vacancies with separate English and Hindi fields for parallel display
+    // Format vacancies - show only title (combined English + Hindi string)
     const vacancies = postings.map((posting) => {
-      // postTitle removed; title is a single combined string
-      const combinedTitle = posting.title || "";
-      const hindiTitle = posting.post?.hi || "";
-      const englishTitle = posting.post?.en || "";
-      const advtNo = posting.advtNo || "";
+      // title is a single combined string (English + Hindi together)
+      const title = posting.title || "";
 
       return {
         id: posting._id,
-        english:
-          combinedTitle ||
-          `Recruitment for the Posts of ${englishTitle} Advt. No. ${advtNo}`,
-        hindi: combinedTitle || `${hindiTitle} विज्ञप्ति संख्या: ${advtNo}`,
-        advtNo: advtNo,
+        english: title, // Show title for both English and Hindi
+        hindi: title,   // Same title (combined) for both
+        advtNo: posting.advtNo || "",
         link: `/job-postings/view/${posting._id}`,
       };
     });
@@ -208,8 +203,21 @@ router.post(
   "/",
   [
     body("advtNo").notEmpty().withMessage("Advertisement number is required"),
-    // Title is now a single combined string
-    body("title").notEmpty().withMessage("Title is required"),
+    // Title can be string (new) or {en, hi} object (backward compatibility)
+    body("title").custom((value) => {
+      if (typeof value === 'string') {
+        if (!value.trim()) {
+          throw new Error("Title is required");
+        }
+        return true;
+      } else if (typeof value === 'object' && value !== null) {
+        if (!value.en || !value.en.trim()) {
+          throw new Error("Title (English) is required");
+        }
+        return true;
+      }
+      throw new Error("Title is required");
+    }),
     body("post.en").notEmpty().withMessage("Post name (English) is required"),
     body("post.hi").notEmpty().withMessage("Post name (Hindi) is required"),
     body("income.en").notEmpty().withMessage("Income range (English) is required"),

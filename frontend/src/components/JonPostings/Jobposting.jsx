@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, Upload } from "lucide-react";
+import { uploadAPI } from "../../utils/api.js";
 
 // All Indian States - English
 const JOB_STATES_EN = [
@@ -324,75 +325,121 @@ const JobPostingForm = ({
     }
     setSubmitting(true);
     
-    // Prepare single language data
-    const locationText = form.jobLocation.length
-      ? form.jobLocation.join(", ")
-      : form.totalPost.join(", ") || form.location || "—";
+    try {
+      // Upload advertisement files to Cloudinary first
+      let advertisementFileUrl = "";
+      let advertisementFileHiUrl = "";
 
-    // Auto-generate a post title so the backend still receives the required field
-    const autoPostTitle =
-      form.post?.trim()
-        ? `Recruitment for the Post of ${form.post.trim()}`
-        : form.title?.trim() || "";
+      if (form.advertisementFile) {
+        if (typeof form.advertisementFile === 'string') {
+          // Already uploaded URL
+          advertisementFileUrl = form.advertisementFile;
+        } else {
+          // Upload file
+          try {
+            const uploadResult = await uploadAPI.uploadAdvertisement(form.advertisementFile);
+            advertisementFileUrl = uploadResult.data.url;
+          } catch (uploadError) {
+            console.error("Failed to upload English advertisement:", uploadError);
+            alert(`Failed to upload English advertisement: ${uploadError.message}`);
+            setSubmitting(false);
+            return;
+          }
+        }
+      }
 
-    const submissionData = {
-      advtNo: form.advtNo,
-      title: {
-        // Single combined title field; store the same value in both languages
-        en: form.title,
-        hi: form.title,
-      },
-      postTitle: {
-        // No manual input; use auto-generated text so backend validations pass
-        en: autoPostTitle,
-        hi: autoPostTitle,
-      },
-      post: {
-        en: form.post,
-        hi: form.postHi || form.post,
-      },
-      date: form.date,
-      incomeMin: Number(form.monthlyIncomeMin),
-      incomeMax: Number(form.monthlyIncomeMax),
-      income: {
-        en: `₹${Number(form.monthlyIncomeMin).toLocaleString()} – ₹${Number(form.monthlyIncomeMax).toLocaleString()}`,
-        hi: `₹${Number(form.monthlyIncomeMin).toLocaleString()} – ₹${Number(form.monthlyIncomeMax).toLocaleString()}`,
-      },
-      education: {
-        en: form.education || "",
-        hi: form.educationHi || form.education || "",
-      },
-      location: {
-        en: form.location || locationText,
-        hi: form.locationHi || (form.jobLocationHi.length > 0 ? form.jobLocationHi.join(", ") : "") || form.location || locationText,
-      },
-      locationArr: form.jobLocation.length ? form.jobLocation : form.totalPost,
-      locationArrHi: form.jobLocationHi.length ? form.jobLocationHi : [],
-      fee: {
-        en: form.applicationFee ? `₹${form.applicationFee}` : "₹0",
-        hi: form.applicationFee ? `₹${form.applicationFee}` : "₹0",
-      },
-      feeStructure: form.feeStructure || {},
-      lastDate: form.lastDateOfApplication || "",
-      applicationOpeningDate: form.applicationOpeningDate || "",
-      firstMeritListDate: form.firstMeritListDate || "",
-      finalMeritListDate: form.finalMeritListDate || "",
-      ageLimit: {
-        en: form.ageLimitMin && form.ageLimitMax ? `${form.ageLimitMin} – ${form.ageLimitMax} Years` : "18 – 40 Years",
-        hi: form.ageLimitMin && form.ageLimitMax ? `${form.ageLimitMin} – ${form.ageLimitMax} Years` : "18 – 40 Years",
-      },
-      ageAsOn: form.ageAsOn || "",
-      selectionProcess: {
-        en: form.selectionProcess || "",
-        hi: form.selectionProcessHi || form.selectionProcess || "",
-      },
-      advertisementFile: form.advertisementFile ? (typeof form.advertisementFile === 'string' ? form.advertisementFile : "") : "",
-      advertisementFileHi: form.advertisementFileHi ? (typeof form.advertisementFileHi === 'string' ? form.advertisementFileHi : "") : "",
-      status: "Active",
-    };
+      if (form.advertisementFileHi) {
+        if (typeof form.advertisementFileHi === 'string') {
+          // Already uploaded URL
+          advertisementFileHiUrl = form.advertisementFileHi;
+        } else {
+          // Upload file
+          try {
+            const uploadResult = await uploadAPI.uploadAdvertisement(form.advertisementFileHi);
+            advertisementFileHiUrl = uploadResult.data.url;
+          } catch (uploadError) {
+            console.error("Failed to upload Hindi advertisement:", uploadError);
+            alert(`Failed to upload Hindi advertisement: ${uploadError.message}`);
+            setSubmitting(false);
+            return;
+          }
+        }
+      }
 
-    onSuccess?.(submissionData);
-    setSubmitting(false);
+      // Prepare single language data
+      const locationText = form.jobLocation.length
+        ? form.jobLocation.join(", ")
+        : form.totalPost.join(", ") || form.location || "—";
+
+      // Auto-generate a post title so the backend still receives the required field
+      const autoPostTitle =
+        form.post?.trim()
+          ? `Recruitment for the Post of ${form.post.trim()}`
+          : form.title?.trim() || "";
+
+      const submissionData = {
+        advtNo: form.advtNo,
+        title: {
+          // Single combined title field; store the same value in both languages
+          en: form.title,
+          hi: form.title,
+        },
+        postTitle: {
+          // No manual input; use auto-generated text so backend validations pass
+          en: autoPostTitle,
+          hi: autoPostTitle,
+        },
+        post: {
+          en: form.post,
+          hi: form.postHi || form.post,
+        },
+        date: form.date,
+        incomeMin: Number(form.monthlyIncomeMin),
+        incomeMax: Number(form.monthlyIncomeMax),
+        income: {
+          en: `₹${Number(form.monthlyIncomeMin).toLocaleString()} – ₹${Number(form.monthlyIncomeMax).toLocaleString()}`,
+          hi: `₹${Number(form.monthlyIncomeMin).toLocaleString()} – ₹${Number(form.monthlyIncomeMax).toLocaleString()}`,
+        },
+        education: {
+          en: form.education || "",
+          hi: form.educationHi || form.education || "",
+        },
+        location: {
+          en: form.location || locationText,
+          hi: form.locationHi || (form.jobLocationHi.length > 0 ? form.jobLocationHi.join(", ") : "") || form.location || locationText,
+        },
+        locationArr: form.jobLocation.length ? form.jobLocation : form.totalPost,
+        locationArrHi: form.jobLocationHi.length ? form.jobLocationHi : [],
+        fee: {
+          en: form.applicationFee ? `₹${form.applicationFee}` : "₹0",
+          hi: form.applicationFee ? `₹${form.applicationFee}` : "₹0",
+        },
+        feeStructure: form.feeStructure || {},
+        lastDate: form.lastDateOfApplication || "",
+        applicationOpeningDate: form.applicationOpeningDate || "",
+        firstMeritListDate: form.firstMeritListDate || "",
+        finalMeritListDate: form.finalMeritListDate || "",
+        ageLimit: {
+          en: form.ageLimitMin && form.ageLimitMax ? `${form.ageLimitMin} – ${form.ageLimitMax} Years` : "18 – 40 Years",
+          hi: form.ageLimitMin && form.ageLimitMax ? `${form.ageLimitMin} – ${form.ageLimitMax} Years` : "18 – 40 Years",
+        },
+        ageAsOn: form.ageAsOn || "",
+        selectionProcess: {
+          en: form.selectionProcess || "",
+          hi: form.selectionProcessHi || form.selectionProcess || "",
+        },
+        advertisementFile: advertisementFileUrl,
+        advertisementFileHi: advertisementFileHiUrl,
+        status: "Active",
+      };
+
+      onSuccess?.(submissionData);
+    } catch (error) {
+      console.error("Submit error:", error);
+      alert(`Failed to submit: ${error.message}`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
