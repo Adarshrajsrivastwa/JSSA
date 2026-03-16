@@ -2652,17 +2652,66 @@ export default function JobDetail() {
       // Build returnUrl before creating order - Cashfree will add orderId when redirecting
       const returnUrl = `${window.location.origin}/payment-success?applicationId=${applicationId}`;
 
-      const orderResponse = await paymentsAPI.createOrder(
-        id,
-        formData.gender,
-        formData.category,
-        token,
-        returnUrl,
-      );
-      if (!orderResponse.success)
+      // Create payment order with retry logic and better error handling
+      let orderResponse;
+      let retries = 0;
+      const maxRetries = 3;
+      
+      while (retries < maxRetries) {
+        try {
+          orderResponse = await paymentsAPI.createOrder(
+            id,
+            formData.gender,
+            formData.category,
+            token,
+            returnUrl,
+          );
+          
+          // If successful, break out of retry loop
+          if (orderResponse.success && orderResponse.data) {
+            break;
+          }
+          
+          // If error is not network-related, don't retry
+          if (orderResponse.error && !orderResponse.error.includes("Network error")) {
+            throw new Error(orderResponse.error || "Failed to create payment order");
+          }
+          
+          // Network error - retry
+          retries++;
+          if (retries < maxRetries) {
+            console.log(`Payment order creation failed, retrying... (${retries}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * retries)); // Exponential backoff
+          }
+        } catch (error) {
+          retries++;
+          if (retries >= maxRetries) {
+            throw new Error(
+              error.message || 
+              "Network error: Unable to connect to payment server. Please check your internet connection and try again."
+            );
+          }
+          if (retries < maxRetries) {
+            console.log(`Payment order creation error, retrying... (${retries}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+          }
+        }
+      }
+      
+      // Final check after retries
+      if (!orderResponse || !orderResponse.success) {
+        const errorMsg = orderResponse?.error || "Failed to create payment order";
         throw new Error(
-          orderResponse.error || "Failed to create payment order",
+          errorMsg.includes("Network error") 
+            ? "Network error: Unable to connect to payment server. Please check your internet connection and try again."
+            : errorMsg
         );
+      }
+      
+      if (!orderResponse.data) {
+        throw new Error("Payment order created but no data received. Please try again.");
+      }
+      
       const { orderId, paymentSessionId, amount, amountInRupees, appId } =
         orderResponse.data;
 
@@ -2784,8 +2833,28 @@ export default function JobDetail() {
       razorpay.open();
       */
     } catch (err) {
-      alert("Error: " + err.message);
+      console.error("Payment submission error:", err);
+      
+      // Provide user-friendly error messages
+      let errorMessage = "An error occurred while processing your application.";
+      
+      if (err.message) {
+        if (err.message.includes("Network error") || err.message.includes("Failed to fetch")) {
+          errorMessage = "Network error: Unable to connect to the server. Please check your internet connection and try again.";
+        } else if (err.message.includes("timeout") || err.message.includes("Timeout")) {
+          errorMessage = "Request timeout: The server took too long to respond. Please try again.";
+        } else if (err.message.includes("VITE_API_URL") || err.message.includes("VITE_BACKEND_URL")) {
+          errorMessage = "Configuration error: API URL is not set. Please contact support.";
+        } else if (err.message.includes("payment order")) {
+          errorMessage = `Payment error: ${err.message}. Please try again or contact support if the problem persists.`;
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      alert(errorMessage);
       setApplying(false);
+      setError(errorMessage);
     }
   };
 

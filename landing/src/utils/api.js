@@ -21,7 +21,7 @@ async function apiRequest(endpoint, options = {}) {
   }
   
   const url = `${API_BASE_URL}${endpoint}`;
-  const { token, ...restOptions } = options;
+  const { token, timeout = 30000, ...restOptions } = options; // Default 30 second timeout
 
   const config = {
     ...restOptions,
@@ -33,7 +33,16 @@ async function apiRequest(endpoint, options = {}) {
   };
 
   try {
-    const response = await fetch(url, config);
+    // Create timeout promise
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Request timeout")), timeout);
+    });
+
+    // Race between fetch and timeout
+    const response = await Promise.race([
+      fetch(url, config),
+      timeoutPromise,
+    ]);
     
     // Check if response is JSON
     let data;
@@ -58,11 +67,21 @@ async function apiRequest(endpoint, options = {}) {
       }
       // Only log non-404 errors
       console.error(`API Error ${response.status}:`, data.message || data.error || `Request failed`);
-      throw new Error(data.message || data.error || `Request failed with status ${response.status}`);
+      return { 
+        success: false, 
+        data: null, 
+        error: data.message || data.error || `Request failed with status ${response.status}` 
+      };
     }
 
     return data;
   } catch (error) {
+    // Handle timeout errors
+    if (error.message === "Request timeout") {
+      console.error("API Request timeout:", url);
+      return { success: false, data: null, error: "Request timeout: Server took too long to respond" };
+    }
+    
     // Only log non-network errors (network errors are expected in some cases)
     if (error.message !== "Failed to fetch" && error.name !== "TypeError") {
       console.error("API Error:", error);
@@ -70,8 +89,8 @@ async function apiRequest(endpoint, options = {}) {
     
     // Provide more helpful error messages
     if (error.message === "Failed to fetch" || error.name === "TypeError") {
-      // Silently handle network errors - return empty data structure
-      return { success: false, data: null, error: "Network error" };
+      // Return network error structure
+      return { success: false, data: null, error: "Network error: Unable to connect to server" };
     }
     
     // For other errors, return error structure instead of throwing
