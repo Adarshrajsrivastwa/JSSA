@@ -323,13 +323,12 @@ const ApplicationView = () => {
     );
   }
 
-  const isActive = application.status === "Active";
+  const paymentStatus = application.paymentStatus || "pending";
+  const isPaid = paymentStatus === "paid";
   const statusColors = {
-    Active: "bg-green-50 text-green-700 border-green-200",
-    Inactive: "bg-gray-50 text-gray-700 border-gray-200",
-    Pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
-    Approved: "bg-blue-50 text-blue-700 border-blue-200",
-    Rejected: "bg-red-50 text-red-700 border-red-200",
+    paid: "bg-green-50 text-green-700 border-green-200",
+    pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
+    failed: "bg-red-50 text-red-700 border-red-200",
   };
 
   return (
@@ -397,15 +396,15 @@ const ApplicationView = () => {
               </div>
               <span
                 className={`self-start flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${
-                  statusColors[application.status] || statusColors.Inactive
+                  statusColors[paymentStatus] || statusColors.pending
                 }`}
               >
-                {isActive ? (
+                {isPaid ? (
                   <CheckCircle2 className="w-3.5 h-3.5" />
                 ) : (
                   <XCircle className="w-3.5 h-3.5" />
                 )}
-                {application.status}
+                {paymentStatus === "paid" ? "Paid" : paymentStatus === "pending" ? "Pending" : "Payment " + paymentStatus.charAt(0).toUpperCase() + paymentStatus.slice(1)}
               </span>
             </div>
           </div>
@@ -478,7 +477,7 @@ const ApplicationView = () => {
                 <tbody>
                   {[
                     ["Application Number", application.applicationNumber || "—"],
-                    ["Status", application.status],
+                    ["Payment Status", paymentStatus === "paid" ? "Paid" : paymentStatus === "pending" ? "Pending" : "Payment " + paymentStatus.charAt(0).toUpperCase() + paymentStatus.slice(1)],
                     [
                       "Created At",
                       application.createdAt
@@ -501,10 +500,10 @@ const ApplicationView = () => {
                       </td>
                       <td
                         className={`py-2.5 font-semibold ${
-                          key === "Status"
-                            ? isActive
+                          key === "Payment Status"
+                            ? isPaid
                               ? "text-[#3AB000]"
-                              : "text-gray-500"
+                              : "text-yellow-600"
                             : "text-gray-800"
                         }`}
                       >

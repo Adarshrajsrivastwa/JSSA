@@ -289,6 +289,11 @@ const JobPostingForm = ({
   };
 
   const validate = () => {
+    // If editing, no fields are required
+    if (isEdit) {
+      return {};
+    }
+    
     const e = {};
     if (!form.advtNo.trim()) e.advtNo = "Advertisement No. is required";
     if (!form.date) e.date = "Date is required";
@@ -466,7 +471,7 @@ const JobPostingForm = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 label="Advertisement No."
-                required
+                required={!isEdit}
                 error={errors.advtNo}
               >
                 <input
@@ -479,7 +484,7 @@ const JobPostingForm = ({
               </FormField>
               <FormField
                 label="Advertisement Date"
-                required
+                required={!isEdit}
                 error={errors.date}
               >
                 <input
@@ -496,7 +501,7 @@ const JobPostingForm = ({
             <div className="mt-4">
               <FormField
                 label="Title (English / Hindi together)"
-                required
+                required={!isEdit}
                 error={errors.title}
               >
                 <input
@@ -539,7 +544,7 @@ const JobPostingForm = ({
           <FormSection title="Post Information / पद की जानकारी">
             {/* Post Name - English and Hindi */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField label="Post (English)" required error={errors.post}>
+              <FormField label="Post (English)" required={!isEdit} error={errors.post}>
                 <input
                   name="post"
                   value={form.post}
@@ -548,7 +553,7 @@ const JobPostingForm = ({
                   className={inputCls(errors.post)}
                 />
               </FormField>
-              <FormField label="Post (Hindi) / पद" required error={errors.postHi}>
+              <FormField label="Post (Hindi) / पद" required={!isEdit} error={errors.postHi}>
                 <input
                   name="postHi"
                   value={form.postHi}
@@ -563,7 +568,7 @@ const JobPostingForm = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
               <FormField
                 label="Education Qualification (English)"
-                required
+                required={!isEdit}
                 error={errors.education}
               >
                 <input
@@ -576,7 +581,7 @@ const JobPostingForm = ({
               </FormField>
               <FormField
                 label="Education Qualification (Hindi) / शैक्षणिक योग्यता"
-                required
+                required={!isEdit}
                 error={errors.educationHi}
               >
                 <input
@@ -595,7 +600,7 @@ const JobPostingForm = ({
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 label="Monthly Income Min / मासिक आय न्यूनतम (₹)"
-                required
+                required={!isEdit}
                 error={errors.monthlyIncomeMin}
               >
                 <input
@@ -609,7 +614,7 @@ const JobPostingForm = ({
               </FormField>
               <FormField
                 label="Monthly Income Max / मासिक आय अधिकतम (₹)"
-                required
+                required={!isEdit}
                 error={errors.monthlyIncomeMax}
               >
                 <input
@@ -623,7 +628,7 @@ const JobPostingForm = ({
               </FormField>
             </div>
             <div className="grid grid-cols-3 gap-4 mt-4">
-              <FormField label="Age Min / आयु न्यूनतम" required error={errors.ageLimitMin}>
+              <FormField label="Age Min / आयु न्यूनतम" required={!isEdit} error={errors.ageLimitMin}>
                 <input
                   type="number"
                   name="ageLimitMin"
@@ -633,7 +638,7 @@ const JobPostingForm = ({
                   className={inputCls(errors.ageLimitMin)}
                 />
               </FormField>
-              <FormField label="Age Max / आयु अधिकतम" required error={errors.ageLimitMax}>
+              <FormField label="Age Max / आयु अधिकतम" required={!isEdit} error={errors.ageLimitMax}>
                 <input
                   type="number"
                   name="ageLimitMax"
@@ -715,7 +720,7 @@ const JobPostingForm = ({
 
             {/* Location - English and Hindi */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-              <FormField label="Location (English)" required error={errors.location}>
+              <FormField label="Location (English)" required={!isEdit} error={errors.location}>
                 <input
                   name="location"
                   value={form.location}
@@ -724,7 +729,7 @@ const JobPostingForm = ({
                   className={inputCls(errors.location)}
                 />
               </FormField>
-              <FormField label="Location (Hindi) / नौकरी करने का स्थान" required error={errors.locationHi}>
+              <FormField label="Location (Hindi) / नौकरी करने का स्थान" required={!isEdit} error={errors.locationHi}>
                 <input
                   name="locationHi"
                   value={form.locationHi}
@@ -737,7 +742,7 @@ const JobPostingForm = ({
 
             {/* Selection Process - English and Hindi */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-              <FormField label="Selection Process (English)" required error={errors.selectionProcess}>
+              <FormField label="Selection Process (English)" required={!isEdit} error={errors.selectionProcess}>
                 <input
                   name="selectionProcess"
                   value={form.selectionProcess}
@@ -746,7 +751,7 @@ const JobPostingForm = ({
                   className={inputCls(errors.selectionProcess)}
                 />
               </FormField>
-              <FormField label="Selection Process (Hindi) / चयन प्रक्रिया" required error={errors.selectionProcessHi}>
+              <FormField label="Selection Process (Hindi) / चयन प्रक्रिया" required={!isEdit} error={errors.selectionProcessHi}>
                 <input
                   name="selectionProcessHi"
                   value={form.selectionProcessHi}
@@ -761,7 +766,7 @@ const JobPostingForm = ({
           {/* ── Section 5: Dates & Fee ── */}
           <FormSection title="Important Dates & Fee / महत्वपूर्ण तिथियां और शुल्क">
             <div className="grid grid-cols-2 gap-4">
-              <FormField label="Application Opening Date / आवेदन खुलने की तिथि" required error={errors.applicationOpeningDate}>
+              <FormField label="Application Opening Date / आवेदन खुलने की तिथि" required={!isEdit} error={errors.applicationOpeningDate}>
                 <input
                   type="date"
                   name="applicationOpeningDate"
@@ -772,7 +777,7 @@ const JobPostingForm = ({
               </FormField>
               <FormField
                 label="Last Date of Application / आवेदन की अंतिम तिथि"
-                required
+                required={!isEdit}
                 error={errors.lastDateOfApplication}
               >
                 <input
@@ -809,7 +814,7 @@ const JobPostingForm = ({
               <div className="mb-3">
                 <label className="block text-xs font-semibold text-gray-600 mb-2">
                   Fee Structure / शुल्क संरचना (₹) – By Gender & Category / लिंग और श्रेणी के अनुसार
-                  <span className="text-red-500 ml-0.5">*</span>
+                  {!isEdit && <span className="text-red-500 ml-0.5">*</span>}
                 </label>
                 <div className="flex gap-2 mb-3 items-end">
                   <div className="flex-1">
