@@ -2016,6 +2016,70 @@ export default function JobDetail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+  // IMMEDIATE CHECK: Check for payment redirect BEFORE anything else
+  // This runs synchronously on every render to catch payment returns immediately
+  (() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const payment = urlParams.get("payment");
+    const orderId = urlParams.get("orderId") || urlParams.get("order_id");
+    const applicationId = urlParams.get("applicationId");
+    const paymentStatus = urlParams.get("payment_status") || urlParams.get("txStatus") || urlParams.get("tx_status");
+    const cfPaymentId = urlParams.get("cf_payment_id") || urlParams.get("paymentId");
+    
+    // If we're already on payment-success, don't do anything
+    if (window.location.pathname === "/payment-success") {
+      return;
+    }
+    
+    // Check for payment success indicators
+    if (payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success") {
+      const pendingData = sessionStorage.getItem("pendingApplication");
+      let finalApplicationId = applicationId || "";
+      let finalOrderId = orderId || "";
+      
+      if (!finalApplicationId && pendingData) {
+        try {
+          const data = JSON.parse(pendingData);
+          finalApplicationId = data.applicationId || data.applicationData?._id || "";
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+      
+      const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
+      console.log("🚨 IMMEDIATE REDIRECT (sync):", redirectUrl);
+      window.location.replace(redirectUrl);
+      return;
+    }
+    
+    // If we have orderId/applicationId and pendingData exists, redirect immediately
+    const hasPendingData = sessionStorage.getItem("pendingApplication");
+    if ((orderId || applicationId || cfPaymentId) && hasPendingData) {
+      const txStatus = urlParams.get("txStatus") || urlParams.get("tx_status") || urlParams.get("payment_status") || "";
+      
+      // Don't redirect if payment failed
+      if (txStatus === "FAILED" || txStatus === "failed" || txStatus === "CANCELLED" || txStatus === "cancelled") {
+        return;
+      }
+      
+      let finalApplicationId = applicationId || "";
+      let finalOrderId = orderId || "";
+      
+      if (!finalApplicationId && hasPendingData) {
+        try {
+          const data = JSON.parse(hasPendingData);
+          finalApplicationId = data.applicationId || data.applicationData?._id || "";
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+      
+      const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
+      console.log("🚨 IMMEDIATE REDIRECT (with params):", redirectUrl);
+      window.location.replace(redirectUrl);
+    }
+  })();
+
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
