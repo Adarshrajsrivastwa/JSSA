@@ -15,54 +15,76 @@ function PaymentRedirectHandler() {
 
   useEffect(() => {
     // Skip if already on payment-success page
-    if (location.pathname === "/payment-success") {
+    if (window.location.pathname === "/payment-success") {
       return;
     }
 
-    const urlParams = new URLSearchParams(location.search);
-    const orderId = urlParams.get("orderId") || urlParams.get("order_id");
-    const applicationId = urlParams.get("applicationId");
-    const payment = urlParams.get("payment");
-    const paymentStatus = urlParams.get("payment_status") || urlParams.get("txStatus") || urlParams.get("tx_status");
-    const cfPaymentId = urlParams.get("cf_payment_id") || urlParams.get("paymentId");
+    const checkAndRedirect = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const orderId = urlParams.get("orderId") || urlParams.get("order_id");
+      const applicationId = urlParams.get("applicationId");
+      const payment = urlParams.get("payment");
+      const paymentStatus = urlParams.get("payment_status") || urlParams.get("txStatus") || urlParams.get("tx_status");
+      const cfPaymentId = urlParams.get("cf_payment_id") || urlParams.get("paymentId");
 
-    // Check if we have payment-related parameters
-    if (orderId || applicationId || cfPaymentId || payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success") {
-      // Get payment status to check if payment failed
-      const txStatus = urlParams.get("txStatus") || urlParams.get("tx_status") || urlParams.get("payment_status") || "";
-      
-      // Don't redirect if payment explicitly failed
-      if (txStatus === "FAILED" || txStatus === "failed" || txStatus === "CANCELLED" || txStatus === "cancelled") {
-        return;
-      }
-
-      // Get data from sessionStorage
+      // Get data from sessionStorage first
       const pendingData = sessionStorage.getItem("pendingApplication");
-      let finalApplicationId = applicationId || "";
-      let finalOrderId = orderId || "";
+      
+      // Check if we have payment-related parameters OR pendingData in sessionStorage
+      // This handles cases where Cashfree redirects without parameters but we have sessionStorage
+      const hasPaymentParams = orderId || applicationId || cfPaymentId || payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success";
+      const hasPendingData = !!pendingData;
 
-      // Try to get from sessionStorage if not in URL
-      if (pendingData) {
-        try {
-          const data = JSON.parse(pendingData);
-          if (!finalApplicationId) {
-            finalApplicationId = data.applicationId || data.applicationData?._id || "";
+      if (hasPaymentParams || hasPendingData) {
+        // Get payment status to check if payment failed
+        const txStatus = urlParams.get("txStatus") || urlParams.get("tx_status") || urlParams.get("payment_status") || "";
+        
+        // Don't redirect if payment explicitly failed
+        if (txStatus === "FAILED" || txStatus === "failed" || txStatus === "CANCELLED" || txStatus === "cancelled") {
+          return;
+        }
+
+        let finalApplicationId = applicationId || "";
+        let finalOrderId = orderId || "";
+
+        // Try to get from sessionStorage if not in URL
+        if (pendingData) {
+          try {
+            const data = JSON.parse(pendingData);
+            if (!finalApplicationId) {
+              finalApplicationId = data.applicationId || data.applicationData?._id || "";
+            }
+            if (!finalOrderId) {
+              finalOrderId = data.orderId || "";
+            }
+          } catch (e) {
+            console.error("Error parsing pendingData:", e);
           }
-          if (!finalOrderId) {
-            finalOrderId = data.orderId || "";
-          }
-        } catch (e) {
-          console.error("Error parsing pendingData:", e);
+        }
+
+        // Only redirect if we have at least applicationId (from URL or sessionStorage)
+        if (finalApplicationId) {
+          // Build redirect URL
+          const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
+          console.log("🌐 GLOBAL PAYMENT REDIRECT: Redirecting to", redirectUrl, {
+            hasPaymentParams,
+            hasPendingData,
+            finalApplicationId,
+            finalOrderId,
+            currentPath: window.location.pathname,
+            search: window.location.search
+          });
+
+          // Redirect immediately
+          window.location.replace(redirectUrl);
+          return true; // Indicate redirect happened
         }
       }
+      return false;
+    };
 
-      // Build redirect URL
-      const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
-      console.log("🌐 GLOBAL PAYMENT REDIRECT: Redirecting to", redirectUrl);
-
-      // Redirect immediately
-      window.location.replace(redirectUrl);
-    }
+    // Run immediately on mount and on location change
+    checkAndRedirect();
   }, [location]);
 
   return null;

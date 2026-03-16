@@ -3,6 +3,77 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 
+// Early payment redirect check - runs before React loads
+(function checkPaymentRedirect() {
+  // Skip if already on payment-success page
+  if (window.location.pathname === "/payment-success") {
+    return;
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const orderId = urlParams.get("orderId") || urlParams.get("order_id");
+  const applicationId = urlParams.get("applicationId");
+  const payment = urlParams.get("payment");
+  const paymentStatus = urlParams.get("payment_status") || urlParams.get("txStatus") || urlParams.get("tx_status");
+  const cfPaymentId = urlParams.get("cf_payment_id") || urlParams.get("paymentId");
+
+  // Get data from sessionStorage
+  let pendingData = null;
+  try {
+    pendingData = sessionStorage.getItem("pendingApplication");
+  } catch (e) {
+    // sessionStorage might not be available in some cases
+  }
+
+  // Check if we have payment-related parameters OR pendingData in sessionStorage
+  const hasPaymentParams = orderId || applicationId || cfPaymentId || payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success";
+  const hasPendingData = !!pendingData;
+
+  if (hasPaymentParams || hasPendingData) {
+    // Get payment status to check if payment failed
+    const txStatus = urlParams.get("txStatus") || urlParams.get("tx_status") || urlParams.get("payment_status") || "";
+
+    // Don't redirect if payment explicitly failed
+    if (txStatus !== "FAILED" && txStatus !== "failed" && txStatus !== "CANCELLED" && txStatus !== "cancelled") {
+      let finalApplicationId = applicationId || "";
+      let finalOrderId = orderId || "";
+
+      // Try to get from sessionStorage if not in URL
+      if (pendingData) {
+        try {
+          const data = JSON.parse(pendingData);
+          if (!finalApplicationId) {
+            finalApplicationId = data.applicationId || data.applicationData?._id || "";
+          }
+          if (!finalOrderId) {
+            finalOrderId = data.orderId || "";
+          }
+        } catch (e) {
+          console.error("Error parsing pendingData:", e);
+        }
+      }
+
+      // Only redirect if we have at least applicationId (from URL or sessionStorage)
+      if (finalApplicationId) {
+        // Build redirect URL
+        const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
+        console.log("🚀 EARLY PAYMENT REDIRECT (before React): Redirecting to", redirectUrl, {
+          hasPaymentParams,
+          hasPendingData,
+          finalApplicationId,
+          finalOrderId,
+          currentPath: window.location.pathname,
+          search: window.location.search
+        });
+
+        // Redirect immediately - this will prevent React from loading
+        window.location.replace(redirectUrl);
+        return; // Exit early
+      }
+    }
+  }
+})();
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
