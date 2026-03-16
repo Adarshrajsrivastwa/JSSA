@@ -2156,180 +2156,99 @@ export default function JobDetail() {
   // Handle Cashfree payment redirect
   useEffect(() => {
     const payment = searchParams.get("payment");
-    const orderId = searchParams.get("orderId");
+    const orderId = searchParams.get("orderId") || searchParams.get("order_id") || searchParams.get("orderId");
     const applicationId = searchParams.get("applicationId");
-
-    // If payment=success is in URL, redirect immediately to payment success page
-    if (payment === "success") {
-      console.log("Payment success detected, redirecting immediately...");
-      const finalApplicationId = applicationId || "";
-      const finalOrderId = orderId || "";
+    
+    // Check for Cashfree payment status parameters
+    const paymentStatus = searchParams.get("payment_status") || searchParams.get("paymentStatus") || searchParams.get("txStatus") || searchParams.get("tx_status");
+    const cfPaymentId = searchParams.get("cf_payment_id") || searchParams.get("paymentId");
+    
+    // If payment=success or payment_status=SUCCESS, redirect immediately to payment success page
+    if (payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success") {
+      console.log("Payment success detected, redirecting immediately...", { payment, paymentStatus, orderId, applicationId });
+      const pendingData = sessionStorage.getItem("pendingApplication");
+      let finalApplicationId = applicationId || "";
+      let finalOrderId = orderId || "";
       
-      // Redirect immediately with available params
-      navigate(
-        `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`,
-        { replace: true }
-      );
+      // Try to get applicationId from sessionStorage if not in URL
+      if (!finalApplicationId && pendingData) {
+        try {
+          const data = JSON.parse(pendingData);
+          finalApplicationId = data.applicationId || data.applicationData?._id || "";
+        } catch (e) {
+          console.error("Error parsing pendingData:", e);
+        }
+      }
+      
+      // Build redirect URL
+      const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
+      console.log("Redirecting to:", redirectUrl);
+      
+      // Use window.location as fallback if navigate doesn't work
+      try {
+        navigate(redirectUrl, { replace: true });
+        // Also set window.location as backup
+        setTimeout(() => {
+          if (window.location.pathname !== "/payment-success") {
+            console.log("Navigate didn't work, using window.location");
+            window.location.href = redirectUrl;
+          }
+        }, 100);
+      } catch (err) {
+        console.error("Navigate error, using window.location:", err);
+        window.location.href = redirectUrl;
+      }
       return; // Exit early to prevent further processing
     }
 
     // Check if we're returning from Cashfree payment with orderId or applicationId
-    if (orderId || applicationId) {
+    // If we have these params, we're likely coming back from payment - redirect immediately
+    if (orderId || applicationId || cfPaymentId) {
+      console.log("Payment return detected with params:", { orderId, applicationId, cfPaymentId });
       const pendingData = sessionStorage.getItem("pendingApplication");
+      let finalApplicationId = applicationId || "";
+      let finalOrderId = orderId || "";
 
-      if (pendingData) {
+      // Try to get applicationId from sessionStorage if not in URL
+      if (!finalApplicationId && pendingData) {
         try {
           const data = JSON.parse(pendingData);
-          const {
-            token,
-            applicationData,
-            defaultPassword,
-            applicationNumber,
-            formData: storedFormData,
-            applicationId: storedApplicationId,
-          } = data;
-
-          // Use applicationId from URL or stored data
-          const finalApplicationId = applicationId || storedApplicationId;
-
-          // Get payment details from URL (Cashfree redirects with these params)
-          const paymentId =
-            searchParams.get("paymentId") ||
-            searchParams.get("referenceId") ||
-            searchParams.get("cf_payment_id");
-          const signature =
-            searchParams.get("signature") || searchParams.get("cf_signature");
-          const orderAmount =
-            searchParams.get("orderAmount") || searchParams.get("order_amount");
-          const txStatus =
-            searchParams.get("txStatus") ||
-            searchParams.get("tx_status") ||
-            searchParams.get("payment_status") ||
-            "SUCCESS";
-          const paymentMode =
-            searchParams.get("paymentMode") ||
-            searchParams.get("payment_mode") ||
-            "";
-          const txMsg =
-            searchParams.get("txMsg") ||
-            searchParams.get("tx_msg") ||
-            searchParams.get("payment_message") ||
-            "";
-          const txTime =
-            searchParams.get("txTime") || searchParams.get("tx_time") || "";
-
-          console.log("Payment redirect detected:", {
-            payment,
-            orderId,
-            finalApplicationId,
-            paymentId,
-            signature,
-            txStatus,
-          });
-
-          // If we have paymentId and signature, verify payment
-          if (paymentId && signature && orderId) {
-            paymentsAPI
-              .verifyPayment(
-                orderId,
-                paymentId,
-                signature,
-                finalApplicationId,
-                orderAmount,
-                txStatus,
-                paymentMode,
-                txMsg,
-                txTime,
-                token,
-              )
-              .then((verifyResponse) => {
-                if (verifyResponse.success) {
-                  // Redirect to payment success page
-                  navigate(
-                    `/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`,
-                    { replace: true }
-                  );
-                  // Clean up will happen on success page
-                } else {
-                  alert(
-                    `Payment verification failed: ${verifyResponse.message || "Please contact support."}`,
-                  );
-                }
-              })
-              .catch((err) => {
-                console.error("Payment verification error:", err);
-                // Even if verification fails, redirect if txStatus is SUCCESS
-                if (txStatus === "SUCCESS") {
-                  navigate(
-                    `/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`,
-                    { replace: true }
-                  );
-                } else {
-                  alert(`Payment verification failed: ${err.message}`);
-                }
-              });
-          } else if (txStatus === "SUCCESS") {
-            // If payment status is SUCCESS but we don't have all params,
-            // still show success page (payment might be verified via webhook)
-            // But first try to get payment status from backend
-            if (orderId && finalApplicationId) {
-              // Try to verify payment status from backend
-              const apiUrl =
-                import.meta.env.VITE_API_URL ||
-                import.meta.env.VITE_BACKEND_URL ||
-                "";
-              fetch(
-                `${apiUrl}/payments/status?orderId=${orderId}&applicationId=${finalApplicationId}`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                },
-              )
-                .then((res) => res.json())
-                .then((result) => {
-                  console.log("Payment status check result:", result);
-                  // Redirect to payment success page regardless of API response
-                  // The success page will handle verification
-                  navigate(
-                    `/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`,
-                    { replace: true }
-                  );
-                })
-                .catch(() => {
-                  // If API call fails, still redirect to success page
-                  navigate(
-                    `/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`,
-                    { replace: true }
-                  );
-                });
-            } else {
-              // Redirect even without orderId if we have applicationId
-              navigate(
-                `/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId || ""}`,
-                { replace: true }
-              );
-            }
-          }
-        } catch (err) {
-          console.error("Payment redirect handling error:", err);
-          // On error, still try to redirect if we have orderId or applicationId
-          if (orderId || applicationId) {
-            navigate(
-              `/payment-success?orderId=${orderId || ""}&applicationId=${applicationId || ""}`,
-              { replace: true }
-            );
-          }
+          finalApplicationId = data.applicationId || data.applicationData?._id || "";
+        } catch (e) {
+          console.error("Error parsing pendingData:", e);
         }
-      } else {
-        // If no pendingData but we have orderId or applicationId, redirect to success page
-        // The success page will handle fetching the data
-        if (orderId || applicationId) {
-          navigate(
-            `/payment-success?orderId=${orderId || ""}&applicationId=${applicationId || ""}`,
-            { replace: true }
-          );
-        }
+      }
+
+      // Get payment status to check if payment was successful
+      const txStatus =
+        searchParams.get("txStatus") ||
+        searchParams.get("tx_status") ||
+        searchParams.get("payment_status") ||
+        "";
+      
+      // If payment status indicates failure, don't redirect
+      if (txStatus === "FAILED" || txStatus === "failed" || txStatus === "CANCELLED") {
+        console.log("Payment failed or cancelled, not redirecting");
+        return;
+      }
+
+      // Build redirect URL
+      const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
+      console.log("Redirecting to payment success page:", redirectUrl);
+
+      // Redirect immediately - verification will happen on success page
+      try {
+        navigate(redirectUrl, { replace: true });
+        // Backup: use window.location if navigate doesn't work
+        setTimeout(() => {
+          if (window.location.pathname !== "/payment-success") {
+            console.log("Navigate didn't work, using window.location fallback");
+            window.location.replace(redirectUrl);
+          }
+        }, 100);
+      } catch (err) {
+        console.error("Navigate error, using window.location:", err);
+        window.location.replace(redirectUrl);
       }
     }
   }, [searchParams, navigate]);
