@@ -2159,8 +2159,22 @@ export default function JobDetail() {
     const orderId = searchParams.get("orderId");
     const applicationId = searchParams.get("applicationId");
 
-    // Check if we're returning from Cashfree payment
-    if (payment === "success" || orderId || applicationId) {
+    // If payment=success is in URL, redirect immediately to payment success page
+    if (payment === "success") {
+      console.log("Payment success detected, redirecting immediately...");
+      const finalApplicationId = applicationId || "";
+      const finalOrderId = orderId || "";
+      
+      // Redirect immediately with available params
+      navigate(
+        `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`,
+        { replace: true }
+      );
+      return; // Exit early to prevent further processing
+    }
+
+    // Check if we're returning from Cashfree payment with orderId or applicationId
+    if (orderId || applicationId) {
       const pendingData = sessionStorage.getItem("pendingApplication");
 
       if (pendingData) {
@@ -2233,6 +2247,7 @@ export default function JobDetail() {
                   // Redirect to payment success page
                   navigate(
                     `/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`,
+                    { replace: true }
                   );
                   // Clean up will happen on success page
                 } else {
@@ -2243,9 +2258,17 @@ export default function JobDetail() {
               })
               .catch((err) => {
                 console.error("Payment verification error:", err);
-                alert(`Payment verification failed: ${err.message}`);
+                // Even if verification fails, redirect if txStatus is SUCCESS
+                if (txStatus === "SUCCESS") {
+                  navigate(
+                    `/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`,
+                    { replace: true }
+                  );
+                } else {
+                  alert(`Payment verification failed: ${err.message}`);
+                }
               });
-          } else if (txStatus === "SUCCESS" || payment === "success") {
+          } else if (txStatus === "SUCCESS") {
             // If payment status is SUCCESS but we don't have all params,
             // still show success page (payment might be verified via webhook)
             // But first try to get payment status from backend
@@ -2266,65 +2289,50 @@ export default function JobDetail() {
                 .then((res) => res.json())
                 .then((result) => {
                   console.log("Payment status check result:", result);
-                  if (result.success && result.data.paymentStatus === "paid") {
-                    // Redirect to payment success page
-                    navigate(
-                      `/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`,
-                    );
-                  } else {
-                    // Show success page anyway if payment=success in URL
-                    navigate(
-                      `/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId}`,
-                    );
-                  }
+                  // Redirect to payment success page regardless of API response
+                  // The success page will handle verification
+                  navigate(
+                    `/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`,
+                    { replace: true }
+                  );
                 })
                 .catch(() => {
-                  // If API call fails, still show success page if payment=success
-                  if (payment === "success") {
-                    navigate(
-                      `/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId}`,
-                    );
-                  }
+                  // If API call fails, still redirect to success page
+                  navigate(
+                    `/payment-success?orderId=${orderId}&applicationId=${finalApplicationId}`,
+                    { replace: true }
+                  );
                 });
-            } else if (payment === "success") {
-              // If we have payment=success but no orderId, still show success
+            } else {
+              // Redirect even without orderId if we have applicationId
               navigate(
                 `/payment-success?orderId=${orderId || ""}&applicationId=${finalApplicationId || ""}`,
+                { replace: true }
               );
             }
           }
         } catch (err) {
           console.error("Payment redirect handling error:", err);
+          // On error, still try to redirect if we have orderId or applicationId
+          if (orderId || applicationId) {
+            navigate(
+              `/payment-success?orderId=${orderId || ""}&applicationId=${applicationId || ""}`,
+              { replace: true }
+            );
+          }
         }
       } else {
-        // If no pendingData but we have payment=success, check if application exists
-        // This handles cases where sessionStorage was cleared
-        if (payment === "success" && applicationId) {
-          const apiUrl =
-            import.meta.env.VITE_API_URL ||
-            import.meta.env.VITE_BACKEND_URL ||
-            "";
-          if (apiUrl) {
-            fetch(`${apiUrl}/applications/${applicationId}`)
-              .then((res) => res.json())
-              .then((result) => {
-                if (result.success && result.data.application) {
-                  const app = result.data.application;
-                  if (app.paymentStatus === "paid") {
-                    // Get form data from somewhere or show success with available data
-                    // Redirect to payment success page
-                    navigate(`/payment-success?applicationId=${applicationId}`);
-                  }
-                }
-              })
-              .catch((err) =>
-                console.error("Error fetching application:", err),
-              );
-          }
+        // If no pendingData but we have orderId or applicationId, redirect to success page
+        // The success page will handle fetching the data
+        if (orderId || applicationId) {
+          navigate(
+            `/payment-success?orderId=${orderId || ""}&applicationId=${applicationId || ""}`,
+            { replace: true }
+          );
         }
       }
     }
-  }, [searchParams]);
+  }, [searchParams, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
