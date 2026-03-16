@@ -1602,6 +1602,7 @@ export async function generateAndSaveApplicationPDF(applicationData, jobPosting)
     const page = await browser.newPage();
     await page.setContent(pdfHtmlContent, { waitUntil: 'networkidle0' });
     
+    // Wait for all images to load (compatible with older Puppeteer versions)
     await page.evaluateHandle(() => {
       return Promise.all(
         Array.from(document.images).map((img) => {
@@ -1609,12 +1610,14 @@ export async function generateAndSaveApplicationPDF(applicationData, jobPosting)
           return new Promise((resolve) => {
             img.onload = resolve;
             img.onerror = resolve;
+            // Fallback timeout in case image events don't fire
             setTimeout(resolve, 5000);
           });
         })
       );
     });
-    await page.waitForTimeout(1000);
+    // Small delay without using page.waitForTimeout (not available in older Puppeteer)
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
