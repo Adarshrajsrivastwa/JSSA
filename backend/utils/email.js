@@ -689,7 +689,7 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
     const logoPathForPdf = "./landing/src/assets/jss.png"; // For Puppeteer PDF generation
 
     // Login URL
-    const loginUrl = process.env.FRONTEND_URL || process.env.VITE_FRONTEND_URL || "https://frontend.jssabhiyan.com";
+    const loginUrl = process.env.FRONTEND_URL || process.env.VITE_FRONTEND_URL || "http://frontend.jssabhiyan.in/";
     console.log("📧 Login URL:", loginUrl);
 
     // Email HTML template - Matching the payment success page design

@@ -1255,7 +1255,7 @@ const ApplicationView = () => {
             }}
           >
             <div style={{ wordBreak: "break-all", flex: 1, minWidth: "200px" }}>
-              https://www.jssabhiyan-nac.in/fill_application_print?oid=
+              https://jssabhiyan.com/fill_application_print?oid=
               {application.id || ""}
             </div>
             <div>1/1</div>

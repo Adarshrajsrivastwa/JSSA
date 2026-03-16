@@ -123,9 +123,9 @@ export default function ApplicantDashboard() {
       textColor: "text-orange-600",
     },
     {
-      stage: "Medical Officer",
+      stage: "MoU",
       icon: ClipboardList,
-      description: "Medical Officer verification",
+      description: "MoU verification",
       color: "bg-yellow-500",
       lightColor: "bg-yellow-50",
       textColor: "text-yellow-600",
@@ -332,13 +332,6 @@ export default function ApplicantDashboard() {
                               {app.jobPosting}
                             </p>
                             <div className="flex items-center gap-3">
-                              <span
-                                className={`px-2 py-1 rounded text-xs font-semibold border ${getStatusColor(
-                                  app.status,
-                                )}`}
-                              >
-                                {app.status}
-                              </span>
                               {app.paymentStatus === "pending" && (
                                 <span className="px-2 py-1 rounded text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-200">
                                   Payment Pending

@@ -1260,7 +1260,7 @@ function PaymentSuccess() {
           }}
         >
           <div style={{ wordBreak: "break-all", flex: 1, minWidth: "200px" }}>
-            https://www.jssabhiyan-nac.in/fill_application_print?oid=
+            https://jssabhiyan.com/fill_application_print?oid=
             {applicationData?._id || applicationData?.id || ""}
           </div>
           <div>1/1</div>

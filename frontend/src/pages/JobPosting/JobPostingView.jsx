@@ -645,24 +645,7 @@ const JobPostingView = () => {
                   विज्ञापन डाउनलोड करें (हिंदी)
                 </a>
               )}
-              <span className="text-gray-300 hidden sm:block">|</span>
-              <button
-                onClick={() => downloadJobPDF("en")}
-                disabled={downloadingPDF}
-                className="flex items-center gap-1.5 text-[#3AB000] text-xs font-semibold hover:underline transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Download className="w-3.5 h-3.5" />
-                {downloadingPDF ? "Generating..." : "Download PDF (English)"}
-              </button>
-              <span className="text-gray-300 hidden sm:block">|</span>
-              <button
-                onClick={() => downloadJobPDF("hi")}
-                disabled={downloadingPDF}
-                className="flex items-center gap-1.5 text-[#3AB000] text-xs font-semibold hover:underline transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Download className="w-3.5 h-3.5" />
-                {downloadingPDF ? "बन रहा है..." : "PDF डाउनलोड करें (हिंदी)"}
-              </button>
+              {/* Removed auto-generated PDF buttons; only show uploaded advertisement PDFs */}
             </div>
             {/* Apply Now Button - Only show for applicants who haven't applied yet */}
             {role === "applicant" && isActive && !hasApplied && (

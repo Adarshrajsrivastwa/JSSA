@@ -4076,7 +4076,7 @@ export default function JobDetail() {
               }}
             >
               <div style={{ wordBreak: "break-all" }}>
-                https://www.jssabhiyan-nac.in/fill_application_print?oid=
+                https://jssabhiyan.com/fill_application_print?oid=
                 {submittedApplication._id || submittedApplication.id}
               </div>
               <div>1/1</div>
