@@ -454,7 +454,11 @@ function PaymentSuccess() {
               Order ID: {orderId || "N/A"} | Application ID: {applicationId || "N/A"}
             </div>
             <button
-              onClick={() => navigate("/")}
+              onClick={() => {
+                // Clear sessionStorage to prevent redirect back to payment-success
+                sessionStorage.removeItem("pendingApplication");
+                navigate("/");
+              }}
               style={{
                 background: GREEN,
                 color: "#fff",
@@ -503,7 +507,11 @@ function PaymentSuccess() {
             No payment information found. Please return to the application page.
           </div>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => {
+              // Clear sessionStorage to prevent redirect back to payment-success
+              sessionStorage.removeItem("pendingApplication");
+              navigate("/");
+            }}
             style={{
               background: GREEN,
               color: "#fff",
@@ -761,14 +769,14 @@ function PaymentSuccess() {
           >
             Personal Details
           </h3>
-          {/* Photo in top right - below header with padding from top */}
+          {/* Photo in top right corner */}
           {photoPreview ? (
             <div
               style={{ 
                 position: "absolute",
-                top: "70px", // More padding from top
+                top: "15px", // Top right corner
                 right: "20px",
-                width: 110,
+                width: 100,
                 textAlign: "center",
                 zIndex: 10,
               }}
@@ -785,7 +793,7 @@ function PaymentSuccess() {
                 }}
                 style={{
                   width: "100%",
-                  height: 130,
+                  height: 120,
                   objectFit: "cover",
                   border: "2px solid #000",
                   borderRadius: 4,
@@ -793,6 +801,17 @@ function PaymentSuccess() {
                   background: "#fff",
                 }}
               />
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  color: "#000",
+                  marginTop: 4,
+                  textAlign: "center",
+                }}
+              >
+                Photo
+              </div>
             </div>
           ) : (
             console.log("⚠️ No photoPreview available")
@@ -948,12 +967,12 @@ function PaymentSuccess() {
               <span>{finalFormData.markPercentage || ""}</span>
             </div>
           </div>
-          {/* Signature in bottom right of Educational Details section */}
+          {/* Signature in bottom right corner */}
           {signaturePreview ? (
             <div
               style={{
                 position: "absolute",
-                bottom: "20px", // Increased from 15px for more space
+                bottom: "15px", // Bottom right corner
                 right: "20px",
                 textAlign: "right",
                 zIndex: 10,
@@ -963,9 +982,9 @@ function PaymentSuccess() {
               <div
                 style={{
                   display: "inline-block",
-                  border: "1px solid #e0e0e0",
-                  background: "#f0f8ff",
-                  padding: "10px 16px",
+                  border: "1px solid #000",
+                  background: "#fff",
+                  padding: "8px 12px",
                   borderRadius: 4,
                   boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                 }}
@@ -981,23 +1000,25 @@ function PaymentSuccess() {
                     console.log("✅ Signature loaded successfully");
                   }}
                   style={{
-                    width: 180,
-                    height: 70,
+                    width: 160,
+                    height: 60,
                     objectFit: "contain",
                     display: "block",
-                    marginBottom: 6,
+                    marginBottom: 4,
                     background: "#fff",
                   }}
                 />
                 <div
                   style={{
-                    fontSize: 13,
+                    fontSize: 11,
                     fontWeight: 600,
                     color: "#000",
                     textAlign: "center",
+                    borderTop: "1px solid #e0e0e0",
+                    paddingTop: 4,
                   }}
                 >
-                  Candidate's Signature
+                  Signature
                 </div>
               </div>
             </div>
@@ -1358,16 +1379,16 @@ function PaymentSuccess() {
                   const { jsPDF } = window.jspdf;
                   const imgData = canvas.toDataURL("image/png", 0.95);
                   
-                  // A4 size: 210mm x 297mm
+                  // A4 size: 210mm x 297mm (portrait)
                   const pdf = new jsPDF({
                     unit: "mm",
-                    format: [210, 297], // Explicit A4 dimensions
+                    format: "a4", // A4 format
                     orientation: "portrait",
                   });
                   
                   const pdfWidth = 210; // A4 width in mm
                   const pdfHeight = 297; // A4 height in mm
-                  const margin = 5;
+                  const margin = 8; // Slightly increased margin for better appearance
                   const imgWidth = pdfWidth - 2 * margin;
                   let imgHeight = (canvas.height * imgWidth) / canvas.width;
                   
@@ -1387,12 +1408,13 @@ function PaymentSuccess() {
                       imgHeight,
                     );
                   } else {
-                    // Fit on single page without scaling
+                    // Fit on single page without scaling - center vertically if content is shorter
+                    const yOffset = margin + (pdfHeight - 2 * margin - imgHeight) / 2;
                     pdf.addImage(
                       imgData,
                       "PNG",
                       margin,
-                      margin,
+                      yOffset,
                       imgWidth,
                       imgHeight,
                     );
@@ -1425,6 +1447,8 @@ function PaymentSuccess() {
           </button>
           <button
             onClick={() => {
+              // Clear sessionStorage to prevent redirect back to payment-success
+              sessionStorage.removeItem("pendingApplication");
               navigate("/");
             }}
             style={{
