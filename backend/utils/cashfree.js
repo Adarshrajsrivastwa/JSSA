@@ -85,16 +85,35 @@ export async function verifyCashfreeConfig() {
  */
 export async function createCashfreeOrder(orderData) {
   try {
+    console.log("💳 ========== CREATING CASHFREE ORDER ==========");
+    console.log("💳 Order data:", { 
+      amount: orderData.amount, 
+      orderId: orderData.orderId,
+      customerName: orderData.customerName,
+      customerEmail: orderData.customerEmail 
+    });
+    
+    console.log("💳 Getting Cashfree credentials...");
     const credentials = await getCashfreeCredentials();
+    console.log("💳 Credentials check:", {
+      hasAppId: !!credentials.appId,
+      hasSecretKey: !!credentials.secretKey,
+      appIdLength: credentials.appId?.length || 0,
+      secretKeyLength: credentials.secretKey?.length || 0
+    });
 
     if (!credentials.appId || !credentials.secretKey) {
-      throw new Error("Cashfree credentials not configured");
+      console.error("❌ Cashfree credentials not configured!");
+      console.error("❌ App ID:", credentials.appId || "MISSING");
+      console.error("❌ Secret Key:", credentials.secretKey ? "***" + credentials.secretKey.slice(-4) : "MISSING");
+      throw new Error("Cashfree credentials not configured. Please set CASHFREE_APP_ID and CASHFREE_SECRET_KEY in environment variables or database settings.");
     }
 
     const { amount, orderId, customerName, customerEmail, customerPhone, notes } = orderData;
 
     // Cashfree API endpoint
     const apiUrl = "https://api.cashfree.com/pg/orders";
+    console.log("💳 Cashfree API URL:", apiUrl);
 
     // Prepare order_meta - only include return_url if it's HTTPS (Cashfree requirement)
     const orderMeta = {};
@@ -139,6 +158,9 @@ export async function createCashfreeOrder(orderData) {
       order_note: notes ? JSON.stringify(notes) : "",
     };
 
+    console.log("💳 Request body:", JSON.stringify(requestBody, null, 2));
+    console.log("💳 Making request to Cashfree API...");
+    
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
@@ -150,26 +172,38 @@ export async function createCashfreeOrder(orderData) {
       body: JSON.stringify(requestBody),
     });
 
+    console.log("💳 Cashfree API response status:", response.status, response.statusText);
+
     if (!response.ok) {
       let errorMessage = `Cashfree API error: ${response.status}`;
+      let errorDetails = null;
       try {
         const errorData = await response.json();
         errorMessage = errorData.message || errorData.error?.message || errorMessage;
+        errorDetails = errorData;
+        console.error("❌ Cashfree API error response:", errorData);
       } catch (e) {
         try {
           const errorText = await response.text();
           errorMessage = errorText || errorMessage;
+          console.error("❌ Cashfree API error text:", errorText);
         } catch (e2) {
-          // Use default error message
+          console.error("❌ Could not parse Cashfree error response");
         }
       }
+      console.error("❌ Cashfree API call failed:", errorMessage);
       throw new Error(errorMessage);
     }
 
     const data = await response.json();
+    console.log("✅ Cashfree order created successfully:", data.order_id || orderId);
+    console.log("✅ Payment session ID:", data.payment_session_id);
     return data;
   } catch (error) {
-    console.error("Error creating Cashfree order:", error);
+    console.error("❌ ========== CASHFREE ORDER CREATION ERROR ==========");
+    console.error("❌ Error:", error);
+    console.error("❌ Error message:", error.message);
+    console.error("❌ Error stack:", error.stack);
     throw error;
   }
 }
