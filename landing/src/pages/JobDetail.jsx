@@ -2153,6 +2153,38 @@ export default function JobDetail() {
     if (id) fetchJob();
   }, [id]);
 
+  // Check for payment redirect on component mount (catches direct URL access)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const payment = urlParams.get("payment");
+    const orderId = urlParams.get("orderId") || urlParams.get("order_id");
+    const applicationId = urlParams.get("applicationId");
+    const paymentStatus = urlParams.get("payment_status") || urlParams.get("txStatus") || urlParams.get("tx_status");
+    
+    // If we have payment success indicators, redirect immediately
+    if (payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success" || orderId || applicationId) {
+      const pendingData = sessionStorage.getItem("pendingApplication");
+      let finalApplicationId = applicationId || "";
+      let finalOrderId = orderId || "";
+      
+      if (!finalApplicationId && pendingData) {
+        try {
+          const data = JSON.parse(pendingData);
+          finalApplicationId = data.applicationId || data.applicationData?._id || "";
+        } catch (e) {
+          console.error("Error parsing pendingData:", e);
+        }
+      }
+      
+      // Only redirect if we're not already on payment-success page
+      if (window.location.pathname !== "/payment-success") {
+        const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
+        console.log("🚀 Mount: Redirecting to payment success:", redirectUrl);
+        window.location.replace(redirectUrl);
+      }
+    }
+  }, []); // Run only on mount
+
   // Handle Cashfree payment redirect - check both searchParams and window.location
   useEffect(() => {
     // Get params from both searchParams and window.location (more reliable)
