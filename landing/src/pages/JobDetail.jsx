@@ -4059,16 +4059,44 @@ export default function JobDetail() {
                       container.style.maxHeight = "none";
                       container.style.height = "auto";
                       const images = container.querySelectorAll("img");
+                      // Wait for all images to load completely
                       await Promise.all(
                         Array.from(images).map((img) => {
-                          if (img.complete) return Promise.resolve();
+                          // If image is already loaded and has dimensions, resolve immediately
+                          if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+                            return Promise.resolve();
+                          }
+                          // Otherwise wait for load
                           return new Promise((resolve) => {
-                            img.onload = resolve;
-                            img.onerror = resolve;
-                            setTimeout(resolve, 2000);
+                            const timeout = setTimeout(() => {
+                              console.log("Image load timeout:", img.src.substring(0, 50));
+                              resolve();
+                            }, 5000);
+                            img.onload = () => {
+                              clearTimeout(timeout);
+                              // Double check dimensions after load
+                              if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+                                resolve();
+                              } else {
+                                setTimeout(resolve, 100);
+                              }
+                            };
+                            img.onerror = () => {
+                              clearTimeout(timeout);
+                              console.error("Image failed to load:", img.src.substring(0, 50));
+                              resolve();
+                            };
+                            // Force reload if src is set but not loaded
+                            if (img.src && !img.complete) {
+                              const currentSrc = img.src;
+                              img.src = "";
+                              img.src = currentSrc;
+                            }
                           });
                         }),
                       );
+                      // Additional wait to ensure images are rendered
+                      await new Promise((resolve) => setTimeout(resolve, 500));
                       const fullHeight = Math.max(
                         container.scrollHeight,
                         container.offsetHeight,
@@ -4079,12 +4107,13 @@ export default function JobDetail() {
                         container.offsetWidth,
                         container.clientWidth,
                       );
+                      // For base64 images, use allowTaint: false and useCORS: false
                       const canvas = await window.html2canvas(container, {
                         scale: 2,
-                        useCORS: true,
+                        useCORS: false, // Base64 images don't need CORS
                         logging: false,
                         backgroundColor: "#ffffff",
-                        allowTaint: true,
+                        allowTaint: false, // Set to false for base64 images
                         width: fullWidth,
                         height: fullHeight,
                         windowWidth: fullWidth,
@@ -4092,6 +4121,7 @@ export default function JobDetail() {
                         scrollX: 0,
                         scrollY: 0,
                         removeContainer: false,
+                        imageTimeout: 15000, // Increase timeout for base64 images
                       });
                       container.style.overflow = originalOverflow;
                       container.style.maxHeight = originalMaxHeight;

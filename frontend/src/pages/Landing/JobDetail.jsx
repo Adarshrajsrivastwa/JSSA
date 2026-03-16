@@ -3740,18 +3740,45 @@ export default function JobDetail() {
                       container.style.maxHeight = "none";
                       container.style.height = "auto";
 
-                      // Wait for any images to load
+                      // Wait for all images to load completely
                       const images = container.querySelectorAll("img");
                       await Promise.all(
                         Array.from(images).map((img) => {
-                          if (img.complete) return Promise.resolve();
-                          return new Promise((resolve, reject) => {
-                            img.onload = resolve;
-                            img.onerror = resolve; // Continue even if image fails
-                            setTimeout(resolve, 2000); // Timeout after 2 seconds
+                          // If image is already loaded and has dimensions, resolve immediately
+                          if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+                            return Promise.resolve();
+                          }
+                          // Otherwise wait for load
+                          return new Promise((resolve) => {
+                            const timeout = setTimeout(() => {
+                              console.log("Image load timeout:", img.src.substring(0, 50));
+                              resolve();
+                            }, 5000);
+                            img.onload = () => {
+                              clearTimeout(timeout);
+                              // Double check dimensions after load
+                              if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+                                resolve();
+                              } else {
+                                setTimeout(resolve, 100);
+                              }
+                            };
+                            img.onerror = () => {
+                              clearTimeout(timeout);
+                              console.error("Image failed to load:", img.src.substring(0, 50));
+                              resolve();
+                            };
+                            // Force reload if src is set but not loaded
+                            if (img.src && !img.complete) {
+                              const currentSrc = img.src;
+                              img.src = "";
+                              img.src = currentSrc;
+                            }
                           });
                         }),
                       );
+                      // Additional wait to ensure images are rendered
+                      await new Promise((resolve) => setTimeout(resolve, 500));
 
                       // Get full height including all content
                       const fullHeight = Math.max(
@@ -3765,12 +3792,13 @@ export default function JobDetail() {
                         container.clientWidth,
                       );
 
+                      // For base64 images, use allowTaint: false and useCORS: false
                       const canvas = await window.html2canvas(container, {
                         scale: 2,
-                        useCORS: true,
+                        useCORS: false, // Base64 images don't need CORS
                         logging: false,
                         backgroundColor: "#ffffff",
-                        allowTaint: true,
+                        allowTaint: false, // Set to false for base64 images
                         width: fullWidth,
                         height: fullHeight,
                         windowWidth: fullWidth,
@@ -3778,6 +3806,7 @@ export default function JobDetail() {
                         scrollX: 0,
                         scrollY: 0,
                         removeContainer: false,
+                        imageTimeout: 15000, // Increase timeout for base64 images
                       });
 
                       // Restore original styles
