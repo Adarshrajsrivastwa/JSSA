@@ -2153,19 +2153,38 @@ export default function JobDetail() {
     if (id) fetchJob();
   }, [id]);
 
-  // Handle Cashfree payment redirect
+  // Handle Cashfree payment redirect - check both searchParams and window.location
   useEffect(() => {
-    const payment = searchParams.get("payment");
-    const orderId = searchParams.get("orderId") || searchParams.get("order_id") || searchParams.get("orderId");
-    const applicationId = searchParams.get("applicationId");
+    // Get params from both searchParams and window.location (more reliable)
+    const urlParams = new URLSearchParams(window.location.search);
+    const payment = searchParams.get("payment") || urlParams.get("payment");
+    const orderId = searchParams.get("orderId") || searchParams.get("order_id") || urlParams.get("orderId") || urlParams.get("order_id");
+    const applicationId = searchParams.get("applicationId") || urlParams.get("applicationId");
     
     // Check for Cashfree payment status parameters
-    const paymentStatus = searchParams.get("payment_status") || searchParams.get("paymentStatus") || searchParams.get("txStatus") || searchParams.get("tx_status");
-    const cfPaymentId = searchParams.get("cf_payment_id") || searchParams.get("paymentId");
+    const paymentStatus = 
+      searchParams.get("payment_status") || 
+      searchParams.get("paymentStatus") || 
+      searchParams.get("txStatus") || 
+      searchParams.get("tx_status") ||
+      urlParams.get("payment_status") ||
+      urlParams.get("txStatus") ||
+      urlParams.get("tx_status");
+    const cfPaymentId = searchParams.get("cf_payment_id") || searchParams.get("paymentId") || urlParams.get("cf_payment_id") || urlParams.get("paymentId");
+    
+    console.log("🔍 Payment redirect check:", { 
+      payment, 
+      paymentStatus, 
+      orderId, 
+      applicationId, 
+      cfPaymentId,
+      currentPath: window.location.pathname,
+      search: window.location.search
+    });
     
     // If payment=success or payment_status=SUCCESS, redirect immediately to payment success page
     if (payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success") {
-      console.log("Payment success detected, redirecting immediately...", { payment, paymentStatus, orderId, applicationId });
+      console.log("✅ Payment success detected, redirecting immediately...", { payment, paymentStatus, orderId, applicationId });
       const pendingData = sessionStorage.getItem("pendingApplication");
       let finalApplicationId = applicationId || "";
       let finalOrderId = orderId || "";
@@ -2182,29 +2201,17 @@ export default function JobDetail() {
       
       // Build redirect URL
       const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
-      console.log("Redirecting to:", redirectUrl);
+      console.log("🚀 Redirecting to:", redirectUrl);
       
-      // Use window.location as fallback if navigate doesn't work
-      try {
-        navigate(redirectUrl, { replace: true });
-        // Also set window.location as backup
-        setTimeout(() => {
-          if (window.location.pathname !== "/payment-success") {
-            console.log("Navigate didn't work, using window.location");
-            window.location.href = redirectUrl;
-          }
-        }, 100);
-      } catch (err) {
-        console.error("Navigate error, using window.location:", err);
-        window.location.href = redirectUrl;
-      }
+      // Use window.location immediately - more reliable than navigate
+      window.location.replace(redirectUrl);
       return; // Exit early to prevent further processing
     }
 
     // Check if we're returning from Cashfree payment with orderId or applicationId
     // If we have these params, we're likely coming back from payment - redirect immediately
     if (orderId || applicationId || cfPaymentId) {
-      console.log("Payment return detected with params:", { orderId, applicationId, cfPaymentId });
+      console.log("💰 Payment return detected with params:", { orderId, applicationId, cfPaymentId });
       const pendingData = sessionStorage.getItem("pendingApplication");
       let finalApplicationId = applicationId || "";
       let finalOrderId = orderId || "";
@@ -2224,32 +2231,23 @@ export default function JobDetail() {
         searchParams.get("txStatus") ||
         searchParams.get("tx_status") ||
         searchParams.get("payment_status") ||
+        urlParams.get("txStatus") ||
+        urlParams.get("tx_status") ||
+        urlParams.get("payment_status") ||
         "";
       
       // If payment status indicates failure, don't redirect
-      if (txStatus === "FAILED" || txStatus === "failed" || txStatus === "CANCELLED") {
-        console.log("Payment failed or cancelled, not redirecting");
+      if (txStatus === "FAILED" || txStatus === "failed" || txStatus === "CANCELLED" || txStatus === "cancelled") {
+        console.log("❌ Payment failed or cancelled, not redirecting");
         return;
       }
 
       // Build redirect URL
       const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
-      console.log("Redirecting to payment success page:", redirectUrl);
+      console.log("🚀 Redirecting to payment success page:", redirectUrl);
 
-      // Redirect immediately - verification will happen on success page
-      try {
-        navigate(redirectUrl, { replace: true });
-        // Backup: use window.location if navigate doesn't work
-        setTimeout(() => {
-          if (window.location.pathname !== "/payment-success") {
-            console.log("Navigate didn't work, using window.location fallback");
-            window.location.replace(redirectUrl);
-          }
-        }, 100);
-      } catch (err) {
-        console.error("Navigate error, using window.location:", err);
-        window.location.replace(redirectUrl);
-      }
+      // Use window.location.replace immediately - most reliable method
+      window.location.replace(redirectUrl);
     }
   }, [searchParams, navigate]);
 
