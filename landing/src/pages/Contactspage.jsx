@@ -171,7 +171,7 @@ export default function ContactsPage() {
               title: "Branch Office:",
               addr: (
                 <>
-                  Rachi, Jharkhanad, Lucknow, Uttar Pradesh,
+                  Ranchi, Jharkhanad, Lucknow, Uttar Pradesh,
                   <br />
                   Bhopal, Madhya Pradesh, Mumbai,
                   <br />
@@ -204,9 +204,7 @@ export default function ContactsPage() {
               </svg>
             </div>
             <div className="info-text">
-              info@jssabhiyan-nac.in
-              <br />
-              support@jssabhiyan-nac.in
+              support@jssabhiyan.com
             </div>
           </div>
           <div className="contact-info-item">

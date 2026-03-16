@@ -3001,8 +3001,11 @@ export default function JobDetail() {
 
   const rows = Math.max(rowsEn.length, rowsHi.length);
   const isActive = job.status === "Active";
-  const titleEn = job.postTitle?.en || job.post?.en || "";
-  const titleHi = job.postTitle?.hi || job.post?.hi || "";
+  // Use fully dynamic titles from API (admin-configurable)
+  const titleEn =
+    job.title?.en || job.postTitle?.en || job.post?.en || "";
+  const titleHi =
+    job.title?.hi || job.postTitle?.hi || job.post?.hi || "";
 
   return (
     <SharedLayout navigate={navigate}>
@@ -3019,9 +3022,11 @@ export default function JobDetail() {
             }}
           >
             <div className="jobs-detail-title-row">
-              Recruitment for the Post of {titleEn} Advt. No. {job.advtNo}{" "}
-              /&nbsp;
-              {titleHi} विज्ञापन संख्या: {job.advtNo}
+              {titleEn}
+              {" / "}
+              {titleHi || ""}
+              {" विज्ञापन संख्या: "}
+              {job.advtNo}
             </div>
             <div className="jobs-detail-download-row">
               <div
