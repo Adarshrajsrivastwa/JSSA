@@ -197,10 +197,32 @@ router.post(
       console.error("❌ Error message:", error.message);
       console.error("❌ Error stack:", error.stack);
       console.error("❌ Error name:", error.name);
+      console.error("❌ Error cause:", error.cause);
+      
+      // Provide more detailed error message
+      let errorMessage = error.message || "Payment gateway error";
+      
+      // Check if it's a Cashfree credentials error
+      if (errorMessage.includes("Cashfree credentials not configured")) {
+        errorMessage = "Cashfree payment gateway is not configured. Please contact administrator.";
+      }
+      // Check if it's a network error
+      else if (errorMessage.includes("Failed to connect") || errorMessage.includes("Network error")) {
+        errorMessage = "Unable to connect to payment gateway. Please check your internet connection.";
+      }
+      // Check if it's a Cashfree API error
+      else if (errorMessage.includes("Cashfree API error")) {
+        errorMessage = errorMessage; // Keep the detailed Cashfree error
+      }
+      
       res.status(500).json({
         error: "Failed to create payment order",
-        message: error.message || "Payment gateway error",
-        details: process.env.NODE_ENV === "development" ? error.stack : undefined,
+        message: errorMessage,
+        details: process.env.NODE_ENV === "development" ? {
+          stack: error.stack,
+          name: error.name,
+          cause: error.cause
+        } : undefined,
       });
     }
   }
