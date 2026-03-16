@@ -2016,9 +2016,8 @@ export default function JobDetail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // ULTRA AGGRESSIVE IMMEDIATE CHECK: Redirect to payment success if we have pendingData
-  // This runs synchronously on every render - if we have pendingData, we're coming back from payment
-  (() => {
+  // Payment redirect check - moved to useEffect to prevent excessive logging
+  useEffect(() => {
     // Skip if already on payment-success page
     if (window.location.pathname === "/payment-success") {
       return;
@@ -2035,17 +2034,21 @@ export default function JobDetail() {
     // Get pending data - if this exists, we're returning from payment
     const pendingData = sessionStorage.getItem("pendingApplication");
     
-    // Log for debugging
-    console.log("🔍 PAYMENT CHECK:", {
-      pathname: window.location.pathname,
-      search: window.location.search,
-      hasPendingData: !!pendingData,
-      payment,
-      orderId,
-      applicationId,
-      paymentStatus,
-      txStatus
-    });
+    // Only log if there are actual payment-related URL parameters (not just pendingData from previous session)
+    // This prevents logging on every page load when pendingData exists but user isn't returning from payment
+    const hasPaymentParams = !!(payment || orderId || applicationId || paymentStatus || cfPaymentId);
+    if (hasPaymentParams) {
+      console.log("🔍 PAYMENT CHECK:", {
+        pathname: window.location.pathname,
+        search: window.location.search,
+        hasPendingData: !!pendingData,
+        payment,
+        orderId,
+        applicationId,
+        paymentStatus,
+        txStatus
+      });
+    }
     
     // If payment explicitly failed, don't redirect
     if (txStatus === "FAILED" || txStatus === "failed" || txStatus === "CANCELLED" || txStatus === "cancelled") {
@@ -2088,7 +2091,7 @@ export default function JobDetail() {
       window.location.replace(redirectUrl);
       return;
     }
-  })();
+  }, []); // Run only once on mount
 
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -2227,11 +2230,13 @@ export default function JobDetail() {
     if (id) fetchJob();
   }, [id]);
 
-  // Continuous monitoring for payment redirect (runs every 1 second)
+  // Continuous monitoring for payment redirect (runs every 2 seconds, only if needed)
   useEffect(() => {
+    let redirectAttempted = false; // Flag to prevent multiple redirects
+    
     const checkAndRedirect = () => {
-      // Skip if already on payment-success page
-      if (window.location.pathname === "/payment-success") {
+      // Skip if already on payment-success page or redirect already attempted
+      if (window.location.pathname === "/payment-success" || redirectAttempted) {
         return;
       }
       
@@ -2243,6 +2248,11 @@ export default function JobDetail() {
       const txStatus = urlParams.get("txStatus") || urlParams.get("tx_status") || urlParams.get("payment_status") || "";
       const pendingData = sessionStorage.getItem("pendingApplication");
       
+      // Only proceed if there are actual payment indicators
+      if (!pendingData && !payment && !orderId && !applicationId && !paymentStatus) {
+        return; // No payment indicators, skip check silently
+      }
+      
       // Don't redirect if payment explicitly failed
       if (txStatus === "FAILED" || txStatus === "failed" || txStatus === "CANCELLED" || txStatus === "cancelled") {
         return;
@@ -2251,6 +2261,7 @@ export default function JobDetail() {
       // If we have pendingData, we're coming back from payment - redirect immediately
       if (pendingData) {
         try {
+          redirectAttempted = true; // Set flag before redirect
           const data = JSON.parse(pendingData);
           const finalApplicationId = applicationId || data.applicationId || data.applicationData?._id || "";
           const finalOrderId = orderId || data.orderId || "";
@@ -2266,6 +2277,7 @@ export default function JobDetail() {
       
       // Also check for explicit success indicators
       if (payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success") {
+        redirectAttempted = true;
         const finalApplicationId = applicationId || "";
         const finalOrderId = orderId || "";
         const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
@@ -2276,6 +2288,7 @@ export default function JobDetail() {
       
       // If we have orderId or applicationId, redirect
       if (orderId || applicationId) {
+        redirectAttempted = true;
         const redirectUrl = `/payment-success?orderId=${orderId || ""}&applicationId=${applicationId || ""}`;
         console.log("🚀 CONTINUOUS CHECK: Redirecting (has params):", redirectUrl);
         window.location.replace(redirectUrl);
@@ -2286,12 +2299,12 @@ export default function JobDetail() {
     // Check immediately
     checkAndRedirect();
     
-    // Check every 1 second (more frequent)
-    const interval = setInterval(checkAndRedirect, 1000);
+    // Check every 2 seconds (reduced frequency to reduce load)
+    const interval = setInterval(checkAndRedirect, 2000);
     
     // Also check when page becomes visible (user returns from payment)
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
+      if (!document.hidden && !redirectAttempted) {
         setTimeout(checkAndRedirect, 100); // Small delay to ensure sessionStorage is available
       }
     };
@@ -2299,7 +2312,9 @@ export default function JobDetail() {
     
     // Also check on focus
     const handleFocus = () => {
-      setTimeout(checkAndRedirect, 100);
+      if (!redirectAttempted) {
+        setTimeout(checkAndRedirect, 100);
+      }
     };
     window.addEventListener("focus", handleFocus);
     
@@ -2313,31 +2328,35 @@ export default function JobDetail() {
   // Handle Cashfree payment redirect - check both searchParams and window.location
   useEffect(() => {
     // Get params from both searchParams and window.location (more reliable)
-    const urlParams = new URLSearchParams(window.location.search);
-    const payment = searchParams.get("payment") || urlParams.get("payment");
-    const orderId = searchParams.get("orderId") || searchParams.get("order_id") || urlParams.get("orderId") || urlParams.get("order_id");
-    const applicationId = searchParams.get("applicationId") || urlParams.get("applicationId");
-    
-    // Check for Cashfree payment status parameters
-    const paymentStatus = 
-      searchParams.get("payment_status") || 
-      searchParams.get("paymentStatus") || 
-      searchParams.get("txStatus") || 
-      searchParams.get("tx_status") ||
-      urlParams.get("payment_status") ||
-      urlParams.get("txStatus") ||
-      urlParams.get("tx_status");
-    const cfPaymentId = searchParams.get("cf_payment_id") || searchParams.get("paymentId") || urlParams.get("cf_payment_id") || urlParams.get("paymentId");
-    
-    console.log("🔍 Payment redirect check:", { 
-      payment, 
-      paymentStatus, 
-      orderId, 
-      applicationId, 
-      cfPaymentId,
-      currentPath: window.location.pathname,
-      search: window.location.search
-    });
+      const urlParams = new URLSearchParams(window.location.search);
+      const payment = searchParams.get("payment") || urlParams.get("payment");
+      const orderId = searchParams.get("orderId") || searchParams.get("order_id") || urlParams.get("orderId") || urlParams.get("order_id");
+      const applicationId = searchParams.get("applicationId") || urlParams.get("applicationId");
+      
+      // Check for Cashfree payment status parameters
+      const paymentStatus = 
+        searchParams.get("payment_status") || 
+        searchParams.get("paymentStatus") || 
+        searchParams.get("txStatus") || 
+        searchParams.get("tx_status") ||
+        urlParams.get("payment_status") ||
+        urlParams.get("txStatus") ||
+        urlParams.get("tx_status");
+      const cfPaymentId = searchParams.get("cf_payment_id") || searchParams.get("paymentId") || urlParams.get("cf_payment_id") || urlParams.get("paymentId");
+      
+      // Only log if there are actual payment parameters in the URL
+      const hasPaymentParams = !!(payment || orderId || applicationId || paymentStatus || cfPaymentId);
+      if (hasPaymentParams) {
+        console.log("🔍 Payment redirect check:", { 
+          payment, 
+          paymentStatus, 
+          orderId, 
+          applicationId, 
+          cfPaymentId,
+          currentPath: window.location.pathname,
+          search: window.location.search
+        });
+      }
     
     // If payment=success or payment_status=SUCCESS, redirect immediately to payment success page
     if (payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success") {

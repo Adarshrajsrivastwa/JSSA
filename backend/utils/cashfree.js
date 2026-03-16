@@ -92,7 +92,16 @@ export async function createCashfreeOrder(orderData) {
         hasAppId: !!credentials.appId,
         hasSecretKey: !!credentials.secretKey,
       });
-      throw new Error("Cashfree credentials not configured");
+      throw new Error("Cashfree credentials not configured. Please configure CASHFREE_APP_ID and CASHFREE_SECRET_KEY in environment variables or database settings.");
+    }
+    
+    // Validate credential format (basic checks)
+    if (credentials.appId.length < 10 || credentials.secretKey.length < 10) {
+      console.error("Cashfree credentials appear invalid (too short):", {
+        appIdLength: credentials.appId.length,
+        secretKeyLength: credentials.secretKey.length,
+      });
+      throw new Error("Cashfree credentials appear to be invalid. Please verify your App ID and Secret Key are correct.");
     }
 
     // Validate required fields
@@ -139,6 +148,12 @@ export async function createCashfreeOrder(orderData) {
       orderMeta.notify_url = notes.notifyUrl;
     }
 
+    // Validate customer email (Cashfree requires email for some payment methods)
+    // If email is missing, use a placeholder or the orderId as email
+    const finalCustomerEmail = customerEmail && customerEmail.trim() 
+      ? customerEmail.trim() 
+      : `customer_${orderId}@placeholder.com`; // Placeholder email if not provided
+    
     const requestBody = {
       order_id: orderId,
       order_amount: amount / 100, // Convert paise to rupees
@@ -146,7 +161,7 @@ export async function createCashfreeOrder(orderData) {
       customer_details: {
         customer_id: notes?.userId?.toString() || orderId,
         customer_name: customerName || "Customer",
-        customer_email: customerEmail || "",
+        customer_email: finalCustomerEmail,
         customer_phone: customerPhone || "",
       },
       order_note: notes ? JSON.stringify(notes) : "",
@@ -165,6 +180,10 @@ export async function createCashfreeOrder(orderData) {
       customerName: customerName || "Customer",
       hasReturnUrl: !!orderMeta.return_url,
       hasNotifyUrl: !!orderMeta.notify_url,
+      hasAppId: !!credentials.appId,
+      appIdLength: credentials.appId?.length || 0,
+      hasSecretKey: !!credentials.secretKey,
+      secretKeyLength: credentials.secretKey?.length || 0,
     });
 
     // Add timeout to fetch request (30 seconds)
@@ -211,6 +230,9 @@ export async function createCashfreeOrder(orderData) {
       try {
         const errorData = await response.json();
         
+        // Log full error response for debugging
+        console.error("Cashfree API error response (JSON):", JSON.stringify(errorData, null, 2));
+        
         // Extract error message from various possible fields
         errorMessage = 
           errorData.message || 
@@ -218,19 +240,30 @@ export async function createCashfreeOrder(orderData) {
           errorData.error?.description ||
           errorData.error ||
           errorData.msg ||
+          errorData.type ||
           (typeof errorData === 'string' ? errorData : errorMessage);
         
         // If error message is too generic, add more context
         if (errorMessage.toLowerCase().includes("api request failed") || 
             errorMessage.toLowerCase().includes("request failed") ||
             errorMessage === "api Request Failed") {
-          errorMessage = `Cashfree API request failed (${response.status}): ${errorData.message || errorData.error || "Please check your credentials and request format"}`;
+          // Try to get more details from the error object
+          const detailedError = errorData.error || errorData;
+          const subMessage = detailedError?.message || detailedError?.description || detailedError?.code;
+          
+          // For 500 errors, provide more specific guidance
+          if (response.status === 500) {
+            errorMessage = `Cashfree API server error (500): ${subMessage || "Internal server error at Cashfree. This may indicate invalid API credentials, incorrect API version, or a temporary service issue. Please verify your App ID and Secret Key are correct and have proper permissions."}`;
+          } else {
+            errorMessage = `Cashfree API request failed (${response.status}): ${subMessage || "Please verify your API credentials (App ID and Secret Key) are correct and have proper permissions"}`;
+          }
         }
         
         errorDetails = errorData;
       } catch (e) {
         try {
           const errorText = await response.text();
+          console.error("Cashfree API error response (text):", errorText);
           if (errorText) {
             errorMessage = errorText;
             errorDetails = { rawResponse: errorText };
@@ -243,19 +276,27 @@ export async function createCashfreeOrder(orderData) {
         }
       }
       
-      // Log detailed error for debugging
-      console.error("Cashfree API error response:", {
+      // Log detailed error for debugging (without sensitive data)
+      console.error("Cashfree API error details:", {
         status: response.status,
         statusText: response.statusText,
         errorMessage,
-        errorDetails,
+        errorDetails: errorDetails ? JSON.stringify(errorDetails).substring(0, 500) : null, // Limit length
         orderId: orderId,
-        amount: amount,
+        amount: amount / 100,
         requestBody: {
           order_id: requestBody.order_id,
           order_amount: requestBody.order_amount,
           order_currency: requestBody.order_currency,
           has_customer_details: !!requestBody.customer_details,
+          customer_id: requestBody.customer_details?.customer_id,
+          has_order_meta: !!requestBody.order_meta,
+        },
+        credentialsCheck: {
+          hasAppId: !!credentials.appId,
+          appIdLength: credentials.appId?.length || 0,
+          hasSecretKey: !!credentials.secretKey,
+          secretKeyLength: credentials.secretKey?.length || 0,
         },
       });
       
