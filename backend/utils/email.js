@@ -1116,7 +1116,7 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
     
     <p>Through your dashboard, you will be able to track the status of your application and manage further updates.</p>
     
-    <p>Also, your <strong>Application Form PDF is attached with this email</strong>. Please download and keep it safe for your records.</p>
+    <p>You can also download your <strong>Application Form PDF</strong> directly from your dashboard and keep it safe for your records.</p>
     
     <p>If you face any issue while logging in, feel free to contact our support team.</p>
     
@@ -1146,7 +1146,7 @@ You can log in to your applicant dashboard using the link below:
 
 Through your dashboard, you will be able to track the status of your application and manage further updates.
 
-Also, your *Application Form PDF is attached with this email*. Please download and keep it safe for your records.
+You can also download your *Application Form PDF* directly from your dashboard and keep it safe for your records.
 
 If you face any issue while logging in, feel free to contact our support team.
 
@@ -1155,97 +1155,7 @@ Support Team
 Jan Swasthya Sahayata Abhiyan
     `;
 
-    // Generate PDF and attach to email
-    let pdfBuffer = null;
-    let pdfFileName = `Application_Slip_${applicationData.applicationNumber || 'JSSA'}.pdf`;
-
-    console.log("📧 Starting PDF generation for email attachment...");
-    console.log("📧 Application Number:", applicationData.applicationNumber);
-    console.log("📧 Job Posting:", jobPosting ? "Found" : "Not found");
-    
-    try {
-      const pdfResult = await generateAndSaveApplicationPDF(applicationData, jobPosting);
-      console.log("📧 PDF generation result received");
-      console.log("📧 PDF result success:", pdfResult?.success);
-      console.log("📧 PDF result has buffer:", !!pdfResult?.buffer);
-      console.log("📧 PDF result buffer size:", pdfResult?.buffer?.length || 0);
-      console.log("📧 PDF result has filePath:", !!pdfResult?.filePath);
-      console.log("📧 PDF result fileName:", pdfResult?.fileName);
-      
-      if (pdfResult && pdfResult.success) {
-        pdfFileName = pdfResult.fileName || pdfFileName;
-        
-        // First try to use buffer directly (if available)
-        if (pdfResult.buffer && Buffer.isBuffer(pdfResult.buffer) && pdfResult.buffer.length > 0) {
-          pdfBuffer = pdfResult.buffer;
-          console.log("✅ Using PDF buffer directly from generation result");
-          console.log("✅ PDF buffer size:", pdfBuffer.length, "bytes");
-          console.log("✅ PDF buffer is valid Buffer:", Buffer.isBuffer(pdfBuffer));
-        } 
-        // Fallback: Try to read from file if buffer not available
-        else if (pdfResult.filePath) {
-          console.log("📧 Attempting to read PDF file from:", pdfResult.filePath);
-          
-          // Check if file exists
-          if (fs.existsSync(pdfResult.filePath)) {
-            try {
-              pdfBuffer = fs.readFileSync(pdfResult.filePath);
-              console.log("✅ Loaded PDF for attachment from:", pdfResult.filePath);
-              console.log("✅ PDF buffer size:", pdfBuffer.length, "bytes");
-              console.log("✅ PDF buffer is valid Buffer:", Buffer.isBuffer(pdfBuffer));
-            } catch (readErr) {
-              console.error("❌ Failed to read generated PDF file:", readErr);
-              console.error("❌ Read error message:", readErr.message);
-              console.error("❌ Read error stack:", readErr.stack);
-              pdfBuffer = null;
-            }
-          } else {
-            console.error("❌ PDF file does not exist at path:", pdfResult.filePath);
-            pdfBuffer = null;
-          }
-        } else {
-          console.error("❌ PDF result has no buffer or filePath");
-          console.error("❌ PDF result keys:", Object.keys(pdfResult || {}));
-          pdfBuffer = null;
-        }
-      } else {
-        console.error("⚠️ PDF generation did not succeed");
-        console.error("⚠️ PDF result:", pdfResult);
-        if (pdfResult && pdfResult.error) {
-          console.error("⚠️ PDF generation error:", pdfResult.error);
-        }
-        pdfBuffer = null;
-      }
-    } catch (pdfGenErr) {
-      console.error("❌ Exception while generating PDF for email attachment:", pdfGenErr);
-      console.error("❌ Exception message:", pdfGenErr.message);
-      console.error("❌ Exception stack:", pdfGenErr.stack);
-      pdfBuffer = null;
-    }
-
-    // Prepare email attachments
-    const attachments = [];
-    if (pdfBuffer && Buffer.isBuffer(pdfBuffer) && pdfBuffer.length > 0) {
-      attachments.push({
-        filename: pdfFileName,
-        content: pdfBuffer,
-        contentType: 'application/pdf',
-      });
-      console.log("✅ PDF attachment prepared:", pdfFileName);
-      console.log("✅ PDF buffer size:", pdfBuffer.length, "bytes");
-      console.log("✅ PDF buffer type:", Buffer.isBuffer(pdfBuffer) ? "Buffer" : typeof pdfBuffer);
-    } else {
-      console.log("⚠️ No PDF attachment (generation/reading failed)");
-      if (pdfBuffer) {
-        console.log("⚠️ PDF buffer exists but invalid:", {
-          isBuffer: Buffer.isBuffer(pdfBuffer),
-          length: pdfBuffer?.length,
-          type: typeof pdfBuffer
-        });
-      }
-    }
-
-    // Send email (with or without PDF attachment)
+    // Send email (no PDF attachment - user can download from dashboard)
     const mailOptions = {
       from: `"JSSA" <${process.env.SMTP_USER}>`,
       to: applicationData.email,
@@ -1254,17 +1164,11 @@ Jan Swasthya Sahayata Abhiyan
       html: htmlContent,
     };
 
-    // Only add attachments if we have valid attachments
-    if (attachments.length > 0) {
-      mailOptions.attachments = attachments;
-    }
-
     console.log("📧 Sending email via SMTP...");
     console.log("📧 Email to:", applicationData.email);
     console.log("📧 Email from:", process.env.SMTP_USER);
     console.log("📧 SMTP Host:", process.env.SMTP_HOST || "smtp.gmail.com");
     console.log("📧 SMTP Port:", process.env.SMTP_PORT || "587");
-    console.log("📧 Has attachments:", attachments.length > 0);
     console.log("📧 Email subject:", mailOptions.subject);
     
     const info = await transporter.sendMail(mailOptions);
