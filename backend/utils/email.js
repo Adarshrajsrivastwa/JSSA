@@ -688,7 +688,12 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
     const logoUrl = "https://jssabhiyan.com/assets/jss.png";
     const logoPathForPdf = "./landing/src/assets/jss.png"; // For Puppeteer PDF generation
 
-    // Email HTML template - Simple format with basic details only
+    // Login URL
+    const loginUrl = process.env.FRONTEND_URL 
+      ? `${process.env.FRONTEND_URL}/login`
+      : "https://jssabhiyan.com/login";
+
+    // Email HTML template - Simple format matching text version
     const htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -1067,168 +1072,126 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
       color: #666;
       font-size: 14px;
     }
+    p {
+      margin: 10px 0;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    strong {
+      font-weight: 600;
+      color: #333;
+    }
+    a {
+      color: #1976d2;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .footer {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+      font-size: 13px;
+      color: #666;
+    }
   </style>
 </head>
 <body>
   <div class="email-container">
-    <!-- Payment Success Banner -->
-    <div class="success-banner">
-      <div class="success-title">✅ Payment Successful!</div>
-      <div class="success-subtitle">Your application has been submitted successfully</div>
-      <div class="app-number">
-        Application Number: ${applicationData.applicationNumber || "N/A"}
-      </div>
-    </div>
-
-    <!-- Login Credentials Box -->
-    <div class="credentials-box">
-      <h3>🔐 Login Credentials / लॉगिन क्रेडेंशियल</h3>
-      <div class="credentials-item">
-        <strong>Login ID:</strong> ${loginCredentials.identifier}
-      </div>
-      <div class="credentials-item">
-        <strong>Password:</strong> ${loginCredentials.password}
-      </div>
-      <div style="margin-top: 10px; font-size: 13px; color: #856404;">
-        ⚠️ Please save these credentials for future login
-      </div>
-    </div>
-
-    <!-- Application Details Summary -->
-    <div class="details-box">
-      <h3>Application Details / आवेदन विवरण</h3>
-      <div class="detail-row">
-        <div class="detail-label">Name / नाम:</div>
-        <div class="detail-value"><strong>${(applicationData.candidateName || "").toUpperCase()}</strong></div>
-      </div>
-      <div class="detail-row">
-        <div class="detail-label">Application Number:</div>
-        <div class="detail-value"><strong>${applicationData.applicationNumber || "N/A"}</strong></div>
-      </div>
-      <div class="detail-row">
-        <div class="detail-label">Post Applied For:</div>
-        <div class="detail-value">${jobPosting?.postTitle?.en || jobPosting?.post?.en || "N/A"}</div>
-      </div>
-      <div class="detail-row">
-        <div class="detail-label">Advertisement No.:</div>
-        <div class="detail-value">${jobPosting?.advtNo || "N/A"}</div>
-      </div>
-      <div class="detail-row">
-        <div class="detail-label">Email ID:</div>
-        <div class="detail-value">${applicationData.email || "N/A"}</div>
-      </div>
-      <div class="detail-row">
-        <div class="detail-label">Mobile Number:</div>
-        <div class="detail-value">${applicationData.mobile || "N/A"}</div>
-      </div>
-      <div class="detail-row">
-        <div class="detail-label">Date of Birth:</div>
-        <div class="detail-value">${formatDate(applicationData.dob)}</div>
-      </div>
-      <div class="detail-row">
-        <div class="detail-label">Gender:</div>
-        <div class="detail-value">${formatGender(applicationData.gender)}</div>
-      </div>
-      <div class="detail-row">
-        <div class="detail-label">Category:</div>
-        <div class="detail-value">${formatCategory(applicationData.category)}</div>
-      </div>
-      <div class="detail-row">
-        <div class="detail-label">Higher Education:</div>
-        <div class="detail-value">${applicationData.higherEducation || "N/A"}</div>
-      </div>
-      <div class="detail-row">
-        <div class="detail-label">Payment Status:</div>
-        <div class="detail-value" style="color: #0aca00; font-weight: 700;">✅ Complete</div>
-      </div>
-      <div class="detail-row">
-        <div class="detail-label">Application Date:</div>
-        <div class="detail-value">${new Date().toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" })}</div>
-      </div>
-    </div>
-
-    <!-- PDF Download Notice -->
-    <div class="pdf-notice">
-      <h3>📥 Application Slip PDF</h3>
-      <p style="font-size: 16px; font-weight: 600; color: #1976d2; margin-bottom: 10px;">
-        Your complete Application Slip PDF is attached to this email.
-      </p>
-      <p style="font-size: 14px; color: #333;">
-        The PDF contains all your application details including personal information, educational qualifications, photo, signature, and payment status.
-      </p>
-      <p style="font-size: 13px; color: #666; margin-top: 12px;">
-        <strong>File Name:</strong> Application_Slip_${applicationData.applicationNumber || 'JSSA'}.pdf
-      </p>
-      <p style="font-size: 12px; color: #999; margin-top: 10px;">
-        Please check the email attachments section to download the PDF file.
-      </p>
-    </div>
-
-    <div class="email-footer">
-      <p><strong>Thank you for applying!</strong></p>
-      <p>आवेदन करने के लिए धन्यवाद!</p>
-      <p style="margin-top: 15px; font-size: 12px; color: #999;">
-        This is an automated email. Please do not reply to this email.<br>
-        यह एक स्वचालित ईमेल है। कृपया इस ईमेल का जवाब न दें।
-      </p>
+    <p>Dear Applicant,</p>
+    
+    <p>Thank you for submitting your application.</p>
+    
+    <p>Your application has been successfully received and registered in our system. Please find your application details below:</p>
+    
+    <p>
+      <strong>Application Number:</strong> ${applicationData.applicationNumber || "N/A"}<br>
+      <strong>Username / Login ID:</strong> ${loginCredentials.identifier}<br>
+      <strong>Password:</strong> ${loginCredentials.password}
+    </p>
+    
+    <p>You can log in to your applicant dashboard using the link below:<br>
+    <strong>Login Link:</strong> <a href="${loginUrl}">${loginUrl}</a></p>
+    
+    <p>Through your dashboard, you will be able to track the status of your application and manage further updates.</p>
+    
+    <p>Also, your <strong>Application Form PDF is attached with this email</strong>. Please download and keep it safe for your records.</p>
+    
+    <p>If you face any issue while logging in, feel free to contact our support team.</p>
+    
+    <div class="footer">
+      <p><strong>Best Regards,</strong><br>
+      Support Team<br>
+      Jan Swasthya Sahayata Abhiyan</p>
     </div>
   </div>
 </body>
 </html>
     `;
 
-    // Plain text version
-    const textContent = `
-Payment Successful - JSSA
-========================
+    // Plain text version - Exact format as requested
+    const textContent = `Dear Applicant,
 
-✅ Payment Successful!
-Your application has been submitted successfully
+Thank you for submitting your application.
 
-Application Number: ${applicationData.applicationNumber || "N/A"}
+Your application has been successfully received and registered in our system. Please find your application details below:
 
-LOGIN CREDENTIALS:
-------------------
-Login ID: ${loginCredentials.identifier}
-Password: ${loginCredentials.password}
+*Application Number:* ${applicationData.applicationNumber || "N/A"}
+*Username / Login ID:* ${loginCredentials.identifier}
+*Password:* ${loginCredentials.password}
 
-Please save these credentials for future login.
+You can log in to your applicant dashboard using the link below:
+*Login Link:* ${loginUrl}
 
-APPLICATION DETAILS:
---------------------
-Name: ${(applicationData.candidateName || "").toUpperCase()}
-Application Number: ${applicationData.applicationNumber || "N/A"}
-Post Applied For: ${jobPosting?.postTitle?.en || jobPosting?.post?.en || "N/A"}
-Advertisement No.: ${jobPosting?.advtNo || "N/A"}
-Email ID: ${applicationData.email || "N/A"}
-Mobile Number: ${applicationData.mobile || "N/A"}
-Date of Birth: ${formatDate(applicationData.dob)}
-Gender: ${formatGender(applicationData.gender)}
-Category: ${formatCategory(applicationData.category)}
-Higher Education: ${applicationData.higherEducation || "N/A"}
-Payment Status: Complete
+Through your dashboard, you will be able to track the status of your application and manage further updates.
 
-PDF ATTACHMENT:
----------------
-Your complete Application Slip PDF is attached to this email.
-The PDF contains all your application details including personal information, 
-educational qualifications, photo, signature, and payment status.
+Also, your *Application Form PDF is attached with this email*. Please download and keep it safe for your records.
 
-File Name: Application_Slip_${applicationData.applicationNumber || 'JSSA'}.pdf
+If you face any issue while logging in, feel free to contact our support team.
 
-Please check the email attachments section to download the PDF file.
-
-Thank you for applying!
-आवेदन करने के लिए धन्यवाद!
+Best Regards,
+Support Team
+Jan Swasthya Sahayata Abhiyan
     `;
 
-    // No PDF generation - email will contain all details in HTML format
-    console.log("📧 Email will be sent without PDF attachment (details in email body)");
-    
-    // Prepare email attachments (empty - no PDF)
-    const attachments = [];
+    // Generate PDF and attach to email
+    let pdfBuffer = null;
+    let pdfFileName = `Application_Slip_${applicationData.applicationNumber || 'JSSA'}.pdf`;
 
-    // Send email (no PDF attachment)
+    try {
+      const pdfResult = await generateAndSaveApplicationPDF(applicationData, jobPosting);
+      if (pdfResult && pdfResult.success && pdfResult.filePath) {
+        pdfFileName = pdfResult.fileName || pdfFileName;
+        try {
+          pdfBuffer = fs.readFileSync(pdfResult.filePath);
+          console.log("✅ Loaded PDF for attachment from:", pdfResult.filePath);
+        } catch (readErr) {
+          console.error("⚠️ Failed to read generated PDF file:", readErr);
+          pdfBuffer = null;
+        }
+      } else {
+        console.log("⚠️ PDF generation did not succeed, sending email without PDF");
+      }
+    } catch (pdfGenErr) {
+      console.error("⚠️ Error while generating PDF for email attachment:", pdfGenErr);
+      pdfBuffer = null;
+    }
+
+    // Prepare email attachments
+    const attachments = [];
+    if (pdfBuffer) {
+      attachments.push({
+        filename: pdfFileName,
+        content: pdfBuffer,
+        contentType: 'application/pdf',
+      });
+      console.log("✅ PDF attachment prepared:", pdfFileName);
+    } else {
+      console.log("⚠️ No PDF attachment (generation/reading failed)");
+    }
+
+    // Send email (with or without PDF attachment)
     const mailOptions = {
       from: `"JSSA" <${process.env.SMTP_USER}>`,
       to: applicationData.email,
@@ -1381,6 +1344,9 @@ export async function generateAndSaveApplicationPDF(applicationData, jobPosting)
   </style>
 </head>
 <body>
+  <div style="text-align: center; font-weight: bold; font-size: 14px; margin: 8px 0;">
+    Application Slip - ${jobPosting?.postTitle?.en || jobPosting?.post?.en || ""} Recruitment 2024
+  </div>
   <div class="application-slip">
     <!-- Header -->
     <div class="header-section">
