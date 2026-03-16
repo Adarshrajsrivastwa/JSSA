@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, User, Lock } from "lucide-react";
+import logo from "../assets/img0.png";
 import { useAuth } from "../auth/AuthProvider";
 import { roleHomePath } from "../auth/auth";
 import { authAPI } from "../utils/api";
@@ -424,7 +425,7 @@ export default function JSSAbhiyanLogin() {
       const response = await authAPI.login(
         formData.identifier.trim(),
         formData.password,
-        formData.role
+        formData.role,
       );
 
       if (response.success && response.data) {
@@ -455,31 +456,11 @@ export default function JSSAbhiyanLogin() {
         <div className="w-full lg:w-1/2 p-6 sm:p-8 lg:p-12 bg-gradient-to-br from-green-50 via-white to-emerald-50">
           {/* Brand Header */}
           <div className="mb-6 lg:mb-8">
-            <div className="flex items-center gap-3 mb-4 lg:mb-6">
-              <div className="shrink-0">
-                <Logo size={60} />
-              </div>
-              <div>
-                <h1
-                  className="text-base sm:text-lg lg:text-xl font-extrabold text-green-700 leading-tight"
-                  style={{ fontFamily: "'Noto Sans Devanagari', serif" }}
-                >
-                  जन स्वास्थ्य सहायता अभियान
-                </h1>
-                <p className="text-xs font-semibold text-blue-700 mt-0.5">
-                  A Project Of Healthcare Research &amp; Development Board
-                </p>
-                <span
-                  className="inline-block mt-1 text-xs font-bold text-white px-3 py-0.5 rounded-full"
-                  style={{ background: GREEN }}
-                >
-                  Registration No. : 053083
-                </span>
-              </div>
-            </div>
-            <p className="text-sm text-gray-500">
-              Nice to see you again! Let's get started
-            </p>
+            <img
+              src={logo}
+              alt="Jan Swasthya Sahayata Abhiyan"
+              className="w-full max-w-lg object-contain"
+            />
           </div>
 
           {/* Form Fields */}
@@ -574,15 +555,15 @@ export default function JSSAbhiyanLogin() {
             </div>
 
             {formData.role === "applicant" && (
-            <div className="text-right">
-              <Link
-                to="/forgot-password"
-                className="text-sm font-semibold"
-                style={{ color: GREEN, textDecoration: "none" }}
-              >
-                Forgot Password?
-              </Link>
-            </div>
+              <div className="text-right">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm font-semibold"
+                  style={{ color: GREEN, textDecoration: "none" }}
+                >
+                  Forgot Password?
+                </Link>
+              </div>
             )}
 
             {error && (
@@ -593,7 +574,9 @@ export default function JSSAbhiyanLogin() {
 
             <button
               onClick={handleLogin}
-              disabled={loading || !formData.identifier.trim() || !formData.password}
+              disabled={
+                loading || !formData.identifier.trim() || !formData.password
+              }
               className="w-full text-white py-3 sm:py-3.5 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 background: `linear-gradient(135deg, ${GREEN} 0%, ${DARK_GREEN} 100%)`,

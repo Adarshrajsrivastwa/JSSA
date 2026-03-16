@@ -458,6 +458,38 @@ export const notificationsAPI = {
 };
 
 /**
+ * Notices API
+ */
+export const noticesAPI = {
+  getAll: async (active = null) => {
+    const query = active !== null ? `?active=${active}` : "";
+    return apiRequest(`/notices${query}`, { method: "GET" });
+  },
+
+  getById: async (id) => {
+    return apiRequest(`/notices/${id}`, { method: "GET" });
+  },
+
+  create: async (data) => {
+    return apiRequest("/notices", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  update: async (id, data) => {
+    return apiRequest(`/notices/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  delete: async (id) => {
+    return apiRequest(`/notices/${id}`, { method: "DELETE" });
+  },
+};
+
+/**
  * Upload API
  */
 export const uploadAPI = {

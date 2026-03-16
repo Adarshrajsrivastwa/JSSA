@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 
 import TopBarNotification from "./pages/TopBarComponents/TopBarNotification";
 import TopBarMail from "./pages/TopBarComponents/TopBarMail";
@@ -19,6 +24,7 @@ import Settings from "./pages/Settings/Settings";
 import Gallery from "./pages/Gallery/Gallery";
 import Scroller from "./pages/Scroller/Scroller";
 import Notifications from "./pages/Notifications/Notifications";
+import Notice from "./pages/Notice/Notice.jsx";
 import Logout from "./pages/Logout";
 
 // Landing pages
@@ -31,14 +37,14 @@ import { RequireAuth, RequireRole } from "./auth/RequireAuth";
 function App() {
   // Log to identify frontend app
   console.log("🚀 FRONTEND App Running on Port 5173");
-  
+
   return (
     <AuthProvider>
       <Router>
-    <Routes>
+        <Routes>
           {/* Frontend default route - Login page */}
           <Route path="/" element={<Login />} />
-          
+
           {/* Landing/Public pages - accessible without authentication */}
           <Route path="/landing" element={<LandingDashboard />} />
           <Route path="/about" element={<LandingDashboard />} />
@@ -49,7 +55,7 @@ function App() {
           <Route path="/gallery" element={<LandingDashboard />} />
           <Route path="/verification" element={<LandingDashboard />} />
           <Route path="/contacts" element={<LandingDashboard />} />
-      <Route path="/job-postings/view/:id" element={<JobDetail />} />
+          <Route path="/job-postings/view/:id" element={<JobDetail />} />
 
           {/* Login page - always accessible */}
           <Route path="/login" element={<Login />} />
@@ -80,9 +86,15 @@ function App() {
             {/* Shared routes (both roles can open) */}
             <Route path="/job-postings" element={<JobPosting />} />
             <Route path="/job-postings/view/:id" element={<JobPostingView />} />
-            <Route path="/job-postings/:id/applicants" element={<JobPostingApplicants />} />
+            <Route
+              path="/job-postings/:id/applicants"
+              element={<JobPostingApplicants />}
+            />
             <Route path="/application-form" element={<ApplicationForm />} />
-            <Route path="/applications/view/:id" element={<ApplicationView />} />
+            <Route
+              path="/applications/view/:id"
+              element={<ApplicationView />}
+            />
 
             {/* Settings - Admin only */}
             <Route
@@ -123,9 +135,20 @@ function App() {
                 </RequireRole>
               }
             />
+            <Route
+              path="/notice"
+              element={
+                <RequireRole allow={["admin"]}>
+                  <Notice />
+                </RequireRole>
+              }
+            />
 
             {/* Top bar demo pages */}
-            <Route path="/notifications-demo" element={<TopBarNotification />} />
+            <Route
+              path="/notifications-demo"
+              element={<TopBarNotification />}
+            />
             <Route path="/mail" element={<TopBarMail />} />
 
             <Route path="/logout" element={<Logout />} />
@@ -133,7 +156,7 @@ function App() {
 
           {/* Catch-all: redirect unknown routes to login */}
           <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        </Routes>
       </Router>
     </AuthProvider>
   );

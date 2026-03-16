@@ -17,6 +17,22 @@ import { roleHomePath } from "../auth/auth";
 const GREEN = "#3AB000";
 const GREEN_DARK = "#2d8a00";
 
+/* ── Static Avatar ── */
+function StaticAvatar({ size = 32 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 40 40"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle cx="20" cy="20" r="20" fill="#3AB000" />
+      <circle cx="20" cy="14" r="7" fill="white" />
+      <ellipse cx="20" cy="36" rx="13" ry="9" fill="white" />
+    </svg>
+  );
+}
+
 /* ── Digital Clock ── */
 function DigitalClock() {
   const [time, setTime] = useState(new Date());
@@ -145,83 +161,6 @@ const Header = () => {
 
       {/* Right Side Icons */}
       <div className="flex items-center gap-1 sm:gap-2 ml-auto">
-        {/* Fullscreen */}
-        {/* <button
-          className="hidden sm:flex items-center justify-center text-white text-lg w-9 h-9 rounded-lg transition"
-          style={{ background: "transparent" }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.background = "rgba(255,255,255,0.2)")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.background = "transparent")
-          }
-          onClick={() => {
-            if (!document.fullscreenElement)
-              document.documentElement.requestFullscreen();
-            else document.exitFullscreen();
-          }}
-          title="Fullscreen"
-        >
-          <FiMaximize size={18} />
-        </button> */}
-
-        {/* Grid / Apps */}
-        {/* <button
-          className="hidden sm:flex items-center justify-center text-white text-lg w-9 h-9 rounded-lg transition"
-          style={{ background: "transparent" }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.background = "rgba(255,255,255,0.2)")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.background = "transparent")
-          }
-          title="Apps"
-        >
-          <FiGrid size={18} />
-        </button> */}
-
-        {/* Mail */}
-        <button
-          onClick={() => navigate("/notifications")}
-          className="relative flex items-center justify-center text-white text-lg w-9 h-9 rounded-lg transition"
-          style={{ background: "transparent" }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.background = "rgba(255,255,255,0.2)")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.background = "transparent")
-          }
-          title="Mail"
-        >
-          <FiMail size={18} />
-          <span
-            className="absolute -top-0.5 -right-0.5 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold"
-            style={{ background: "#1a56c4" }}
-          >
-            5
-          </span>
-        </button>
-
-        {/* Notifications */}
-        <button
-          onClick={() => navigate("/notifications")}
-          className="relative flex items-center justify-center text-white text-lg w-9 h-9 rounded-lg transition"
-          style={{ background: "transparent" }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.background = "rgba(255,255,255,0.2)")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.background = "transparent")
-          }
-          title="Notifications"
-        >
-          <FiBell size={18} />
-          <span
-            className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
-            style={{ background: "#ef4444", borderColor: GREEN_DARK }}
-          />
-        </button>
-
         {/* Divider */}
         <div className="w-px h-6 mx-1 bg-white/30" />
 
@@ -238,18 +177,18 @@ const Header = () => {
               (e.currentTarget.style.background = "transparent")
             }
           >
+            {/* Avatar with online dot */}
             <div className="relative">
-              <img
-                src="https://i.pravatar.cc/32"
-                alt="User Avatar"
-                className="w-8 h-8 rounded-full border-2 border-white/60"
-              />
+              <div className="w-8 h-8 rounded-full border-2 border-white/60 overflow-hidden">
+                <StaticAvatar size={32} />
+              </div>
               {/* Online dot */}
               <span
                 className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2"
                 style={{ background: "#4ade80", borderColor: GREEN_DARK }}
               />
             </div>
+
             {/* Name — hidden on small screens */}
             <div className="hidden md:block text-left">
               <p className="text-white text-xs font-bold leading-tight">
@@ -278,11 +217,9 @@ const Header = () => {
                   background: `linear-gradient(135deg, ${GREEN} 0%, ${GREEN_DARK} 100%)`,
                 }}
               >
-                <img
-                  src="https://i.pravatar.cc/40"
-                  alt="avatar"
-                  className="w-10 h-10 rounded-full border-2 border-white"
-                />
+                <div className="w-10 h-10 rounded-full border-2 border-white overflow-hidden flex-shrink-0">
+                  <StaticAvatar size={40} />
+                </div>
                 <div>
                   <p className="text-sm font-bold text-white leading-tight">
                     {role === "admin"
@@ -307,7 +244,13 @@ const Header = () => {
                     path: roleHomePath(role),
                   },
                   ...(role === "admin"
-                    ? [{ icon: FiSettings, label: "Settings", path: "/settings" }]
+                    ? [
+                        {
+                          icon: FiSettings,
+                          label: "Settings",
+                          path: "/settings",
+                        },
+                      ]
                     : []),
                   { icon: FiPhone, label: "9471987611", path: null },
                 ].map(({ icon: Icon, label, path }, i) => (

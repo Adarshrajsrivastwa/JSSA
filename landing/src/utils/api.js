@@ -150,6 +150,17 @@ export const galleryAPI = {
 /**
  * Notifications API
  */
+export const noticesAPI = {
+  getAll: async (active = null) => {
+    const query = active !== null ? `?active=${active}` : "";
+    return apiRequest(`/notices${query}`, { method: "GET" });
+  },
+
+  getById: async (id) => {
+    return apiRequest(`/notices/${id}`, { method: "GET" });
+  },
+};
+
 export const notificationsAPI = {
   getAll: async (active = null) => {
     const query = active !== null ? `?active=${active}` : "";

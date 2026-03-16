@@ -5,7 +5,6 @@ import logo from "../../assets/img0.png";
 import logo1 from "../../assets/jss.png";
 import swachhBharat from "../../assets/Swachh.png";
 import brochurePDF from "../../assets/broucher.pdf";
-import ApplicationSlip from "../../components/ApplicationSlip.jsx";
 
 const GREEN = "#3AB000";
 
@@ -3076,7 +3075,7 @@ export default function JobDetail() {
         )}
       </div>
 
-      {/* Application Success Popup Modal */}
+      {/* Payment Success Popup Modal */}
       {showSuccessPage && submittedApplication && (
         <div
           style={{
@@ -3099,295 +3098,20 @@ export default function JobDetail() {
           }}
         >
           <div
+            id="application-slip-pdf"
             style={{
               background: "#fff",
-              borderRadius: 8,
+              borderRadius: 0,
               maxWidth: "900px",
               width: "100%",
               maxHeight: "90vh",
               overflow: "auto",
               padding: 0,
               position: "relative",
+              fontFamily: "Arial, sans-serif",
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Success Banner */}
-            <div
-              style={{
-                maxWidth: "900px",
-                width: "100%",
-                margin: "0 auto",
-                background: "#fff",
-                borderRadius: 8,
-                padding: "20px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                textAlign: "center",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 32,
-                  fontWeight: 900,
-                  color: GREEN,
-                  marginBottom: 12,
-                }}
-              >
-                ✅ Application Submitted Successfully!
-              </div>
-              <div
-                style={{
-                  fontSize: 18,
-                  fontWeight: 700,
-                  color: "#333",
-                  marginBottom: 8,
-                }}
-              >
-                Your application has been submitted successfully
-              </div>
-              <div
-                style={{
-                  fontSize: 16,
-                  fontWeight: 600,
-                  color: "#666",
-                  marginBottom: 16,
-                }}
-              >
-                Application Number:{" "}
-                <span style={{ color: GREEN, fontSize: 18 }}>
-                  {submittedApplication.applicationNumber || formData.applicationNumber || "N/A"}
-                </span>
-              </div>
-              <div
-                style={{
-                  fontSize: 14,
-                  color: "#666",
-                  lineHeight: 1.6,
-                }}
-              >
-                Please download your application slip below. Keep this application number
-                for future reference.
-              </div>
-            </div>
-
-            {/* Application Slip */}
-            <div style={{ maxWidth: "900px", width: "100%", margin: "0 auto" }}>
-              <ApplicationSlip
-                applicationData={submittedApplication || formData}
-                jobPosting={job}
-                photoSrc={photoPreview}
-                signatureSrc={signaturePreview}
-              />
-            </div>
-
-            {/* Download PDF Button */}
-            <div
-              style={{
-                display: "flex",
-                gap: 12,
-                padding: "15px 20px",
-                justifyContent: "center",
-                flexWrap: "wrap",
-                background: "#fff",
-                maxWidth: "900px",
-                margin: "20px auto 0",
-                borderRadius: 8,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-              }}
-            >
-              <button
-                onClick={async (e) => {
-                  try {
-                    if (!window.html2canvas)
-                      await loadScript(
-                        "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
-                      );
-                    if (!window.jspdf)
-                      await loadScript(
-                        "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
-                      );
-                    await new Promise((resolve) => setTimeout(resolve, 500));
-                    const container = document.getElementById("application-slip-pdf");
-                    if (!container || !window.html2canvas || !window.jspdf) {
-                      alert(
-                        "PDF libraries not loaded. Please wait and try again.",
-                      );
-                      return;
-                    }
-                    const button = e.target;
-                    const originalText = button.innerHTML;
-                    button.innerHTML = "⏳ Generating PDF...";
-                    button.disabled = true;
-                    try {
-                      const originalOverflow = container.style.overflow;
-                      const originalMaxHeight = container.style.maxHeight;
-                      container.style.overflow = "visible";
-                      container.style.maxHeight = "none";
-                      container.style.height = "auto";
-                      const images = container.querySelectorAll("img");
-                      await Promise.all(
-                        Array.from(images).map((img) => {
-                          if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
-                            return Promise.resolve();
-                          }
-                          return new Promise((resolve) => {
-                            const timeout = setTimeout(() => {
-                              console.log("Image load timeout:", img.src.substring(0, 50));
-                              resolve();
-                            }, 5000);
-                            img.onload = () => {
-                              clearTimeout(timeout);
-                              if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-                                resolve();
-                              } else {
-                                setTimeout(resolve, 100);
-                              }
-                            };
-                            img.onerror = () => {
-                              clearTimeout(timeout);
-                              console.error("Image failed to load:", img.src.substring(0, 50));
-                              resolve();
-                            };
-                            if (img.src && !img.complete) {
-                              const currentSrc = img.src;
-                              img.src = "";
-                              img.src = currentSrc;
-                            }
-                          });
-                        }),
-                      );
-                      await new Promise((resolve) => setTimeout(resolve, 500));
-                      const fullHeight = Math.max(
-                        container.scrollHeight,
-                        container.offsetHeight,
-                        container.clientHeight,
-                      );
-                      const fullWidth = Math.max(
-                        container.scrollWidth,
-                        container.offsetWidth,
-                        container.clientWidth,
-                      );
-                      const canvas = await window.html2canvas(container, {
-                        scale: 2.5,
-                        useCORS: false,
-                        logging: false,
-                        backgroundColor: "#ffffff",
-                        allowTaint: false,
-                        width: fullWidth,
-                        height: fullHeight,
-                        windowWidth: fullWidth,
-                        windowHeight: fullHeight,
-                        scrollX: 0,
-                        scrollY: 0,
-                        removeContainer: false,
-                        imageTimeout: 15000,
-                      });
-                      container.style.overflow = originalOverflow;
-                      container.style.maxHeight = originalMaxHeight;
-                      container.style.height = "";
-                      const { jsPDF } = window.jspdf;
-                      const imgData = canvas.toDataURL("image/png", 0.95);
-                      
-                      const pdf = new jsPDF({
-                        unit: "mm",
-                        format: "a4",
-                        orientation: "landscape",
-                      });
-                      
-                      const pdfWidth = 297;
-                      const pdfHeight = 210;
-                      const margin = 5;
-                      const imgWidth = pdfWidth - 2 * margin;
-                      let imgHeight = (canvas.height * imgWidth) / canvas.width;
-                      
-                      if (imgHeight > pdfHeight - 2 * margin) {
-                        const scaleFactor = (pdfHeight - 2 * margin) / imgHeight;
-                        imgHeight = pdfHeight - 2 * margin;
-                        const scaledWidth = imgWidth * scaleFactor;
-                        const xOffset = margin + (imgWidth - scaledWidth) / 2;
-                        pdf.addImage(
-                          imgData,
-                          "PNG",
-                          xOffset,
-                          margin,
-                          scaledWidth,
-                          imgHeight,
-                        );
-                      } else {
-                        pdf.addImage(
-                          imgData,
-                          "PNG",
-                          margin,
-                          margin,
-                          imgWidth,
-                          imgHeight,
-                        );
-                      }
-                      
-                      pdf.save(`Application_Slip_${submittedApplication.applicationNumber || formData.applicationNumber || "APP"}.pdf`);
-                    } finally {
-                      button.innerHTML = originalText;
-                      button.disabled = false;
-                    }
-                  } catch (err) {
-                    alert(
-                      "Failed to generate PDF: " + (err.message || "Unknown error"),
-                    );
-                  }
-                }}
-                style={{
-                  background: GREEN,
-                  color: "#fff",
-                  border: "none",
-                  padding: "12px 24px",
-                  borderRadius: 4,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                }}
-              >
-                📥 Download PDF
-              </button>
-              <button
-                onClick={() => {
-                  navigate("/login");
-                }}
-                style={{
-                  background: "#1a2a4a",
-                  color: "#fff",
-                  border: "none",
-                  padding: "12px 24px",
-                  borderRadius: 4,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                }}
-              >
-                🔐 Login
-              </button>
-              <button
-                onClick={() => {
-                  navigate("/");
-                }}
-                style={{
-                  background: "#6c757d",
-                  color: "#fff",
-                  border: "none",
-                  padding: "12px 24px",
-                  borderRadius: 4,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                }}
-              >
-                ✖ Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
             {/* Top Header with timestamp and title */}
             <div
               style={{

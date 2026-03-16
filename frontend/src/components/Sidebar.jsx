@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import logo from "../assets/img0.png";
 import {
   LayoutDashboard,
   FileText,
@@ -129,6 +130,7 @@ const Sidebar = () => {
         { name: "Gallery", icon: ImageIcon, path: "/admin/gallery" },
         { name: "Scroller", icon: Film, path: "/scroller" },
         { name: "Notifications", icon: Bell, path: "/notifications-manage" },
+        { name: "Notice", icon: Bell, path: "/notice" },
         { name: "Payment Settings", icon: CreditCard, path: "/settings" },
         {
           name: "Settings",
@@ -136,7 +138,11 @@ const Sidebar = () => {
           path: "/settings",
           children: [
             { name: "Account", path: "/settings/account", icon: UserCog },
-            { name: "Manage Role", path: "/settings/manage-role", icon: Shield },
+            {
+              name: "Manage Role",
+              path: "/settings/manage-role",
+              icon: Shield,
+            },
             { name: "Logs", path: "/settings/logs", icon: ScrollText },
           ],
         },
@@ -189,24 +195,22 @@ const Sidebar = () => {
             background: `linear-gradient(135deg, ${GREEN} 0%, ${GREEN_DARK} 100%)`,
           }}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-white rounded-lg flex items-center justify-center shadow-sm overflow-hidden">
-              <SidebarLogo />
-            </div>
-            <div>
-              <h2
-                className="text-sm font-extrabold text-white leading-tight"
-                style={{ fontFamily: "'Noto Sans Devanagari', serif" }}
-              >
-                जन स्वास्थ्य सहायता
-              </h2>
-              <p className="text-[10px] text-green-100 font-medium">अभियान</p>
-            </div>
+          <div className="flex items-center justify-center">
+            <img
+              src={logo}
+              alt="Logo"
+              className="w-55 h-33 object-contain"
+              style={{ filter: "brightness(0.6)" }}
+            />
           </div>
           {/* Role badge */}
           <div className="mt-2 flex items-center gap-1.5">
             <span className="text-[10px] text-green-100 font-medium bg-white/20 px-2 py-0.5 rounded-full">
-              {role === "admin" ? "Admin" : role === "applicant" ? "Applicant" : "User"}
+              {role === "admin"
+                ? "Admin"
+                : role === "applicant"
+                  ? "Applicant"
+                  : "User"}
             </span>
           </div>
         </div>
@@ -354,7 +358,6 @@ const Sidebar = () => {
             })}
           </ul>
         </div>
-
       </aside>
 
       {/* Mobile Overlay */}
