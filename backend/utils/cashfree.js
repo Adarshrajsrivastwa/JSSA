@@ -88,10 +88,27 @@ export async function createCashfreeOrder(orderData) {
     const credentials = await getCashfreeCredentials();
 
     if (!credentials.appId || !credentials.secretKey) {
+      console.error("Cashfree credentials missing:", {
+        hasAppId: !!credentials.appId,
+        hasSecretKey: !!credentials.secretKey,
+      });
       throw new Error("Cashfree credentials not configured");
     }
 
+    // Validate required fields
+    if (!orderData) {
+      throw new Error("Order data is required");
+    }
+
     const { amount, orderId, customerName, customerEmail, customerPhone, notes } = orderData;
+
+    // Validate required order data
+    if (!amount || amount <= 0) {
+      throw new Error("Invalid order amount: amount must be greater than 0");
+    }
+    if (!orderId || typeof orderId !== 'string' || orderId.trim() === '') {
+      throw new Error("Invalid order ID: orderId is required and must be a non-empty string");
+    }
 
     // Cashfree API endpoint
     const apiUrl = "https://api.cashfree.com/pg/orders";
@@ -140,37 +157,130 @@ export async function createCashfreeOrder(orderData) {
       requestBody.order_meta = orderMeta;
     }
 
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-version": "2022-09-01",
-        "x-client-id": credentials.appId,
-        "x-client-secret": credentials.secretKey,
-      },
-      body: JSON.stringify(requestBody),
+    // Log request details for debugging (without sensitive data)
+    console.log("Creating Cashfree order:", {
+      orderId: orderId,
+      amount: amount / 100,
+      currency: "INR",
+      customerName: customerName || "Customer",
+      hasReturnUrl: !!orderMeta.return_url,
+      hasNotifyUrl: !!orderMeta.notify_url,
     });
 
+    // Add timeout to fetch request (30 seconds)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+    let response;
+    try {
+      response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-version": "2022-09-01",
+          "x-client-id": credentials.appId,
+          "x-client-secret": credentials.secretKey,
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      // Handle network errors and timeouts
+      if (fetchError.name === 'AbortError') {
+        console.error("Cashfree API request timeout after 30 seconds");
+        throw new Error("Cashfree API request timeout: The request took too long to complete");
+      }
+      
+      if (fetchError.message === "Failed to fetch" || fetchError.code === "ECONNREFUSED" || fetchError.code === "ENOTFOUND") {
+        console.error("Cashfree API network error:", fetchError.message || fetchError.code);
+        throw new Error("Network error: Unable to connect to Cashfree API. Please check your internet connection.");
+      }
+      
+      // Re-throw other fetch errors
+      console.error("Cashfree API fetch error:", fetchError);
+      throw new Error(`Cashfree API request failed: ${fetchError.message || "Unknown error"}`);
+    }
+
     if (!response.ok) {
-      let errorMessage = `Cashfree API error: ${response.status}`;
+      let errorMessage = `Cashfree API error: ${response.status} ${response.statusText}`;
+      let errorDetails = null;
+      
       try {
         const errorData = await response.json();
-        errorMessage = errorData.message || errorData.error?.message || errorMessage;
+        
+        // Extract error message from various possible fields
+        errorMessage = 
+          errorData.message || 
+          errorData.error?.message || 
+          errorData.error?.description ||
+          errorData.error ||
+          errorData.msg ||
+          (typeof errorData === 'string' ? errorData : errorMessage);
+        
+        // If error message is too generic, add more context
+        if (errorMessage.toLowerCase().includes("api request failed") || 
+            errorMessage.toLowerCase().includes("request failed") ||
+            errorMessage === "api Request Failed") {
+          errorMessage = `Cashfree API request failed (${response.status}): ${errorData.message || errorData.error || "Please check your credentials and request format"}`;
+        }
+        
+        errorDetails = errorData;
       } catch (e) {
         try {
           const errorText = await response.text();
-          errorMessage = errorText || errorMessage;
+          if (errorText) {
+            errorMessage = errorText;
+            errorDetails = { rawResponse: errorText };
+          } else {
+            errorDetails = { status: response.status, statusText: response.statusText };
+          }
         } catch (e2) {
           // Use default error message
+          errorDetails = { status: response.status, statusText: response.statusText };
         }
       }
+      
+      // Log detailed error for debugging
+      console.error("Cashfree API error response:", {
+        status: response.status,
+        statusText: response.statusText,
+        errorMessage,
+        errorDetails,
+        orderId: orderId,
+        amount: amount,
+        requestBody: {
+          order_id: requestBody.order_id,
+          order_amount: requestBody.order_amount,
+          order_currency: requestBody.order_currency,
+          has_customer_details: !!requestBody.customer_details,
+        },
+      });
+      
       throw new Error(errorMessage);
     }
 
     const data = await response.json();
+    
+    // Log successful order creation for debugging
+    console.log("Cashfree order created successfully:", {
+      orderId: data.order_id || orderId,
+      paymentSessionId: data.payment_session_id,
+    });
+    
     return data;
   } catch (error) {
-    console.error("Error creating Cashfree order:", error);
+    // Don't log if it's already been logged above
+    if (!error.message.includes("Cashfree API")) {
+      console.error("Error creating Cashfree order:", {
+        message: error.message,
+        stack: error.stack,
+        orderId: orderData?.orderId,
+        amount: orderData?.amount,
+      });
+    }
     throw error;
   }
 }
