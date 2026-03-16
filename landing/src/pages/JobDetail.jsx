@@ -3033,6 +3033,12 @@ export default function JobDetail() {
                 <button
                   className="dl-link"
                   onClick={async () => {
+                    // If uploaded PDF exists, download it directly
+                    if (job.advertisementFile && job.advertisementFile.trim()) {
+                      window.open(job.advertisementFile, "_blank");
+                      return;
+                    }
+                    // Otherwise, generate PDF
                     setDownloading("en");
                     try {
                       await downloadJobPDF(job, "en");
@@ -3149,6 +3155,12 @@ export default function JobDetail() {
                 <button
                   className="dl-link"
                   onClick={async () => {
+                    // If uploaded PDF exists, download it directly
+                    if (job.advertisementFileHi && job.advertisementFileHi.trim()) {
+                      window.open(job.advertisementFileHi, "_blank");
+                      return;
+                    }
+                    // Otherwise, generate PDF
                     setDownloading("hi");
                     try {
                       await downloadJobPDF(job, "hi");

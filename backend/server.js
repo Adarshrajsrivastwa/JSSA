@@ -108,6 +108,18 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
+// Serve uploaded files statically with proper MIME types
+const uploadsPath = path.join(__dirname, "uploads");
+app.use("/api/files", express.static(uploadsPath, {
+  setHeaders: (res, filePath) => {
+    // Set proper Content-Type for PDFs
+    if (filePath.endsWith('.pdf')) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="' + path.basename(filePath) + '"');
+    }
+  }
+}));
+
 // Health check
 app.get("/health", (req, res) => {
   res.json({ status: "ok", message: "JSSA Backend API is running" });

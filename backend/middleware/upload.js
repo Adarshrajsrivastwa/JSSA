@@ -107,6 +107,7 @@ export const uploadFileToCloudinary = async (fileBuffer, folder = "jssa/advertis
       {
         folder: folder,
         resource_type: isPDF ? "raw" : "image",
+        format: isPDF ? "pdf" : undefined,
         ...(isPDF ? {} : {
           transformation: [
             {
@@ -122,8 +123,27 @@ export const uploadFileToCloudinary = async (fileBuffer, folder = "jssa/advertis
         if (error) {
           reject(error);
         } else {
+          let url = result.secure_url;
+          // For PDFs, modify URL to force PDF format and proper download
+          if (isPDF) {
+            // Cloudinary raw files need proper format specification
+            // Insert format_pdf transformation before the version number
+            if (url.includes('/upload/')) {
+              // Pattern: https://res.cloudinary.com/.../upload/v1234567890/folder/file
+              // We want: https://res.cloudinary.com/.../upload/fl_attachment,format_pdf/v1234567890/folder/file.pdf
+              const parts = url.split('/upload/');
+              if (parts.length === 2) {
+                const afterUpload = parts[1];
+                // Add fl_attachment flag and format_pdf, ensure .pdf extension
+                url = parts[0] + '/upload/fl_attachment,format_pdf/' + afterUpload;
+                if (!url.endsWith('.pdf')) {
+                  url = url + '.pdf';
+                }
+              }
+            }
+          }
           resolve({
-            url: result.secure_url,
+            url: url,
             public_id: result.public_id,
           });
         }
