@@ -15,7 +15,7 @@ import App from "./App";
   const applicationId = urlParams.get("applicationId");
   const payment = urlParams.get("payment");
   const paymentStatus = urlParams.get("payment_status") || urlParams.get("txStatus") || urlParams.get("tx_status");
-  const cfPaymentId = urlParams.get("cf_payment_id") || urlParams.get("paymentId");
+  const paymentId = urlParams.get("paymentId") || urlParams.get("razorpay_payment_id");
 
   // Get data from sessionStorage
   let pendingData = null;
@@ -26,7 +26,7 @@ import App from "./App";
   }
 
   // Check if we have payment-related parameters OR pendingData in sessionStorage
-  const hasPaymentParams = orderId || applicationId || cfPaymentId || payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success";
+  const hasPaymentParams = orderId || applicationId || paymentId || payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success";
   const hasPendingData = !!pendingData;
 
   if (hasPaymentParams || hasPendingData) {

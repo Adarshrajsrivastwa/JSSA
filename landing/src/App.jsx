@@ -25,14 +25,14 @@ function PaymentRedirectHandler() {
       const applicationId = urlParams.get("applicationId");
       const payment = urlParams.get("payment");
       const paymentStatus = urlParams.get("payment_status") || urlParams.get("txStatus") || urlParams.get("tx_status");
-      const cfPaymentId = urlParams.get("cf_payment_id") || urlParams.get("paymentId");
+      const paymentId = urlParams.get("paymentId") || urlParams.get("razorpay_payment_id");
 
       // Get data from sessionStorage first
       const pendingData = sessionStorage.getItem("pendingApplication");
       
       // Check if we have payment-related parameters OR pendingData in sessionStorage
-      // This handles cases where Cashfree redirects without parameters but we have sessionStorage
-      const hasPaymentParams = orderId || applicationId || cfPaymentId || payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success";
+      // This handles cases where Razorpay redirects without parameters but we have sessionStorage
+      const hasPaymentParams = orderId || applicationId || paymentId || payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success";
       const hasPendingData = !!pendingData;
 
       if (hasPaymentParams || hasPendingData) {

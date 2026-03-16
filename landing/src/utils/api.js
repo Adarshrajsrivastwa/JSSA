@@ -173,19 +173,14 @@ export const paymentsAPI = {
     });
   },
 
-  verifyPayment: async (orderId, paymentId, signature, applicationId, orderAmount, txStatus, paymentMode, txMsg, txTime, token = null) => {
+  verifyPayment: async (razorpay_order_id, razorpay_payment_id, razorpay_signature, applicationId, token = null) => {
     return apiRequest("/payments/verify", {
       method: "POST",
       body: JSON.stringify({
-        orderId: orderId,
-        paymentId: paymentId,
-        signature: signature,
+        razorpay_order_id: razorpay_order_id,
+        razorpay_payment_id: razorpay_payment_id,
+        razorpay_signature: razorpay_signature,
         applicationId: applicationId,
-        orderAmount: orderAmount,
-        txStatus: txStatus,
-        paymentMode: paymentMode,
-        txMsg: txMsg,
-        txTime: txTime,
       }),
       token,
     });
