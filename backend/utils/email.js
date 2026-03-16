@@ -1159,22 +1159,59 @@ Jan Swasthya Sahayata Abhiyan
     let pdfBuffer = null;
     let pdfFileName = `Application_Slip_${applicationData.applicationNumber || 'JSSA'}.pdf`;
 
+    console.log("📧 Starting PDF generation for email attachment...");
+    console.log("📧 Application Number:", applicationData.applicationNumber);
+    console.log("📧 Job Posting:", jobPosting ? "Found" : "Not found");
+    
     try {
       const pdfResult = await generateAndSaveApplicationPDF(applicationData, jobPosting);
-      if (pdfResult && pdfResult.success && pdfResult.filePath) {
+      console.log("📧 PDF generation result:", JSON.stringify(pdfResult, null, 2));
+      
+      if (pdfResult && pdfResult.success) {
         pdfFileName = pdfResult.fileName || pdfFileName;
-        try {
-          pdfBuffer = fs.readFileSync(pdfResult.filePath);
-          console.log("✅ Loaded PDF for attachment from:", pdfResult.filePath);
-        } catch (readErr) {
-          console.error("⚠️ Failed to read generated PDF file:", readErr);
+        
+        // First try to use buffer directly (if available)
+        if (pdfResult.buffer && pdfResult.buffer.length > 0) {
+          pdfBuffer = pdfResult.buffer;
+          console.log("✅ Using PDF buffer directly from generation result");
+          console.log("✅ PDF buffer size:", pdfBuffer.length, "bytes");
+        } 
+        // Fallback: Try to read from file if buffer not available
+        else if (pdfResult.filePath) {
+          console.log("📧 Attempting to read PDF file from:", pdfResult.filePath);
+          
+          // Check if file exists
+          if (fs.existsSync(pdfResult.filePath)) {
+            try {
+              pdfBuffer = fs.readFileSync(pdfResult.filePath);
+              console.log("✅ Loaded PDF for attachment from:", pdfResult.filePath);
+              console.log("✅ PDF buffer size:", pdfBuffer.length, "bytes");
+            } catch (readErr) {
+              console.error("❌ Failed to read generated PDF file:", readErr);
+              console.error("❌ Read error message:", readErr.message);
+              console.error("❌ Read error stack:", readErr.stack);
+              pdfBuffer = null;
+            }
+          } else {
+            console.error("❌ PDF file does not exist at path:", pdfResult.filePath);
+            pdfBuffer = null;
+          }
+        } else {
+          console.error("❌ PDF result has no buffer or filePath");
           pdfBuffer = null;
         }
       } else {
-        console.log("⚠️ PDF generation did not succeed, sending email without PDF");
+        console.error("⚠️ PDF generation did not succeed");
+        console.error("⚠️ PDF result:", pdfResult);
+        if (pdfResult && pdfResult.error) {
+          console.error("⚠️ PDF generation error:", pdfResult.error);
+        }
+        
       }
     } catch (pdfGenErr) {
-      console.error("⚠️ Error while generating PDF for email attachment:", pdfGenErr);
+      console.error("❌ Exception while generating PDF for email attachment:", pdfGenErr);
+      console.error("❌ Exception message:", pdfGenErr.message);
+      console.error("❌ Exception stack:", pdfGenErr.stack);
       pdfBuffer = null;
     }
 
@@ -1566,18 +1603,34 @@ export async function generateAndSaveApplicationPDF(applicationData, jobPosting)
 
     await browser.close();
     console.log("📄 PDF buffer generated, size:", pdfBuffer.length, "bytes");
-    console.log("📄 Writing PDF to file:", filePath);
-    fs.writeFileSync(filePath, pdfBuffer);
-    console.log("✅ PDF generated and saved to:", filePath);
     
-    // Verify file was written
-    if (fs.existsSync(filePath)) {
-      const stats = fs.statSync(filePath);
-      console.log("✅ PDF file verified, size:", stats.size, "bytes");
-      return { success: true, filePath, fileName };
+    // Try to save file, but don't fail if it doesn't work
+    let fileSaved = false;
+    try {
+      console.log("📄 Writing PDF to file:", filePath);
+      fs.writeFileSync(filePath, pdfBuffer);
+      console.log("✅ PDF generated and saved to:", filePath);
+      
+      // Verify file was written
+      if (fs.existsSync(filePath)) {
+        const stats = fs.statSync(filePath);
+        console.log("✅ PDF file verified, size:", stats.size, "bytes");
+        fileSaved = true;
+      } else {
+        console.error("❌ PDF file was not created at:", filePath);
+      }
+    } catch (fileErr) {
+      console.error("⚠️ Failed to save PDF file (but buffer is available):", fileErr.message);
+      // Continue - we still have the buffer
+    }
+    
+    // Return both buffer and file info
+    if (fileSaved) {
+      return { success: true, filePath, fileName, buffer: pdfBuffer };
     } else {
-      console.error("❌ PDF file was not created at:", filePath);
-      return { success: false, error: "PDF file was not created" };
+      // Return buffer even if file save failed
+      console.log("📄 Returning PDF buffer (file save failed but buffer available)");
+      return { success: true, filePath: null, fileName, buffer: pdfBuffer };
     }
   } catch (error) {
     console.error("❌ Error generating and saving PDF:", error);
