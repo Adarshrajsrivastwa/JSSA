@@ -2667,6 +2667,13 @@ export default function JobDetail() {
         orderResponse.data;
 
       // Store application data in sessionStorage for after payment redirect
+      // Include photoPreview and signaturePreview (base64 strings) in formData
+      const formDataWithImages = {
+        ...formData,
+        photo: photoPreview || formData.photo, // Use photoPreview if available, fallback to formData.photo
+        signature: signaturePreview || formData.signature, // Use signaturePreview if available, fallback to formData.signature
+      };
+      
       sessionStorage.setItem(
         "pendingApplication",
         JSON.stringify({
@@ -2677,7 +2684,7 @@ export default function JobDetail() {
             applyData.data.application.applicationNumber ||
             formData.applicationNumber,
           token: token,
-          formData: formData, // Store form data for PDF
+          formData: formDataWithImages, // Store form data with images for PDF
           orderId: orderId, // Store orderId for reference
         }),
       );
