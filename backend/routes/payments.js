@@ -71,56 +71,38 @@ router.post(
   ],
   async (req, res) => {
     try {
-      console.log("💳 ========== CREATE ORDER REQUEST ==========");
-      console.log("💳 Request body:", req.body);
-      console.log("💳 User:", req.user?.id, req.user?.email);
-      
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        console.error("❌ Validation errors:", errors.array());
         return res.status(400).json({
           error: "Validation failed",
           errors: errors.array(),
         });
       }
 
-      const { jobPostingId, gender, category, returnUrl } = req.body;
-      console.log("💳 Job Posting ID:", jobPostingId);
-      console.log("💳 Gender:", gender);
-      console.log("💳 Category:", category);
-      console.log("💳 Return URL:", returnUrl);
+      const { jobPostingId, gender, category } = req.body;
       
       // Get customer details from user if available
       const customerName = req.user?.name || "Customer";
       const customerEmail = req.user?.email || "";
       const customerPhone = req.user?.phone || "";
-      console.log("💳 Customer:", { customerName, customerEmail, customerPhone });
 
       // Get job posting
-      console.log("💳 Fetching job posting...");
       const jobPosting = await JobPosting.findById(jobPostingId);
       if (!jobPosting) {
-        console.error("❌ Job posting not found:", jobPostingId);
         return res.status(404).json({
           error: "Job posting not found",
         });
       }
-      console.log("✅ Job posting found:", jobPosting.postTitle?.en || jobPosting.post?.en);
 
       // Calculate fee based on gender and category
       const feeKey = `${gender}_${category}`;
       const feeAmount = jobPosting.feeStructure?.[feeKey] || "0";
-      console.log("💳 Fee key:", feeKey);
-      console.log("💳 Fee amount:", feeAmount);
       
       // Convert fee to number (remove ₹ if present, handle empty string)
       const amountInRupees = parseFloat(feeAmount.toString().replace(/[₹,]/g, "")) || 0;
       const amountInPaise = Math.round(amountInRupees * 100);
-      console.log("💳 Amount in rupees:", amountInRupees);
-      console.log("💳 Amount in paise:", amountInPaise);
 
       if (amountInPaise <= 0) {
-        console.error("❌ Invalid fee amount:", amountInPaise);
         return res.status(400).json({
           error: "Invalid fee amount",
           message: "Fee amount is zero or invalid for this combination",
@@ -128,56 +110,35 @@ router.post(
       }
 
       // Get Cashfree App ID for frontend
-      console.log("💳 Getting Cashfree App ID...");
-      let appId;
-      try {
-        appId = await getCashfreeAppId();
-        console.log("💳 Cashfree App ID:", appId ? "Found" : "NOT FOUND");
-        if (!appId) {
-          throw new Error("Cashfree App ID not configured. Please set CASHFREE_APP_ID in environment variables or database settings.");
-        }
-      } catch (appIdError) {
-        console.error("❌ Error getting Cashfree App ID:", appIdError);
-        throw appIdError;
-      }
+      const appId = await getCashfreeAppId();
 
       // Create unique order ID
       const timestamp = Date.now().toString().slice(-10); // Last 10 digits
       const userIdShort = req.user.id.toString().slice(-8); // Last 8 chars of user ID
       const orderId = `JSSA_${userIdShort}_${timestamp}`;
-      console.log("💳 Generated Order ID:", orderId);
       
       // Get return URL from request or use default
-      const finalReturnUrl = returnUrl || req.body.returnUrl || req.headers.origin || "";
-      console.log("💳 Final Return URL:", finalReturnUrl);
+      // For local development, we'll skip return_url as Cashfree requires HTTPS
+      const returnUrl = req.body.returnUrl || req.headers.origin || "";
+      // Note: Cashfree requires HTTPS for return_url, so HTTP localhost URLs will be skipped
       
       // Create Cashfree order
-      console.log("💳 Creating Cashfree order...");
-      let order;
-      try {
-        order = await createCashfreeOrder({
-          amount: amountInPaise,
-          orderId: orderId,
-          customerName: customerName || "Customer",
-          customerEmail: customerEmail || "",
-          customerPhone: customerPhone || "",
-          notes: {
-            jobPostingId: jobPostingId,
-            userId: req.user.id,
-            gender: gender,
-            category: category,
-            returnUrl: finalReturnUrl,
-          },
-        });
-        console.log("✅ Cashfree order created:", order.order_id || orderId);
-      } catch (cashfreeError) {
-        console.error("❌ Cashfree order creation failed:", cashfreeError);
-        console.error("❌ Error message:", cashfreeError.message);
-        console.error("❌ Error stack:", cashfreeError.stack);
-        throw cashfreeError;
-      }
+      const order = await createCashfreeOrder({
+        amount: amountInPaise,
+        orderId: orderId,
+        customerName: customerName || "Customer",
+        customerEmail: customerEmail || "",
+        customerPhone: customerPhone || "",
+        notes: {
+          jobPostingId: jobPostingId,
+          userId: req.user.id,
+          gender: gender,
+          category: category,
+          returnUrl: returnUrl,
+        },
+      });
 
-      const responseData = {
+      res.json({
         success: true,
         data: {
           orderId: order.order_id || orderId,
@@ -188,41 +149,12 @@ router.post(
           appId: appId,
           feeKey: feeKey,
         },
-      };
-      console.log("✅ Order created successfully, sending response");
-      res.json(responseData);
+      });
     } catch (error) {
-      console.error("❌ ========== CREATE ORDER ERROR ==========");
-      console.error("❌ Error:", error);
-      console.error("❌ Error message:", error.message);
-      console.error("❌ Error stack:", error.stack);
-      console.error("❌ Error name:", error.name);
-      console.error("❌ Error cause:", error.cause);
-      
-      // Provide more detailed error message
-      let errorMessage = error.message || "Payment gateway error";
-      
-      // Check if it's a Cashfree credentials error
-      if (errorMessage.includes("Cashfree credentials not configured")) {
-        errorMessage = "Cashfree payment gateway is not configured. Please contact administrator.";
-      }
-      // Check if it's a network error
-      else if (errorMessage.includes("Failed to connect") || errorMessage.includes("Network error")) {
-        errorMessage = "Unable to connect to payment gateway. Please check your internet connection.";
-      }
-      // Check if it's a Cashfree API error
-      else if (errorMessage.includes("Cashfree API error")) {
-        errorMessage = errorMessage; // Keep the detailed Cashfree error
-      }
-      
+      console.error("Create order error:", error);
       res.status(500).json({
         error: "Failed to create payment order",
-        message: errorMessage,
-        details: process.env.NODE_ENV === "development" ? {
-          stack: error.stack,
-          name: error.name,
-          cause: error.cause
-        } : undefined,
+        message: error.message || "Payment gateway error",
       });
     }
   }

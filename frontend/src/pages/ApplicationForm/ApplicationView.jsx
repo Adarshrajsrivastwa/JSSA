@@ -141,14 +141,14 @@ const ApplicationView = () => {
           marks: app.marks,
           markPercentage: app.markPercentage,
           applicationNumber: app.applicationNumber,
-            photo: app.photo,
-            signature: app.signature,
-            status: app.status,
+          photo: app.photo,
+          signature: app.signature,
+          status: app.status,
             paymentStatus: app.paymentStatus || "pending",
-            createdAt: app.createdAt,
-            updatedAt: app.updatedAt,
-            createdBy: app.createdBy,
-            jobPostingId: app.jobPostingId,
+          createdAt: app.createdAt,
+          updatedAt: app.updatedAt,
+          createdBy: app.createdBy,
+          jobPostingId: app.jobPostingId,
         });
       }
       setIsEditModalOpen(false);
@@ -180,13 +180,13 @@ const ApplicationView = () => {
     setDownloadingPDF(true);
     try {
       if (!window.html2canvas)
-        await loadScript(
+      await loadScript(
           "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
-        );
+      );
       if (!window.jspdf)
-        await loadScript(
+      await loadScript(
           "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
-        );
+      );
       await new Promise((resolve) => setTimeout(resolve, 500));
       const container = document.getElementById("application-slip-pdf");
       if (!container || !window.html2canvas || !window.jspdf) {
@@ -248,13 +248,13 @@ const ApplicationView = () => {
         format: [210, 297],
         orientation: "portrait",
       });
-      
+
       const pdfWidth = 210;
       const pdfHeight = 297;
       const margin = 5;
       const imgWidth = pdfWidth - 2 * margin;
       let imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
+
       // Ensure content fits on single A4 page
       if (imgHeight > pdfHeight - 2 * margin) {
         const scaleFactor = (pdfHeight - 2 * margin) / imgHeight;
@@ -279,7 +279,7 @@ const ApplicationView = () => {
           imgHeight,
         );
       }
-      
+
       const appNumber = application.applicationNumber || application.id || "APP";
       pdf.save(`Application_Slip_${appNumber}.pdf`);
     } catch (err) {

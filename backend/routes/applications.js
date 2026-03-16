@@ -187,7 +187,7 @@ router.post(
         // Prepare application data for email (include all fields)
         const applicationDataForEmail = {
           ...application.toObject(),
-          applicationNumber: generatedApplicationNumber,
+            applicationNumber: generatedApplicationNumber,
           candidateName: candidateName,
           fatherName: fatherName,
           motherName: motherName || null,
@@ -198,7 +198,7 @@ router.post(
           aadhar: aadhar || null,
           pan: pan || null,
           mobile: normalizedPhone,
-          email: email,
+            email: email,
           address: address || null,
           state: state || null,
           district: district,

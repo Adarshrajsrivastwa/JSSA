@@ -35,7 +35,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <Routes>
+    <Routes>
           {/* Frontend default route - Login page */}
           <Route path="/" element={<Login />} />
           
@@ -49,7 +49,7 @@ function App() {
           <Route path="/gallery" element={<LandingDashboard />} />
           <Route path="/verification" element={<LandingDashboard />} />
           <Route path="/contacts" element={<LandingDashboard />} />
-          <Route path="/job-postings/view/:id" element={<JobDetail />} />
+      <Route path="/job-postings/view/:id" element={<JobDetail />} />
 
           {/* Login page - always accessible */}
           <Route path="/login" element={<Login />} />
@@ -133,7 +133,7 @@ function App() {
 
           {/* Catch-all: redirect unknown routes to login */}
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+    </Routes>
       </Router>
     </AuthProvider>
   );

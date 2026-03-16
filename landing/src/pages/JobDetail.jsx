@@ -2557,54 +2557,18 @@ export default function JobDetail() {
         return;
       }
 
-      // Prepare return URL BEFORE creating order (needed for Cashfree)
-      const returnUrl = `${window.location.origin}/payment-success?orderId=PLACEHOLDER&applicationId=${applicationId}`;
-
-      console.log("💳 Creating payment order...");
-      console.log("💳 Job Posting ID:", id);
-      console.log("💳 Gender:", formData.gender);
-      console.log("💳 Category:", formData.category);
-      console.log("💳 Token exists:", !!token);
-      console.log("💳 Return URL:", returnUrl);
-
-      try {
-        const orderResponse = await paymentsAPI.createOrder(
-          id,
-          formData.gender,
-          formData.category,
-          token,
-          returnUrl, // Pass returnUrl to backend
-        );
-        
-        console.log("💳 Order response:", orderResponse);
-        
-        if (!orderResponse || !orderResponse.success) {
-          const errorMsg = orderResponse?.error || orderResponse?.message || "Failed to create payment order";
-          console.error("❌ Payment order creation failed:", errorMsg);
-          console.error("❌ Full response:", orderResponse);
-          throw new Error(errorMsg);
-        }
-        
-        console.log("✅ Payment order created successfully");
-      } catch (orderErr) {
-        console.error("❌ Error creating payment order:", orderErr);
-        console.error("❌ Error message:", orderErr.message);
-        console.error("❌ Error stack:", orderErr.stack);
-        throw orderErr;
-      }
-      
       const orderResponse = await paymentsAPI.createOrder(
         id,
         formData.gender,
         formData.category,
         token,
-        returnUrl,
       );
+      if (!orderResponse.success)
+        throw new Error(
+          orderResponse.error || "Failed to create payment order",
+        );
       const { orderId, paymentSessionId, amount, amountInRupees, appId } =
         orderResponse.data;
-
-      // Update return URL with actual orderId
-      const finalReturnUrl = `${window.location.origin}/payment-success?orderId=${orderId}&applicationId=${applicationId}`;
 
       // Store application data in sessionStorage for after payment redirect
       sessionStorage.setItem(
@@ -2620,6 +2584,9 @@ export default function JobDetail() {
           formData: formData, // Store form data for PDF
         }),
       );
+
+      // Redirect to Cashfree payment page - will redirect to payment success page after payment
+      const returnUrl = `${window.location.origin}/payment-success?orderId=${orderId}&applicationId=${applicationId}`;
 
       // Load Cashfree Checkout.js and redirect
       const script = document.createElement("script");

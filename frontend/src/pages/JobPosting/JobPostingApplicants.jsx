@@ -334,7 +334,7 @@ const JobPostingApplicants = () => {
                         ) : (
                           <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-gray-50 text-gray-700 border border-gray-200">
                             {app.paymentStatus}
-                          </span>
+                        </span>
                         )}
                       </td>
                       <td className="px-4 py-4 text-center text-gray-700 text-xs">
@@ -410,7 +410,7 @@ const JobPostingApplicants = () => {
                     ) : (
                       <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-gray-50 text-gray-700 border border-gray-200">
                         {app.paymentStatus}
-                      </span>
+                    </span>
                     )}
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { jobPostingsAPI, paymentsAPI } from "../utils/api.js";
+import { jobPostingsAPI } from "../utils/api.js";
 import logo1 from "../assets/jss.png";
 
 const GREEN = "#0aca00";
@@ -240,47 +240,6 @@ function PaymentSuccess() {
         const orderId = searchParams.get("orderId");
         const applicationId = searchParams.get("applicationId");
         console.log("PaymentSuccess - orderId:", orderId, "applicationId:", applicationId, "pendingData exists:", !!pendingData);
-
-        // Check if we have payment parameters from Cashfree redirect
-        const paymentId = searchParams.get("paymentId") || searchParams.get("referenceId") || searchParams.get("cf_payment_id");
-        const signature = searchParams.get("signature") || searchParams.get("cf_signature");
-        const txStatus = searchParams.get("txStatus") || searchParams.get("tx_status") || searchParams.get("payment_status");
-        
-        // If we have payment parameters and haven't verified yet, verify payment
-        if (paymentId && signature && orderId && applicationId && txStatus === "SUCCESS") {
-          console.log("🔐 Payment parameters detected, verifying payment...");
-          try {
-            const pendingDataObj = pendingData ? JSON.parse(pendingData) : null;
-            const token = pendingDataObj?.token || null;
-            
-            const orderAmount = searchParams.get("orderAmount") || searchParams.get("order_amount") || "";
-            const paymentMode = searchParams.get("paymentMode") || searchParams.get("payment_mode") || "";
-            const txMsg = searchParams.get("txMsg") || searchParams.get("tx_msg") || "";
-            const txTime = searchParams.get("txTime") || searchParams.get("tx_time") || "";
-            
-            const verifyResponse = await paymentsAPI.verifyPayment(
-              orderId,
-              paymentId,
-              signature,
-              applicationId,
-              orderAmount,
-              txStatus,
-              paymentMode,
-              txMsg,
-              txTime,
-              token
-            );
-            
-            if (verifyResponse.success) {
-              console.log("✅ Payment verified successfully!");
-            } else {
-              console.error("❌ Payment verification failed:", verifyResponse.message || verifyResponse.error);
-            }
-          } catch (verifyErr) {
-            console.error("❌ Error verifying payment:", verifyErr);
-            // Continue loading page even if verification fails
-          }
-        }
 
         // Wait a bit for sessionStorage to be available (in case of redirect timing)
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -611,44 +570,25 @@ function PaymentSuccess() {
         </div>
         <div
           style={{
-            background: "#f0fdf4",
-            border: `2px solid ${GREEN}`,
-            borderRadius: 8,
-            padding: "16px 24px",
+            fontSize: 16,
+            fontWeight: 600,
+            color: "#666",
             marginBottom: 16,
-            display: "inline-block",
           }}
         >
-          <div
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: "#666",
-              marginBottom: 8,
-            }}
-          >
-            Application Number:
-          </div>
-          <div
-            style={{
-              fontSize: 28,
-              fontWeight: 900,
-              color: GREEN,
-              letterSpacing: "1px",
-            }}
-          >
+          Application Number:{" "}
+          <span style={{ color: GREEN, fontSize: 18 }}>
             {applicationNumber || "N/A"}
-          </div>
+          </span>
         </div>
         <div
           style={{
             fontSize: 14,
             color: "#666",
             lineHeight: 1.6,
-            marginTop: 12,
           }}
         >
-          📥 Please download your application slip below. Keep this application number
+          Please download your application slip below. Keep this application number
           for future reference.
         </div>
       </div>
@@ -1473,75 +1413,30 @@ function PaymentSuccess() {
               background: GREEN,
               color: "#fff",
               border: "none",
-              padding: "16px 32px",
-              borderRadius: 6,
-              fontSize: 16,
+              padding: "12px 24px",
+              borderRadius: 4,
+              fontSize: 14,
               fontWeight: 700,
               cursor: "pointer",
-              boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
-              transition: "all 0.3s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = "scale(1.05)";
-              e.target.style.boxShadow = "0 6px 12px rgba(0,0,0,0.4)";
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = "scale(1)";
-              e.target.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
+              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
             }}
           >
             📥 Download PDF
           </button>
           <button
             onClick={() => {
-              window.print();
+              navigate("/");
             }}
             style={{
               background: "#1a2a4a",
               color: "#fff",
               border: "none",
-              padding: "16px 32px",
-              borderRadius: 6,
-              fontSize: 16,
+              padding: "12px 24px",
+              borderRadius: 4,
+              fontSize: 14,
               fontWeight: 700,
               cursor: "pointer",
-              boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
-              transition: "all 0.3s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = "scale(1.05)";
-              e.target.style.boxShadow = "0 6px 12px rgba(0,0,0,0.4)";
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = "scale(1)";
-              e.target.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
-            }}
-          >
-            🖨️ Print
-          </button>
-          <button
-            onClick={() => {
-              navigate("/");
-            }}
-            style={{
-              background: "#666",
-              color: "#fff",
-              border: "none",
-              padding: "16px 32px",
-              borderRadius: 6,
-              fontSize: 16,
-              fontWeight: 700,
-              cursor: "pointer",
-              boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
-              transition: "all 0.3s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = "scale(1.05)";
-              e.target.style.boxShadow = "0 6px 12px rgba(0,0,0,0.4)";
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = "scale(1)";
-              e.target.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
+              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
             }}
           >
             🏠 Home

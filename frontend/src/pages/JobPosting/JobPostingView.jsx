@@ -542,22 +542,22 @@ const JobPostingView = () => {
           </div>
 
           {role === "admin" && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => navigate(`/job-postings/edit/${posting.id}`)}
-                className="flex items-center gap-1.5 bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded text-sm font-medium transition-colors"
-              >
-                <Edit className="w-3.5 h-3.5" />
-                Edit
-              </button>
-              <button
-                onClick={handleDelete}
-                className="flex items-center gap-1.5 bg-white border border-red-200 text-red-500 hover:bg-red-50 px-4 py-2 rounded text-sm font-medium transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Delete
-              </button>
-            </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate(`/job-postings/edit/${posting.id}`)}
+              className="flex items-center gap-1.5 bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded text-sm font-medium transition-colors"
+            >
+              <Edit className="w-3.5 h-3.5" />
+              Edit
+            </button>
+            <button
+              onClick={handleDelete}
+              className="flex items-center gap-1.5 bg-white border border-red-200 text-red-500 hover:bg-red-50 px-4 py-2 rounded text-sm font-medium transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete
+            </button>
+          </div>
           )}
         </div>
 

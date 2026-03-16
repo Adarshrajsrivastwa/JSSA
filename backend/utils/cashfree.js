@@ -85,59 +85,37 @@ export async function verifyCashfreeConfig() {
  */
 export async function createCashfreeOrder(orderData) {
   try {
-    console.log("💳 ========== CREATING CASHFREE ORDER ==========");
-    console.log("💳 Order data:", { 
-      amount: orderData.amount, 
-      orderId: orderData.orderId,
-      customerName: orderData.customerName,
-      customerEmail: orderData.customerEmail 
-    });
-    
-    console.log("💳 Getting Cashfree credentials...");
     const credentials = await getCashfreeCredentials();
-    console.log("💳 Credentials check:", {
-      hasAppId: !!credentials.appId,
-      hasSecretKey: !!credentials.secretKey,
-      appIdLength: credentials.appId?.length || 0,
-      secretKeyLength: credentials.secretKey?.length || 0
-    });
 
     if (!credentials.appId || !credentials.secretKey) {
-      console.error("❌ Cashfree credentials not configured!");
-      console.error("❌ App ID:", credentials.appId || "MISSING");
-      console.error("❌ Secret Key:", credentials.secretKey ? "***" + credentials.secretKey.slice(-4) : "MISSING");
-      throw new Error("Cashfree credentials not configured. Please set CASHFREE_APP_ID and CASHFREE_SECRET_KEY in environment variables or database settings.");
+      throw new Error("Cashfree credentials not configured");
     }
 
     const { amount, orderId, customerName, customerEmail, customerPhone, notes } = orderData;
 
     // Cashfree API endpoint
     const apiUrl = "https://api.cashfree.com/pg/orders";
-    console.log("💳 Cashfree API URL:", apiUrl);
 
     // Prepare order_meta - only include return_url if it's HTTPS (Cashfree requirement)
     const orderMeta = {};
     if (notes?.returnUrl) {
-      // Replace PLACEHOLDER with actual orderId if present
-      let finalReturnUrl = notes.returnUrl;
-      if (finalReturnUrl.includes("PLACEHOLDER")) {
-        finalReturnUrl = finalReturnUrl.replace("PLACEHOLDER", orderId);
-        console.log("Replaced PLACEHOLDER with orderId in returnUrl:", finalReturnUrl);
-      }
-      
-      if (finalReturnUrl.startsWith("https://")) {
-        // For HTTPS URLs, use the returnUrl
+      // Don't include return_url if it contains placeholder values
+      if (notes.returnUrl.includes("PLACEHOLDER")) {
+        console.log("Skipping return_url - contains placeholder values");
+      } else if (notes.returnUrl.startsWith("https://")) {
+        // For HTTPS URLs, construct full returnUrl with orderId if not already present
+        let finalReturnUrl = notes.returnUrl;
+        // If returnUrl doesn't have query params, we can't add orderId here
+        // Cashfree will redirect with orderId in the URL anyway
         orderMeta.return_url = finalReturnUrl;
-        console.log("Setting return_url for Cashfree:", finalReturnUrl);
-      } else if (finalReturnUrl.startsWith("http://localhost") || finalReturnUrl.startsWith("http://127.0.0.1")) {
+      } else if (notes.returnUrl.startsWith("http://localhost") || notes.returnUrl.startsWith("http://127.0.0.1")) {
         // For local development, convert HTTP localhost to HTTPS or skip
         // Cashfree doesn't accept HTTP URLs, so we'll skip return_url for localhost
         // The payment will still work, but redirect will be handled by frontend
         console.log("Skipping return_url for localhost HTTP (Cashfree requires HTTPS)");
-      } else if (finalReturnUrl.startsWith("http://")) {
+      } else if (notes.returnUrl.startsWith("http://")) {
         // For other HTTP URLs, try to convert to HTTPS
-        orderMeta.return_url = finalReturnUrl.replace("http://", "https://");
-        console.log("Converted HTTP to HTTPS for return_url:", orderMeta.return_url);
+        orderMeta.return_url = notes.returnUrl.replace("http://", "https://");
       }
     }
     if (notes?.notifyUrl) {
@@ -158,74 +136,37 @@ export async function createCashfreeOrder(orderData) {
       order_note: notes ? JSON.stringify(notes) : "",
     };
 
-    console.log("💳 Request body:", JSON.stringify(requestBody, null, 2));
-    console.log("💳 Making request to Cashfree API...");
-    console.log("💳 API URL:", apiUrl);
-    console.log("💳 Headers:", {
-      "Content-Type": "application/json",
-      "x-api-version": "2022-09-01",
-      "x-client-id": credentials.appId ? credentials.appId.substring(0, 10) + "..." : "MISSING",
-      "x-client-secret": credentials.secretKey ? "***" + credentials.secretKey.slice(-4) : "MISSING"
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-version": "2022-09-01",
+        "x-client-id": credentials.appId,
+        "x-client-secret": credentials.secretKey,
+      },
+      body: JSON.stringify(requestBody),
     });
-    
-    let response;
-    try {
-      response = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-version": "2022-09-01",
-          "x-client-id": credentials.appId,
-          "x-client-secret": credentials.secretKey,
-        },
-        body: JSON.stringify(requestBody),
-      });
-      console.log("💳 Cashfree API response status:", response.status, response.statusText);
-    } catch (fetchError) {
-      console.error("❌ Fetch error calling Cashfree API:", fetchError);
-      console.error("❌ Fetch error message:", fetchError.message);
-      console.error("❌ Fetch error name:", fetchError.name);
-      console.error("❌ Fetch error stack:", fetchError.stack);
-      throw new Error(`Failed to connect to Cashfree API: ${fetchError.message || "Network error"}`);
-    }
 
     if (!response.ok) {
-      let errorMessage = `Cashfree API error: ${response.status} ${response.statusText}`;
-      let errorDetails = null;
+      let errorMessage = `Cashfree API error: ${response.status}`;
       try {
         const errorData = await response.json();
-        console.error("❌ Cashfree API error response (JSON):", JSON.stringify(errorData, null, 2));
-        errorMessage = errorData.message || 
-                      errorData.error?.message || 
-                      errorData.error?.description ||
-                      errorData.error ||
-                      errorMessage;
-        errorDetails = errorData;
+        errorMessage = errorData.message || errorData.error?.message || errorMessage;
       } catch (e) {
         try {
           const errorText = await response.text();
-          console.error("❌ Cashfree API error response (text):", errorText);
           errorMessage = errorText || errorMessage;
         } catch (e2) {
-          console.error("❌ Could not parse Cashfree error response");
-          console.error("❌ Parse error:", e2);
+          // Use default error message
         }
       }
-      console.error("❌ Cashfree API call failed with status:", response.status);
-      console.error("❌ Error message:", errorMessage);
-      console.error("❌ Error details:", errorDetails);
-      throw new Error(`Cashfree API error (${response.status}): ${errorMessage}`);
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
-    console.log("✅ Cashfree order created successfully:", data.order_id || orderId);
-    console.log("✅ Payment session ID:", data.payment_session_id);
     return data;
   } catch (error) {
-    console.error("❌ ========== CASHFREE ORDER CREATION ERROR ==========");
-    console.error("❌ Error:", error);
-    console.error("❌ Error message:", error.message);
-    console.error("❌ Error stack:", error.stack);
+    console.error("Error creating Cashfree order:", error);
     throw error;
   }
 }

@@ -33,28 +33,18 @@ async function apiRequest(endpoint, options = {}) {
   };
 
   try {
-    console.log(`🌐 API Request: ${config.method || "GET"} ${url}`);
-    if (token) {
-      console.log("🔑 Token provided (length):", token.length);
-    } else {
-      console.log("⚠️ No token provided");
-    }
-    
     const response = await fetch(url, config);
-    
-    console.log(`📡 Response status: ${response.status} ${response.statusText}`);
     
     // Check if response is JSON
     let data;
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
       data = await response.json();
-      console.log("📦 Response data:", data);
     } else {
       const text = await response.text();
-      console.error("❌ Non-JSON response:", text);
       // For 404 errors, return empty data structure silently
       if (response.status === 404) {
+        // Silently handle 404 - don't log to avoid console spam
         return { success: false, data: null, error: "Route not found" };
       }
       throw new Error(text || "Server returned non-JSON response");
@@ -63,46 +53,29 @@ async function apiRequest(endpoint, options = {}) {
     if (!response.ok) {
       // For 404 errors, return empty data structure silently
       if (response.status === 404) {
+        // Silently handle 404 - don't log to avoid console spam
         return { success: false, data: null, error: data.message || data.error || "Route not found" };
       }
-      // Log all errors for debugging
-      console.error(`❌ API Error ${response.status}:`, data.message || data.error || `Request failed`);
-      console.error("❌ Full error response:", data);
-      return { 
-        success: false, 
-        data: null, 
-        error: data.message || data.error || `Request failed with status ${response.status}`,
-        status: response.status,
-        fullError: data
-      };
+      // Only log non-404 errors
+      console.error(`API Error ${response.status}:`, data.message || data.error || `Request failed`);
+      throw new Error(data.message || data.error || `Request failed with status ${response.status}`);
     }
 
     return data;
   } catch (error) {
-    // Log all errors for debugging
-    console.error("❌ API Request Error:", error);
-    console.error("❌ Error name:", error.name);
-    console.error("❌ Error message:", error.message);
-    console.error("❌ Error stack:", error.stack);
+    // Only log non-network errors (network errors are expected in some cases)
+    if (error.message !== "Failed to fetch" && error.name !== "TypeError") {
+      console.error("API Error:", error);
+    }
     
     // Provide more helpful error messages
     if (error.message === "Failed to fetch" || error.name === "TypeError") {
-      console.error("❌ Network error - check API URL and CORS settings");
-      return { 
-        success: false, 
-        data: null, 
-        error: "Network error - Unable to connect to server. Please check your internet connection and API configuration.",
-        isNetworkError: true
-      };
+      // Silently handle network errors - return empty data structure
+      return { success: false, data: null, error: "Network error" };
     }
     
     // For other errors, return error structure instead of throwing
-    return { 
-      success: false, 
-      data: null, 
-      error: error.message || "Unknown error",
-      originalError: error
-    };
+    return { success: false, data: null, error: error.message || "Unknown error" };
   }
 }
 
