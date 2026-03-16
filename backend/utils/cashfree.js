@@ -132,9 +132,13 @@ export async function createCashfreeOrder(orderData) {
         customer_email: customerEmail || "",
         customer_phone: customerPhone || "",
       },
-      order_meta: Object.keys(orderMeta).length > 0 ? orderMeta : undefined,
       order_note: notes ? JSON.stringify(notes) : "",
     };
+
+    // Only include order_meta if it has values (Cashfree doesn't accept empty/undefined order_meta)
+    if (Object.keys(orderMeta).length > 0) {
+      requestBody.order_meta = orderMeta;
+    }
 
     const response = await fetch(apiUrl, {
       method: "POST",
