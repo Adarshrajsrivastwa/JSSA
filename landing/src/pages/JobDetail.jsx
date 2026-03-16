@@ -2016,67 +2016,84 @@ export default function JobDetail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // IMMEDIATE CHECK: Check for payment redirect BEFORE anything else
+  // AGGRESSIVE IMMEDIATE CHECK: Check for payment redirect BEFORE anything else
   // This runs synchronously on every render to catch payment returns immediately
   (() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const payment = urlParams.get("payment");
-    const orderId = urlParams.get("orderId") || urlParams.get("order_id");
-    const applicationId = urlParams.get("applicationId");
-    const paymentStatus = urlParams.get("payment_status") || urlParams.get("txStatus") || urlParams.get("tx_status");
-    const cfPaymentId = urlParams.get("cf_payment_id") || urlParams.get("paymentId");
-    
-    // If we're already on payment-success, don't do anything
+    // Skip if already on payment-success page
     if (window.location.pathname === "/payment-success") {
       return;
     }
     
-    // Check for payment success indicators
-    if (payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success") {
-      const pendingData = sessionStorage.getItem("pendingApplication");
-      let finalApplicationId = applicationId || "";
-      let finalOrderId = orderId || "";
-      
-      if (!finalApplicationId && pendingData) {
-        try {
-          const data = JSON.parse(pendingData);
-          finalApplicationId = data.applicationId || data.applicationData?._id || "";
-        } catch (e) {
-          // Ignore parse errors
-        }
+    const urlParams = new URLSearchParams(window.location.search);
+    const payment = urlParams.get("payment");
+    const orderId = urlParams.get("orderId") || urlParams.get("order_id") || urlParams.get("orderId");
+    const applicationId = urlParams.get("applicationId");
+    const paymentStatus = urlParams.get("payment_status") || urlParams.get("txStatus") || urlParams.get("tx_status");
+    const cfPaymentId = urlParams.get("cf_payment_id") || urlParams.get("paymentId");
+    const txStatus = urlParams.get("txStatus") || urlParams.get("tx_status") || urlParams.get("payment_status") || "";
+    
+    // Log all detected parameters for debugging
+    console.log("🔍 SYNC CHECK - URL Params:", {
+      pathname: window.location.pathname,
+      search: window.location.search,
+      payment,
+      orderId,
+      applicationId,
+      paymentStatus,
+      cfPaymentId,
+      txStatus,
+      hasPendingData: !!sessionStorage.getItem("pendingApplication")
+    });
+    
+    // Get pending data
+    const pendingData = sessionStorage.getItem("pendingApplication");
+    let finalApplicationId = applicationId || "";
+    let finalOrderId = orderId || "";
+    
+    if (pendingData) {
+      try {
+        const data = JSON.parse(pendingData);
+        finalApplicationId = finalApplicationId || data.applicationId || data.applicationData?._id || "";
+        finalOrderId = finalOrderId || data.orderId || "";
+      } catch (e) {
+        console.error("Error parsing pendingData:", e);
       }
-      
+    }
+    
+    // Check 1: Explicit payment success indicators
+    if (payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success") {
       const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
-      console.log("🚨 IMMEDIATE REDIRECT (sync):", redirectUrl);
+      console.log("🚨 REDIRECT #1 (payment=success):", redirectUrl);
       window.location.replace(redirectUrl);
       return;
     }
     
-    // If we have orderId/applicationId and pendingData exists, redirect immediately
-    const hasPendingData = sessionStorage.getItem("pendingApplication");
-    if ((orderId || applicationId || cfPaymentId) && hasPendingData) {
-      const txStatus = urlParams.get("txStatus") || urlParams.get("tx_status") || urlParams.get("payment_status") || "";
-      
-      // Don't redirect if payment failed
+    // Check 2: If we have orderId/applicationId AND pendingData exists, redirect (likely payment return)
+    if ((orderId || applicationId || cfPaymentId) && pendingData) {
+      // Don't redirect if payment explicitly failed
       if (txStatus === "FAILED" || txStatus === "failed" || txStatus === "CANCELLED" || txStatus === "cancelled") {
+        console.log("❌ Payment failed, not redirecting");
         return;
       }
       
-      let finalApplicationId = applicationId || "";
-      let finalOrderId = orderId || "";
-      
-      if (!finalApplicationId && hasPendingData) {
-        try {
-          const data = JSON.parse(hasPendingData);
-          finalApplicationId = data.applicationId || data.applicationData?._id || "";
-        } catch (e) {
-          // Ignore parse errors
-        }
+      const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
+      console.log("🚨 REDIRECT #2 (has params + pendingData):", redirectUrl);
+      window.location.replace(redirectUrl);
+      return;
+    }
+    
+    // Check 3: If we have orderId/applicationId even without pendingData, still redirect (might be from URL)
+    if (orderId || applicationId) {
+      // Don't redirect if payment explicitly failed
+      if (txStatus === "FAILED" || txStatus === "failed" || txStatus === "CANCELLED" || txStatus === "cancelled") {
+        console.log("❌ Payment failed, not redirecting");
+        return;
       }
       
       const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
-      console.log("🚨 IMMEDIATE REDIRECT (with params):", redirectUrl);
+      console.log("🚨 REDIRECT #3 (has orderId/applicationId):", redirectUrl);
       window.location.replace(redirectUrl);
+      return;
     }
   })();
 
@@ -2217,36 +2234,62 @@ export default function JobDetail() {
     if (id) fetchJob();
   }, [id]);
 
-  // Check for payment redirect on component mount (catches direct URL access)
+  // Continuous monitoring for payment redirect (runs every 2 seconds)
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const payment = urlParams.get("payment");
-    const orderId = urlParams.get("orderId") || urlParams.get("order_id");
-    const applicationId = urlParams.get("applicationId");
-    const paymentStatus = urlParams.get("payment_status") || urlParams.get("txStatus") || urlParams.get("tx_status");
-    
-    // If we have payment success indicators, redirect immediately
-    if (payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success" || orderId || applicationId) {
-      const pendingData = sessionStorage.getItem("pendingApplication");
-      let finalApplicationId = applicationId || "";
-      let finalOrderId = orderId || "";
+    const checkAndRedirect = () => {
+      // Skip if already on payment-success page
+      if (window.location.pathname === "/payment-success") {
+        return;
+      }
       
-      if (!finalApplicationId && pendingData) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const payment = urlParams.get("payment");
+      const orderId = urlParams.get("orderId") || urlParams.get("order_id");
+      const applicationId = urlParams.get("applicationId");
+      const paymentStatus = urlParams.get("payment_status") || urlParams.get("txStatus") || urlParams.get("tx_status");
+      const cfPaymentId = urlParams.get("cf_payment_id") || urlParams.get("paymentId");
+      const txStatus = urlParams.get("txStatus") || urlParams.get("tx_status") || urlParams.get("payment_status") || "";
+      const pendingData = sessionStorage.getItem("pendingApplication");
+      
+      // If we have any payment-related parameters and pendingData, redirect
+      if ((payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success" || orderId || applicationId || cfPaymentId) && pendingData) {
+        // Don't redirect if payment failed
+        if (txStatus === "FAILED" || txStatus === "failed" || txStatus === "CANCELLED" || txStatus === "cancelled") {
+          return;
+        }
+        
         try {
           const data = JSON.parse(pendingData);
-          finalApplicationId = data.applicationId || data.applicationData?._id || "";
+          const finalApplicationId = applicationId || data.applicationId || data.applicationData?._id || "";
+          const finalOrderId = orderId || data.orderId || "";
+          
+          const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
+          console.log("🚀 CONTINUOUS CHECK: Redirecting to payment success:", redirectUrl);
+          window.location.replace(redirectUrl);
         } catch (e) {
-          console.error("Error parsing pendingData:", e);
+          console.error("Error in continuous check:", e);
         }
       }
-      
-      // Only redirect if we're not already on payment-success page
-      if (window.location.pathname !== "/payment-success") {
-        const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
-        console.log("🚀 Mount: Redirecting to payment success:", redirectUrl);
-        window.location.replace(redirectUrl);
+    };
+    
+    // Check immediately
+    checkAndRedirect();
+    
+    // Check every 2 seconds
+    const interval = setInterval(checkAndRedirect, 2000);
+    
+    // Also check when page becomes visible (user returns from payment)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        checkAndRedirect();
       }
-    }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []); // Run only on mount
 
   // Handle Cashfree payment redirect - check both searchParams and window.location
