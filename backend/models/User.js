@@ -54,14 +54,11 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Compound index: at least one of email or phone must be provided
-userSchema.index({ email: 1, phone: 1 }, { unique: true, sparse: true });
+// Index for email uniqueness (when not null) - sparse index allows multiple nulls
+userSchema.index({ email: 1 }, { unique: true, sparse: true });
 
-// Index for email uniqueness (when not null)
-userSchema.index({ email: 1 }, { unique: true, sparse: true, partialFilterExpression: { email: { $ne: null } } });
-
-// Index for phone uniqueness (when not null)
-userSchema.index({ phone: 1 }, { unique: true, sparse: true, partialFilterExpression: { phone: { $ne: null } } });
+// Index for phone uniqueness (when not null) - sparse index allows multiple nulls
+userSchema.index({ phone: 1 }, { unique: true, sparse: true });
 
 // Pre-save validation: ensure at least email or phone is provided
 userSchema.pre("save", function (next) {
