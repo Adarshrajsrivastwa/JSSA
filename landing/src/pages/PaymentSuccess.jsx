@@ -757,71 +757,70 @@ function PaymentSuccess() {
           </div>
         </div>
         <div style={{ padding: "15px 20px", background: "#fff", position: "relative" }}>
-          <h3
-            style={{
-              fontSize: 16,
-              fontWeight: 900,
-              color: "#000",
-              marginBottom: 12,
-              paddingBottom: 6,
-              borderBottom: "2px solid #e0e0e0",
-            }}
-          >
-            Personal Details
-          </h3>
-          {/* Photo in top right corner */}
-          {photoPreview ? (
-            <div
-              style={{ 
-                position: "absolute",
-                top: "15px", // Top right corner
-                right: "20px",
-                width: 100,
-                textAlign: "center",
-                zIndex: 10,
+          {/* Header with Photo in top right */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+            <h3
+              style={{
+                fontSize: 16,
+                fontWeight: 900,
+                color: "#000",
+                margin: 0,
+                paddingBottom: 6,
+                borderBottom: "2px solid #e0e0e0",
+                flex: 1,
               }}
             >
-              <img
-                src={photoPreview}
-                alt="Applicant Photo"
-                onError={(e) => {
-                  console.error("❌ Photo failed to load:", photoPreview);
-                  e.target.style.display = "none";
-                }}
-                onLoad={() => {
-                  console.log("✅ Photo loaded successfully");
-                }}
-                style={{
-                  width: "100%",
-                  height: 120,
-                  objectFit: "cover",
-                  border: "2px solid #000",
-                  borderRadius: 4,
-                  display: "block",
-                  background: "#fff",
-                }}
-              />
+              Personal Details
+            </h3>
+            {/* Photo in top right corner */}
+            {photoPreview ? (
               <div
-                style={{
-                  fontSize: 10,
-                  fontWeight: 600,
-                  color: "#000",
-                  marginTop: 4,
+                style={{ 
+                  marginLeft: 20,
+                  width: 100,
                   textAlign: "center",
+                  flexShrink: 0,
                 }}
               >
-                Photo
+                <img
+                  src={photoPreview}
+                  alt="Applicant Photo"
+                  onError={(e) => {
+                    console.error("❌ Photo failed to load:", photoPreview);
+                    e.target.style.display = "none";
+                  }}
+                  onLoad={() => {
+                    console.log("✅ Photo loaded successfully");
+                  }}
+                  style={{
+                    width: "100%",
+                    height: 120,
+                    objectFit: "cover",
+                    border: "2px solid #000",
+                    borderRadius: 4,
+                    display: "block",
+                    background: "#fff",
+                  }}
+                />
+                <div
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: "#000",
+                    marginTop: 4,
+                    textAlign: "center",
+                  }}
+                >
+                  Photo
+                </div>
               </div>
-            </div>
-          ) : (
-            console.log("⚠️ No photoPreview available")
-          )}
+            ) : null}
+          </div>
           {/* Personal details - one field per line */}
           <div
             style={{
               fontSize: 15,
               lineHeight: 2.2,
-              marginRight: photoPreview ? "130px" : "0",
             }}
           >
             <div style={{ marginBottom: 4 }}>
@@ -921,110 +920,111 @@ function PaymentSuccess() {
         <div
           style={{
             padding: "15px 20px",
-            paddingBottom: signaturePreview ? "100px" : "15px", // Add bottom padding for signature
             background: "#fff",
             borderTop: "1px solid #e0e0e0",
             position: "relative",
-            minHeight: signaturePreview ? "200px" : "auto", // Ensure minimum height for signature space
           }}
         >
-          <h3
-            style={{
-              fontSize: 16,
-              fontWeight: 900,
-              color: "#000",
-              marginBottom: 12,
-              paddingBottom: 6,
-              borderBottom: "2px solid #e0e0e0",
-            }}
-          >
-            Educational Details
-          </h3>
-          {/* Educational details - one field per line (same format as Personal Details) */}
-          <div
-            className="educational-details-content"
-            style={{
-              fontSize: 15,
-              lineHeight: 2.2,
-              marginRight: signaturePreview ? "220px" : "0",
-              paddingBottom: signaturePreview ? "10px" : "0", // Extra padding to prevent overlap
-            }}
-          >
-            <div style={{ marginBottom: 4 }}>
-              <strong style={{ color: "#333" }}>Higher Education:</strong>{" "}
-              <span>{finalFormData.higherEducation || ""}</span>
-            </div>
-            <div style={{ marginBottom: 4 }}>
-              <strong style={{ color: "#333" }}>Board/University:</strong>{" "}
-              <span>{finalFormData.board || ""}</span>
-            </div>
-            <div style={{ marginBottom: 4 }}>
-              <strong style={{ color: "#333" }}>Total Marks:</strong>{" "}
-              <span>{finalFormData.marks || ""}</span>
-            </div>
-            <div style={{ marginBottom: 4 }}>
-              <strong style={{ color: "#333" }}>Marks in Percentage:</strong>{" "}
-              <span>{finalFormData.markPercentage || ""}</span>
-            </div>
-          </div>
-          {/* Signature in bottom right corner */}
-          {signaturePreview ? (
-            <div
+          {/* Educational Details with Signature in bottom right */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+            <h3
               style={{
-                position: "absolute",
-                bottom: "15px", // Bottom right corner
-                right: "20px",
-                textAlign: "right",
-                zIndex: 10,
-                pointerEvents: "none", // Prevent signature from blocking interactions
+                fontSize: 16,
+                fontWeight: 900,
+                color: "#000",
+                margin: 0,
+                paddingBottom: 6,
+                borderBottom: "2px solid #e0e0e0",
+                flex: 1,
               }}
             >
-              <div
-                style={{
-                  display: "inline-block",
-                  border: "1px solid #000",
-                  background: "#fff",
-                  padding: "8px 12px",
-                  borderRadius: 4,
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                }}
-              >
-                <img
-                  src={signaturePreview}
-                  alt="Signature"
-                  onError={(e) => {
-                    console.error("❌ Signature failed to load:", signaturePreview);
-                    e.target.style.display = "none";
-                  }}
-                  onLoad={() => {
-                    console.log("✅ Signature loaded successfully");
-                  }}
-                  style={{
-                    width: 160,
-                    height: 60,
-                    objectFit: "contain",
-                    display: "block",
-                    marginBottom: 4,
-                    background: "#fff",
-                  }}
-                />
-                <div
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: "#000",
-                    textAlign: "center",
-                    borderTop: "1px solid #e0e0e0",
-                    paddingTop: 4,
-                  }}
-                >
-                  Signature
-                </div>
+              Educational Details
+            </h3>
+          </div>
+          {/* Content with signature */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+            {/* Educational details - one field per line */}
+            <div
+              className="educational-details-content"
+              style={{
+                fontSize: 15,
+                lineHeight: 2.2,
+                flex: 1,
+                paddingBottom: signaturePreview ? "80px" : "0",
+              }}
+            >
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Higher Education:</strong>{" "}
+                <span>{finalFormData.higherEducation || ""}</span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Board/University:</strong>{" "}
+                <span>{finalFormData.board || ""}</span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Total Marks:</strong>{" "}
+                <span>{finalFormData.marks || ""}</span>
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <strong style={{ color: "#333" }}>Marks in Percentage:</strong>{" "}
+                <span>{finalFormData.markPercentage || ""}</span>
               </div>
             </div>
-          ) : (
-            console.log("⚠️ No signaturePreview available")
-          )}
+            {/* Signature in bottom right */}
+            {signaturePreview ? (
+              <div
+                style={{
+                  marginLeft: 20,
+                  textAlign: "right",
+                  flexShrink: 0,
+                  alignSelf: "flex-end",
+                }}
+              >
+                <div
+                  style={{
+                    display: "inline-block",
+                    border: "1px solid #000",
+                    background: "#fff",
+                    padding: "8px 12px",
+                    borderRadius: 4,
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  <img
+                    src={signaturePreview}
+                    alt="Signature"
+                    onError={(e) => {
+                      console.error("❌ Signature failed to load:", signaturePreview);
+                      e.target.style.display = "none";
+                    }}
+                    onLoad={() => {
+                      console.log("✅ Signature loaded successfully");
+                    }}
+                    style={{
+                      width: 160,
+                      height: 60,
+                      objectFit: "contain",
+                      display: "block",
+                      marginBottom: 4,
+                      background: "#fff",
+                    }}
+                  />
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "#000",
+                      textAlign: "center",
+                      borderTop: "1px solid #e0e0e0",
+                      paddingTop: 4,
+                    }}
+                  >
+                    Signature
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
         <div
           style={{
