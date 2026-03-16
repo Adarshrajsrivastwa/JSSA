@@ -2346,11 +2346,16 @@ export default function JobDetail() {
       let finalApplicationId = applicationId || "";
       let finalOrderId = orderId || "";
       
-      // Try to get applicationId from sessionStorage if not in URL
-      if (!finalApplicationId && pendingData) {
+      // Try to get applicationId and orderId from sessionStorage if not in URL
+      if (pendingData) {
         try {
           const data = JSON.parse(pendingData);
-          finalApplicationId = data.applicationId || data.applicationData?._id || "";
+          if (!finalApplicationId) {
+            finalApplicationId = data.applicationId || data.applicationData?._id || "";
+          }
+          if (!finalOrderId) {
+            finalOrderId = data.orderId || "";
+          }
         } catch (e) {
           console.error("Error parsing pendingData:", e);
         }
@@ -2373,11 +2378,16 @@ export default function JobDetail() {
       let finalApplicationId = applicationId || "";
       let finalOrderId = orderId || "";
 
-      // Try to get applicationId from sessionStorage if not in URL
-      if (!finalApplicationId && pendingData) {
+      // Try to get applicationId and orderId from sessionStorage if not in URL
+      if (pendingData) {
         try {
           const data = JSON.parse(pendingData);
-          finalApplicationId = data.applicationId || data.applicationData?._id || "";
+          if (!finalApplicationId) {
+            finalApplicationId = data.applicationId || data.applicationData?._id || "";
+          }
+          if (!finalOrderId) {
+            finalOrderId = data.orderId || "";
+          }
         } catch (e) {
           console.error("Error parsing pendingData:", e);
         }
@@ -2639,11 +2649,15 @@ export default function JobDetail() {
         return;
       }
 
+      // Build returnUrl before creating order - Cashfree will add orderId when redirecting
+      const returnUrl = `${window.location.origin}/payment-success?applicationId=${applicationId}`;
+
       const orderResponse = await paymentsAPI.createOrder(
         id,
         formData.gender,
         formData.category,
         token,
+        returnUrl,
       );
       if (!orderResponse.success)
         throw new Error(
@@ -2664,11 +2678,9 @@ export default function JobDetail() {
             formData.applicationNumber,
           token: token,
           formData: formData, // Store form data for PDF
+          orderId: orderId, // Store orderId for reference
         }),
       );
-
-      // Redirect to Cashfree payment page - will redirect to payment success page after payment
-      const returnUrl = `${window.location.origin}/payment-success?orderId=${orderId}&applicationId=${applicationId}`;
 
       // Load Cashfree Checkout.js and redirect
       const script = document.createElement("script");
