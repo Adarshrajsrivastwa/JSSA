@@ -35,57 +35,50 @@ const NoticeDisplay = () => {
   return (
     <>
       {/* Main Notice Section */}
-      <div
-        className="notice-app-wrap"
-        style={{ background: "#fce8f0", padding: "20px 0 0", marginTop: 24 }}
-      >
-        <div className="notice-app-inner" style={{ padding: "0 175px 0 175px" }}>
-          {notice.noticeEnglish || notice.noticeHindi ? (
-            <p
-              className="body-text notice-text"
-              style={{
-                lineHeight: 1.6,
-                color: "#1a1a1a",
-                marginBottom: 28,
-                textAlign: "justify",
-                fontWeight: 400,
-                fontSize: 18,
-              }}
-            >
-              <strong>NOTICE/सूचना:</strong>{" "}
-              {notice.noticeHindi && (
-                <>
-                  {notice.noticeHindi}{" "}
-                </>
-              )}
-              {notice.noticeEnglish && (
-                <>
-                  {notice.noticeEnglish}
-                </>
-              )}
-            </p>
-          ) : null}
-
-          {/* Important Notice Box */}
-          {notice.importantNotice && (
-            <div
-              className="body-text notice-important"
-              style={{
-                background: "#f8b4b4",
-                padding: "20px 24px",
-                borderRadius: 3,
-                fontWeight: 600,
-                color: "#1a1a1a",
-                marginBottom: 28,
-                textAlign: "center",
-                fontSize: 19,
-              }}
-            >
-              IMPORTANT NOTICE:– {notice.importantNotice}
-            </div>
+      {notice.noticeEnglish || notice.noticeHindi ? (
+        <p
+          className="body-text notice-text"
+          style={{
+            lineHeight: 1.6,
+            color: "#1a1a1a",
+            marginBottom: 28,
+            textAlign: "justify",
+            fontWeight: 400,
+            fontSize: 18,
+          }}
+        >
+          <strong>NOTICE/सूचना:</strong>{" "}
+          {notice.noticeHindi && (
+            <>
+              {notice.noticeHindi}{" "}
+            </>
           )}
+          {notice.noticeEnglish && (
+            <>
+              {notice.noticeEnglish}
+            </>
+          )}
+        </p>
+      ) : null}
+
+      {/* Important Notice Box */}
+      {notice.importantNotice && (
+        <div
+          className="body-text notice-important"
+          style={{
+            background: "#f8b4b4",
+            padding: "20px 24px",
+            borderRadius: 3,
+            fontWeight: 600,
+            color: "#1a1a1a",
+            marginBottom: 28,
+            textAlign: "center",
+            fontSize: 19,
+          }}
+        >
+          IMPORTANT NOTICE:– {notice.importantNotice}
         </div>
-      </div>
+      )}
     </>
   );
 };

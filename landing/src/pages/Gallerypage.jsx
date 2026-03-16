@@ -65,10 +65,9 @@ export default function GalleryPage() {
     fetchGalleryImages();
   }, []);
 
-  // Helper function to assign span types for visual variety
+  // All images will be same size (1:1 square)
   const getSpanForIndex = (index) => {
-    const patterns = ["normal", "normal", "wide", "normal", "tall", "normal", "wide", "normal"];
-    return patterns[index % patterns.length];
+    return "normal"; // All images same size
   };
 
   useEffect(() => {
@@ -106,9 +105,9 @@ export default function GalleryPage() {
         }
         .gallery-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 
-        .card { position: relative; overflow: hidden; border-radius: 4px; cursor: pointer; background: #ddd; aspect-ratio: 4/3; border: 2px solid transparent; opacity: 0; transform: translateY(24px); transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.25s, box-shadow 0.25s; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .card.col-2 { grid-column: span 2; }
-        .card.row-2 { grid-row: span 2; aspect-ratio: auto; }
+        .card { position: relative; overflow: hidden; border-radius: 4px; cursor: pointer; background: #ddd; aspect-ratio: 1/1; border: 2px solid transparent; opacity: 0; transform: translateY(24px); transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.25s, box-shadow 0.25s; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .card.col-2 { grid-column: span 1; }
+        .card.row-2 { grid-row: span 1; aspect-ratio: 1/1; }
         .card.visible { opacity: 1; transform: translateY(0); }
         .card:hover { border-color: var(--green); box-shadow: 0 6px 24px rgba(46,139,0,0.2); z-index: 2; }
         .card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
@@ -140,7 +139,7 @@ export default function GalleryPage() {
 
         @media(max-width: 768px) {
           .gallery-grid { grid-template-columns: repeat(2,1fr); }
-          .card.col-2 { grid-column: span 2; }
+          .card.col-2 { grid-column: span 1; }
         }
       `}</style>
 
@@ -163,7 +162,7 @@ export default function GalleryPage() {
                   cardRefs.current[img.id] = el;
                 }}
                 data-id={img.id}
-                className={`card ${img.span === "wide" ? "col-2" : ""} ${img.span === "tall" ? "row-2" : ""} ${visibleCards.has(String(img.id)) ? "visible" : ""}`}
+                className={`card ${visibleCards.has(String(img.id)) ? "visible" : ""}`}
                 style={{ transitionDelay: `${(idx % 8) * 0.06}s` }}
                 onClick={() => setSelectedImage(img)}
               >

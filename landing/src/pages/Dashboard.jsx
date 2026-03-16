@@ -2756,6 +2756,7 @@ import TermsPage from "../pages/Termspage";
 import EnquiryPage from "../pages/Enquirypage";
 import { jobPostingsAPI, scrollerAPI, notificationsAPI } from "../utils/api.js";
 import brochurePDF from "../assets/broucher.pdf";
+import NoticeDisplay from "../components/NoticeDisplay.jsx";
 
 const GREEN = "#0aca00";
 const BLUE_TEXT = "#1a56c4";
@@ -3593,24 +3594,45 @@ function HomePage({ onNavigate }) {
             setSlides(sortedImages.map((i) => i.imageUrl));
             setScrollerImages(sortedImages);
             setSlide(0);
-          } else setSlides(fallbackSlides);
-        } else setSlides(fallbackSlides);
+          } else {
+            setSlides(fallbackSlides);
+            setSlide(0);
+          }
+        } else {
+          setSlides(fallbackSlides);
+          setSlide(0);
+        }
       } catch {
         setSlides(fallbackSlides);
+        setSlide(0);
       }
     };
     fetch_();
   }, []);
 
+  // Ensure slide index is always valid when slides change
+  useEffect(() => {
+    if (slides.length > 0 && slide >= slides.length) {
+      setSlide(0);
+    }
+  }, [slides.length, slide]);
+
   useEffect(() => {
     if (slides.length > 0) {
+      // Ensure slide index is valid
+      if (slide >= slides.length) {
+        setSlide(0);
+      }
       const t = setInterval(
-        () => setSlide((s) => (s + 1) % slides.length),
+        () => setSlide((s) => {
+          const next = (s + 1) % slides.length;
+          return next >= 0 && next < slides.length ? next : 0;
+        }),
         4000,
       );
       return () => clearInterval(t);
     }
-  }, [slides.length]);
+  }, [slides.length, slide]);
 
   useEffect(() => {
     const fetch_ = async () => {
@@ -3684,6 +3706,7 @@ function HomePage({ onNavigate }) {
             <>
               {slides.map((src, i) => {
                 const si = scrollerImages[i];
+                const isActive = i === slide;
                 const imgEl = (
                   <img
                     key={i}
@@ -3695,10 +3718,17 @@ function HomePage({ onNavigate }) {
                       width: "100%",
                       height: "100%",
                       objectFit: "cover",
-                      opacity: i === slide ? 1 : 0,
+                      opacity: isActive ? 1 : 0,
                       transition: "opacity 0.8s ease",
+                      zIndex: isActive ? 2 : 1,
                     }}
                     onError={(e) => (e.target.style.display = "none")}
+                    onLoad={(e) => {
+                      // Ensure image is loaded before showing
+                      if (isActive) {
+                        e.target.style.opacity = "1";
+                      }
+                    }}
                   />
                 );
                 if (si?.link)
@@ -3733,9 +3763,12 @@ function HomePage({ onNavigate }) {
               {slides.length > 1 && (
                 <>
                   <button
-                    onClick={() =>
-                      setSlide((s) => (s - 1 + slides.length) % slides.length)
-                    }
+                    onClick={() => {
+                      setSlide((s) => {
+                        const prev = (s - 1 + slides.length) % slides.length;
+                        return prev >= 0 && prev < slides.length ? prev : 0;
+                      });
+                    }}
                     style={{
                       position: "absolute",
                       left: 6,
@@ -3754,7 +3787,12 @@ function HomePage({ onNavigate }) {
                     ‹
                   </button>
                   <button
-                    onClick={() => setSlide((s) => (s + 1) % slides.length)}
+                    onClick={() => {
+                      setSlide((s) => {
+                        const next = (s + 1) % slides.length;
+                        return next >= 0 && next < slides.length ? next : 0;
+                      });
+                    }}
                     style={{
                       position: "absolute",
                       right: 6,
@@ -3876,47 +3914,10 @@ function HomePage({ onNavigate }) {
           className="notice-app-inner"
           style={{ padding: "0 175px 0 175px" }}
         >
-          <p
-            className="body-text notice-text"
-            style={{
-              lineHeight: 1.6,
-              color: "#1a1a1a",
-              marginBottom: 28,
-              textAlign: "justify",
-              fontWeight: 400,
-              fontSize: 18,
-            }}
-          >
-            <strong>NOTICE/सूचना:</strong> जिन अभ्यर्थियों का नाम जिला प्रबंधक
-            पद विज्ञापन सं: JSSA/REQ/01/2025/P–III तथा ब्लॉक सुपरवाइजर सह पंचायत
-            कार्यपालक विज्ञापन सं: JSSA/REQ/02/2025/P–III तथा पंचायत कार्यपालक
-            विज्ञापन सं: JSSA/REQ/03/2026/P–III के अंतर्गत प्रथम मेधा सूची में
-            जारी किया गया है वे अभ्यर्थी कृपया ऑनलाइन एमओयू और सहमति प्रपत्र
-            अंतिम तिथि 02/03/2026 से पहले भर लें। Candidates whose name has been
-            released in the first merit list under District Manager Advt. No:
-            JSSA/REQ/01/2025/P–III &amp; Block Supervisor Cum Panchayat
-            Executive Advt. No: JSSA/REQ/02/2025/P–III &amp; Panchayat Executive
-            Advt. No: JSSA/REQ/03/2025/P–III those candidates please fill the
-            online MoU and consent form before the last date 02/03/2026. Failure
-            to submit the required documents within the stipulated date may lead
-            to cancellation of candidate.
-          </p>
-          <div
-            className="body-text notice-important"
-            style={{
-              background: "#f8b4b4",
-              padding: "20px 24px",
-              borderRadius: 3,
-              fontWeight: 600,
-              color: "#1a1a1a",
-              marginBottom: 28,
-              textAlign: "center",
-              fontSize: 19,
-            }}
-          >
-            IMPORTANT NOTICE:– जन स्वास्थ्य सहायता अभियान के कार्यक्रमों को
-            जमीनी स्तर पर शुरुवात करने हेतु आवश्यक अधिसूचना।
-          </div>
+          {/* Dynamic Notice Display */}
+          <NoticeDisplay />
+          
+          {/* Action Buttons */}
           <div
             className="action-btns-row"
             style={{ display: "flex", gap: 20, marginBottom: 32 }}
@@ -5162,7 +5163,7 @@ export default function JSSAbhiyan() {
         .tb-search   { display: flex !important; }
 
         .slider-stats-wrap { display: flex; padding: 16px 100px 16px 100px; background: #fff; }
-        .slider-area  { flex: 0 0 75%; position: relative; overflow: hidden; min-height: 500px; max-height: 680px; border-radius: 4px; }
+        .slider-area  { flex: 0 0 75%; position: relative; overflow: hidden; min-height: 500px; max-height: 680px; border-radius: 4px; background: #000; }
         .stats-area   { flex: 0 0 25%; display: grid; grid-template-columns: 1fr 1fr; border-left: 1px solid #eee; background: #fff; }
         .stat-cell    { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 20px 8px 20px 20px; border-bottom: none; border-right: none; }
         .stat-cell:nth-child(2), .stat-cell:nth-child(4) { border-right: none; }
@@ -5242,7 +5243,7 @@ export default function JSSAbhiyan() {
           }
 
           .slider-stats-wrap { display: flex !important; flex-direction: row !important; min-height: unset !important; align-items: stretch !important; justify-content: flex-start !important; padding: 0 !important; gap: 0 !important; width: 100% !important; overflow: hidden !important; }
-          .slider-area { flex: 0 0 55% !important; width: 55% !important; height: 200px !important; min-height: 200px !important; max-height: 200px !important; border-radius: 0 !important; }
+          .slider-area { flex: 0 0 55% !important; width: 55% !important; height: 200px !important; min-height: 200px !important; max-height: 200px !important; border-radius: 0 !important; background: #000 !important; }
           .stats-area  { flex: 0 0 45% !important; width: 45% !important; display: grid !important; grid-template-columns: 1fr 1fr !important; border-left: 1px solid #eee !important; border-top: none !important; background: #fff !important; height: 200px !important; }
           .stat-cell   { padding: 4px 2px !important; border-bottom: 1px solid #eee !important; border-right: 1px solid #eee !important; gap: 1px !important; align-items: center !important; justify-content: center !important; }
           .stat-cell:nth-child(2), .stat-cell:nth-child(4) { border-right: none !important; }

@@ -494,7 +494,7 @@ function SharedLayout({ children, navigate }) {
               <rect x="2" y="4" width="20" height="16" rx="2" />
               <path d="M2 7l10 7 10-7" />
             </svg>
-            support@jssabhiyan-nac.in
+            support@jssabhiyan.com
           </span>
         </div>
         <div
