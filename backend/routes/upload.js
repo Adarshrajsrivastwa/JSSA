@@ -54,7 +54,7 @@ router.post("/advertisement", uploadPDF.single("file"), async (req, res) => {
 
     // Get base URL from request or environment
     const protocol = req.protocol || "http";
-    const host = req.get("host") || process.env.BACKEND_URL || `localhost:${process.env.PORT || 3000}`;
+    const host = req.get("host") || process.env.BACKEND_URL || `localhost:${process.env.PORT || 3006}`;
     const baseUrl = `${protocol}://${host}`;
     
     // Return full local file URL

@@ -22,7 +22,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3006;
 
 // Middleware
 // CORS configuration - Allow domains from environment variables
