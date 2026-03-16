@@ -2560,17 +2560,46 @@ export default function JobDetail() {
       // Prepare return URL BEFORE creating order (needed for Cashfree)
       const returnUrl = `${window.location.origin}/payment-success?orderId=PLACEHOLDER&applicationId=${applicationId}`;
 
+      console.log("💳 Creating payment order...");
+      console.log("💳 Job Posting ID:", id);
+      console.log("💳 Gender:", formData.gender);
+      console.log("💳 Category:", formData.category);
+      console.log("💳 Token exists:", !!token);
+      console.log("💳 Return URL:", returnUrl);
+
+      try {
+        const orderResponse = await paymentsAPI.createOrder(
+          id,
+          formData.gender,
+          formData.category,
+          token,
+          returnUrl, // Pass returnUrl to backend
+        );
+        
+        console.log("💳 Order response:", orderResponse);
+        
+        if (!orderResponse || !orderResponse.success) {
+          const errorMsg = orderResponse?.error || orderResponse?.message || "Failed to create payment order";
+          console.error("❌ Payment order creation failed:", errorMsg);
+          console.error("❌ Full response:", orderResponse);
+          throw new Error(errorMsg);
+        }
+        
+        console.log("✅ Payment order created successfully");
+      } catch (orderErr) {
+        console.error("❌ Error creating payment order:", orderErr);
+        console.error("❌ Error message:", orderErr.message);
+        console.error("❌ Error stack:", orderErr.stack);
+        throw orderErr;
+      }
+      
       const orderResponse = await paymentsAPI.createOrder(
         id,
         formData.gender,
         formData.category,
         token,
-        returnUrl, // Pass returnUrl to backend
+        returnUrl,
       );
-      if (!orderResponse.success)
-        throw new Error(
-          orderResponse.error || "Failed to create payment order",
-        );
       const { orderId, paymentSessionId, amount, amountInRupees, appId } =
         orderResponse.data;
 
