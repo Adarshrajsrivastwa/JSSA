@@ -3002,10 +3002,13 @@ export default function JobDetail() {
   const rows = Math.max(rowsEn.length, rowsHi.length);
   const isActive = job.status === "Active";
   // Use fully dynamic titles from API (admin-configurable)
+  // Prioritize job.title field if it exists
+  const displayTitleEn = job.title?.en || (typeof job.title === 'string' ? job.title : null);
+  const displayTitleHi = job.title?.hi || null;
   const titleEn =
-    job.title?.en || job.postTitle?.en || job.post?.en || "";
+    displayTitleEn || job.postTitle?.en || job.post?.en || "";
   const titleHi =
-    job.title?.hi || job.postTitle?.hi || job.post?.hi || "";
+    displayTitleHi || job.postTitle?.hi || job.post?.hi || "";
 
   return (
     <SharedLayout navigate={navigate}>
@@ -3022,11 +3025,7 @@ export default function JobDetail() {
             }}
           >
             <div className="jobs-detail-title-row">
-              {titleEn}
-              {" / "}
-              {titleHi || ""}
-              {" विज्ञापन संख्या: "}
-              {job.advtNo}
+              {displayTitleEn || titleEn}
             </div>
             <div className="jobs-detail-download-row">
               <div
