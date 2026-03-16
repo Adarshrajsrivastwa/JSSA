@@ -2557,11 +2557,15 @@ export default function JobDetail() {
         return;
       }
 
+      // Prepare return URL BEFORE creating order (needed for Cashfree)
+      const returnUrl = `${window.location.origin}/payment-success?orderId=PLACEHOLDER&applicationId=${applicationId}`;
+
       const orderResponse = await paymentsAPI.createOrder(
         id,
         formData.gender,
         formData.category,
         token,
+        returnUrl, // Pass returnUrl to backend
       );
       if (!orderResponse.success)
         throw new Error(
@@ -2569,6 +2573,9 @@ export default function JobDetail() {
         );
       const { orderId, paymentSessionId, amount, amountInRupees, appId } =
         orderResponse.data;
+
+      // Update return URL with actual orderId
+      const finalReturnUrl = `${window.location.origin}/payment-success?orderId=${orderId}&applicationId=${applicationId}`;
 
       // Store application data in sessionStorage for after payment redirect
       sessionStorage.setItem(
@@ -2584,9 +2591,6 @@ export default function JobDetail() {
           formData: formData, // Store form data for PDF
         }),
       );
-
-      // Redirect to Cashfree payment page - will redirect to payment success page after payment
-      const returnUrl = `${window.location.origin}/payment-success?orderId=${orderId}&applicationId=${applicationId}`;
 
       // Load Cashfree Checkout.js and redirect
       const script = document.createElement("script");

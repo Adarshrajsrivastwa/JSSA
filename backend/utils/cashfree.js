@@ -99,23 +99,26 @@ export async function createCashfreeOrder(orderData) {
     // Prepare order_meta - only include return_url if it's HTTPS (Cashfree requirement)
     const orderMeta = {};
     if (notes?.returnUrl) {
-      // Don't include return_url if it contains placeholder values
-      if (notes.returnUrl.includes("PLACEHOLDER")) {
-        console.log("Skipping return_url - contains placeholder values");
-      } else if (notes.returnUrl.startsWith("https://")) {
-        // For HTTPS URLs, construct full returnUrl with orderId if not already present
-        let finalReturnUrl = notes.returnUrl;
-        // If returnUrl doesn't have query params, we can't add orderId here
-        // Cashfree will redirect with orderId in the URL anyway
+      // Replace PLACEHOLDER with actual orderId if present
+      let finalReturnUrl = notes.returnUrl;
+      if (finalReturnUrl.includes("PLACEHOLDER")) {
+        finalReturnUrl = finalReturnUrl.replace("PLACEHOLDER", orderId);
+        console.log("Replaced PLACEHOLDER with orderId in returnUrl:", finalReturnUrl);
+      }
+      
+      if (finalReturnUrl.startsWith("https://")) {
+        // For HTTPS URLs, use the returnUrl
         orderMeta.return_url = finalReturnUrl;
-      } else if (notes.returnUrl.startsWith("http://localhost") || notes.returnUrl.startsWith("http://127.0.0.1")) {
+        console.log("Setting return_url for Cashfree:", finalReturnUrl);
+      } else if (finalReturnUrl.startsWith("http://localhost") || finalReturnUrl.startsWith("http://127.0.0.1")) {
         // For local development, convert HTTP localhost to HTTPS or skip
         // Cashfree doesn't accept HTTP URLs, so we'll skip return_url for localhost
         // The payment will still work, but redirect will be handled by frontend
         console.log("Skipping return_url for localhost HTTP (Cashfree requires HTTPS)");
-      } else if (notes.returnUrl.startsWith("http://")) {
+      } else if (finalReturnUrl.startsWith("http://")) {
         // For other HTTP URLs, try to convert to HTTPS
-        orderMeta.return_url = notes.returnUrl.replace("http://", "https://");
+        orderMeta.return_url = finalReturnUrl.replace("http://", "https://");
+        console.log("Converted HTTP to HTTPS for return_url:", orderMeta.return_url);
       }
     }
     if (notes?.notifyUrl) {
