@@ -189,9 +189,24 @@ router.post(
         errorMessage = `Failed to create payment order: ${error.message || "Unknown error. Please check server logs for details."}`;
       }
       
+      // Add diagnostic hint for 500 errors
+      if (error.message && error.message.includes("500")) {
+        errorMessage += " | TROUBLESHOOTING: Check backend console logs for detailed Cashfree API error response. Common causes: Invalid credentials, wrong API endpoint (sandbox vs production), or account restrictions.";
+      }
+      
       res.status(500).json({
         error: "Failed to create payment order",
         message: errorMessage,
+        // Include non-sensitive diagnostic info
+        diagnostic: {
+          hint: "Check backend server console logs for detailed Cashfree API error response",
+          commonCauses: [
+            "Invalid or expired Cashfree App ID / Secret Key",
+            "Using sandbox credentials with production endpoint (or vice versa)",
+            "Cashfree account not activated or restricted",
+            "Missing required permissions in Cashfree account"
+          ]
+        }
       });
     }
   }

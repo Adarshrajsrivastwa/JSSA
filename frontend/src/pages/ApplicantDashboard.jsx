@@ -123,7 +123,7 @@ export default function ApplicantDashboard() {
       textColor: "text-orange-600",
     },
     {
-      stage: "MO",
+      stage: "Medical Officer",
       icon: ClipboardList,
       description: "Medical Officer verification",
       color: "bg-yellow-500",
@@ -131,7 +131,7 @@ export default function ApplicantDashboard() {
       textColor: "text-yellow-600",
     },
     {
-      stage: "Employ",
+      stage: "Employment",
       icon: Award,
       description: "Final employment",
       color: "bg-green-500",

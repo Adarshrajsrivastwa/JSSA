@@ -87,8 +87,19 @@ export async function createCashfreeOrder(orderData) {
   try {
     const credentials = await getCashfreeCredentials();
 
+    // CRITICAL: Log credential status immediately
+    console.error("🔍 CASHFREE CREDENTIALS CHECK:");
+    console.error("  App ID present:", !!credentials.appId);
+    console.error("  App ID length:", credentials.appId?.length || 0);
+    console.error("  App ID preview:", credentials.appId ? `${credentials.appId.substring(0, 6)}...${credentials.appId.substring(credentials.appId.length - 4)}` : "MISSING");
+    console.error("  Secret Key present:", !!credentials.secretKey);
+    console.error("  Secret Key length:", credentials.secretKey?.length || 0);
+    console.error("  Environment CASHFREE_APP_ID:", !!process.env.CASHFREE_APP_ID);
+    console.error("  Environment CASHFREE_SECRET_KEY:", !!process.env.CASHFREE_SECRET_KEY);
+    console.error("  Environment CASHFREE_SANDBOX:", process.env.CASHFREE_SANDBOX);
+
     if (!credentials.appId || !credentials.secretKey) {
-      console.error("Cashfree credentials missing:", {
+      console.error("❌ Cashfree credentials missing:", {
         hasAppId: !!credentials.appId,
         hasSecretKey: !!credentials.secretKey,
       });
@@ -97,11 +108,17 @@ export async function createCashfreeOrder(orderData) {
     
     // Validate credential format (basic checks)
     if (credentials.appId.length < 10 || credentials.secretKey.length < 10) {
-      console.error("Cashfree credentials appear invalid (too short):", {
+      console.error("❌ Cashfree credentials appear invalid (too short):", {
         appIdLength: credentials.appId.length,
         secretKeyLength: credentials.secretKey.length,
       });
       throw new Error("Cashfree credentials appear to be invalid. Please verify your App ID and Secret Key are correct.");
+    }
+    
+    // Check if credentials are empty strings or just whitespace
+    if (credentials.appId.trim() === "" || credentials.secretKey.trim() === "") {
+      console.error("❌ Cashfree credentials are empty strings");
+      throw new Error("Cashfree credentials are empty. Please set valid CASHFREE_APP_ID and CASHFREE_SECRET_KEY.");
     }
 
     // Validate required fields
@@ -120,7 +137,25 @@ export async function createCashfreeOrder(orderData) {
     }
 
     // Cashfree API endpoint
-    const apiUrl = "https://api.cashfree.com/pg/orders";
+    // Check if we should use sandbox (test) mode
+    // Sandbox credentials typically start with specific patterns
+    const isSandbox = process.env.CASHFREE_SANDBOX === "true" || 
+                     (credentials.appId && credentials.appId.toLowerCase().includes("test")) ||
+                     (credentials.appId && credentials.appId.toLowerCase().includes("sandbox"));
+    
+    // Use sandbox endpoint if in sandbox mode, otherwise use production
+    const apiUrl = isSandbox 
+      ? "https://sandbox.cashfree.com/pg/orders"
+      : "https://api.cashfree.com/pg/orders";
+    
+    console.error("🌐 CASHFREE API ENDPOINT:", apiUrl);
+    console.error("🔧 SANDBOX MODE:", isSandbox);
+    
+    if (isSandbox) {
+      console.log("⚠️ Using Cashfree SANDBOX/TEST mode");
+    } else {
+      console.log("✅ Using Cashfree PRODUCTION mode");
+    }
 
     // Prepare order_meta - only include return_url if it's HTTPS (Cashfree requirement)
     const orderMeta = {};
@@ -154,6 +189,27 @@ export async function createCashfreeOrder(orderData) {
       ? customerEmail.trim() 
       : `customer_${orderId}@placeholder.com`; // Placeholder email if not provided
     
+    // Format phone number for Cashfree (should be 10 digits, optionally with country code)
+    // Cashfree expects format: +91XXXXXXXXXX or just XXXXXXXXXX (10 digits)
+    let finalCustomerPhone = "";
+    if (customerPhone && customerPhone.trim()) {
+      // Remove all non-digit characters
+      const digitsOnly = customerPhone.replace(/\D/g, "");
+      if (digitsOnly.length === 10) {
+        // If 10 digits, add +91 prefix
+        finalCustomerPhone = `+91${digitsOnly}`;
+      } else if (digitsOnly.length === 12 && digitsOnly.startsWith("91")) {
+        // If 12 digits starting with 91, add + prefix
+        finalCustomerPhone = `+${digitsOnly}`;
+      } else if (digitsOnly.length >= 10) {
+        // Use last 10 digits if longer
+        finalCustomerPhone = `+91${digitsOnly.slice(-10)}`;
+      } else {
+        // If less than 10 digits, use as is (might cause validation error)
+        finalCustomerPhone = customerPhone.trim();
+      }
+    }
+    
     const requestBody = {
       order_id: orderId,
       order_amount: amount / 100, // Convert paise to rupees
@@ -162,7 +218,7 @@ export async function createCashfreeOrder(orderData) {
         customer_id: notes?.userId?.toString() || orderId,
         customer_name: customerName || "Customer",
         customer_email: finalCustomerEmail,
-        customer_phone: customerPhone || "",
+        customer_phone: finalCustomerPhone,
       },
       order_note: notes ? JSON.stringify(notes) : "",
     };
@@ -256,19 +312,35 @@ export async function createCashfreeOrder(orderData) {
       let errorDetails = null;
       
       try {
+        // Clone response to read it multiple times if needed
+        const responseClone = response.clone();
         const errorData = await response.json();
         
-        // Log full error response for debugging
-        console.error("Cashfree API error response (JSON):", JSON.stringify(errorData, null, 2));
+        // Log full error response for debugging (this is critical for diagnosing 500 errors)
+        console.error("═══════════════════════════════════════════════════════");
+        console.error("Cashfree API ERROR RESPONSE (FULL):");
+        console.error("Status:", response.status, response.statusText);
+        console.error("Error Data:", JSON.stringify(errorData, null, 2));
+        console.error("Request URL:", apiUrl);
+        console.error("Request Headers (sanitized):", {
+          "Content-Type": "application/json",
+          "x-api-version": "2022-09-01",
+          "x-client-id": credentials.appId ? `${credentials.appId.substring(0, 4)}...${credentials.appId.substring(credentials.appId.length - 4)}` : "MISSING",
+          "x-client-secret": credentials.secretKey ? "***" : "MISSING",
+        });
+        console.error("Request Body:", JSON.stringify(requestBody, null, 2));
+        console.error("═══════════════════════════════════════════════════════");
         
         // Extract error message from various possible fields
         errorMessage = 
           errorData.message || 
           errorData.error?.message || 
           errorData.error?.description ||
+          errorData.error?.code ||
           errorData.error ||
           errorData.msg ||
           errorData.type ||
+          errorData.code ||
           (typeof errorData === 'string' ? errorData : errorMessage);
         
         // If error message is too generic, add more context
@@ -279,9 +351,30 @@ export async function createCashfreeOrder(orderData) {
           const detailedError = errorData.error || errorData;
           const subMessage = detailedError?.message || detailedError?.description || detailedError?.code;
           
+          // Log the full error structure for debugging
+          console.error("Full error structure:", {
+            errorData,
+            detailedError,
+            subMessage,
+            allKeys: Object.keys(errorData || {}),
+          });
+          
           // For 500 errors, provide more specific guidance
           if (response.status === 500) {
-            errorMessage = `Cashfree API server error (500): ${subMessage || "Internal server error at Cashfree. This may indicate invalid API credentials, incorrect API version, or a temporary service issue. Please verify your App ID and Secret Key are correct and have proper permissions."}`;
+            // Check for specific error codes or messages
+            const errorCode = errorData.code || errorData.error?.code || detailedError?.code;
+            const errorType = errorData.type || errorData.error?.type;
+            
+            let diagnosticMessage = "Internal server error at Cashfree.";
+            if (errorCode) {
+              diagnosticMessage += ` Error code: ${errorCode}.`;
+            }
+            if (errorType) {
+              diagnosticMessage += ` Error type: ${errorType}.`;
+            }
+            diagnosticMessage += " Common causes: Invalid API credentials, wrong API endpoint (sandbox vs production), account not activated, or missing permissions.";
+            
+            errorMessage = `Cashfree API server error (500): ${subMessage || diagnosticMessage}`;
           } else {
             errorMessage = `Cashfree API request failed (${response.status}): ${subMessage || "Please verify your API credentials (App ID and Secret Key) are correct and have proper permissions"}`;
           }
