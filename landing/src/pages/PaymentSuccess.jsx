@@ -507,11 +507,11 @@ function PaymentSuccess() {
                 const pdf = new jsPDF({
                   unit: "mm",
                   format: "a4",
-                  orientation: "landscape",
+                  orientation: "portrait",
                 });
                 
-                const pdfWidth = 297;
-                const pdfHeight = 210;
+                const pdfWidth = 210;
+                const pdfHeight = 297;
                 const margin = 0; // Full width - no margins
                 const imgWidth = pdfWidth - 2 * margin;
                 let imgHeight = (canvas.height * imgWidth) / canvas.width;
