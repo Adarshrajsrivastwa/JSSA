@@ -75,14 +75,18 @@ router.get("/latest-vacancies", async (req, res) => {
 
     // Format vacancies with separate English and Hindi fields for parallel display
     const vacancies = postings.map((posting) => {
-      const hindiTitle = posting.postTitle?.hi || posting.post?.hi || "";
-      const englishTitle = posting.postTitle?.en || posting.post?.en || "";
+      // postTitle removed; title is a single combined string
+      const combinedTitle = posting.title || "";
+      const hindiTitle = posting.post?.hi || "";
+      const englishTitle = posting.post?.en || "";
       const advtNo = posting.advtNo || "";
 
       return {
         id: posting._id,
-        english: `Recruitment for the Posts of ${englishTitle} Advt. No. ${advtNo}`,
-        hindi: `${hindiTitle} विज्ञप्ति संख्या: ${advtNo}`,
+        english:
+          combinedTitle ||
+          `Recruitment for the Posts of ${englishTitle} Advt. No. ${advtNo}`,
+        hindi: combinedTitle || `${hindiTitle} विज्ञप्ति संख्या: ${advtNo}`,
         advtNo: advtNo,
         link: `/job-postings/view/${posting._id}`,
       };
@@ -133,14 +137,16 @@ router.get("/latest-results", async (req, res) => {
 
     // Format results with separate English and Hindi fields for parallel display
     const results = postings.map((posting) => {
-      const hindiTitle = posting.postTitle?.hi || posting.post?.hi || "";
-      const englishTitle = posting.postTitle?.en || posting.post?.en || "";
+      // postTitle removed; title is a single combined string
+      const combinedTitle = posting.title || "";
+      const hindiTitle = posting.post?.hi || "";
+      const englishTitle = posting.post?.en || "";
       const advtNo = posting.advtNo || "";
 
       return {
         id: posting._id,
-        english: `First Merit List ${englishTitle} Advt.No: ${advtNo}`,
-        hindi: `प्रथम मेधा सूची ${hindiTitle}`,
+        english: combinedTitle || `First Merit List ${englishTitle} Advt.No: ${advtNo}`,
+        hindi: combinedTitle || `प्रथम मेधा सूची ${hindiTitle}`,
         advtNo: advtNo,
         link: `/job-postings/view/${posting._id}`,
       };
@@ -202,10 +208,8 @@ router.post(
   "/",
   [
     body("advtNo").notEmpty().withMessage("Advertisement number is required"),
-    body("title.en").notEmpty().withMessage("Title (English) is required"),
-    body("title.hi").optional(),
-    body("postTitle.en").notEmpty().withMessage("Post title (English) is required"),
-    body("postTitle.hi").optional(),
+    // Title is now a single combined string
+    body("title").notEmpty().withMessage("Title is required"),
     body("post.en").notEmpty().withMessage("Post name (English) is required"),
     body("post.hi").notEmpty().withMessage("Post name (Hindi) is required"),
     body("income.en").notEmpty().withMessage("Income range (English) is required"),
@@ -250,9 +254,18 @@ router.post(
         });
       }
 
+      // Normalize payload for backward compatibility:
+      // - title may come as string (new) or {en,hi} (old)
+      const normalizedTitle =
+        typeof req.body.title === "string"
+          ? req.body.title
+          : req.body.title?.en || req.body.title?.hi || "";
+
       // Ensure all Hindi fields are included
       const postingData = {
         ...req.body,
+        title: normalizedTitle,
+        // postTitle has been removed from the schema; ignore if client sends it
         // Ensure locationArrHi is saved
         locationArrHi: req.body.locationArrHi || [],
         // Ensure feeStructure is saved
@@ -294,7 +307,7 @@ router.put(
   "/:id",
   [
     body("advtNo").optional().notEmpty(),
-    body("postTitle").optional().notEmpty(),
+    // postTitle removed; ignore if present
     body("post").optional().notEmpty(),
   ],
   async (req, res) => {
@@ -323,9 +336,17 @@ router.put(
         });
       }
 
+      const normalizedTitle =
+        req.body.title === undefined
+          ? undefined
+          : typeof req.body.title === "string"
+            ? req.body.title
+            : req.body.title?.en || req.body.title?.hi || "";
+
       // Ensure all Hindi fields are updated
       const updateData = {
         ...req.body,
+        ...(normalizedTitle !== undefined ? { title: normalizedTitle } : {}),
         // Ensure locationArrHi is updated
         locationArrHi: req.body.locationArrHi !== undefined ? req.body.locationArrHi : posting.locationArrHi,
         // Ensure feeStructure is updated

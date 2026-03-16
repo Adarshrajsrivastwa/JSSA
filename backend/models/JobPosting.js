@@ -8,29 +8,11 @@ const jobPostingSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    // Single combined title (English + Hindi together if needed)
     title: {
-      en: {
-        type: String,
-        required: [true, "Title (English) is required"],
-        trim: true,
-      },
-      hi: {
-        type: String,
-        default: "",
-        trim: true,
-      },
-    },
-    postTitle: {
-      en: {
-        type: String,
-        required: [true, "Post title (English) is required"],
-        trim: true,
-      },
-      hi: {
-        type: String,
-        default: "",
-        trim: true,
-      },
+      type: String,
+      required: [true, "Title is required"],
+      trim: true,
     },
     post: {
       en: {

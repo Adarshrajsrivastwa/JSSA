@@ -291,8 +291,9 @@ const JobPostingForm = ({
     const e = {};
     if (!form.advtNo.trim()) e.advtNo = "Advertisement No. is required";
     if (!form.date) e.date = "Date is required";
+    // Title will now be a single combined field (English + Hindi as needed)
     if (!form.title.trim()) e.title = "Title is required";
-    if (!form.postTitle.trim()) e.postTitle = "Post title is required";
+    // Post title fields have been removed from the UI; we auto-generate it from the post name
     if (!form.post.trim()) e.post = "Post name (English) is required";
     if (!form.postHi.trim()) e.postHi = "Post name (Hindi) is required";
     if (!form.monthlyIncomeMin) e.monthlyIncomeMin = "Required";
@@ -328,15 +329,23 @@ const JobPostingForm = ({
       ? form.jobLocation.join(", ")
       : form.totalPost.join(", ") || form.location || "—";
 
+    // Auto-generate a post title so the backend still receives the required field
+    const autoPostTitle =
+      form.post?.trim()
+        ? `Recruitment for the Post of ${form.post.trim()}`
+        : form.title?.trim() || "";
+
     const submissionData = {
       advtNo: form.advtNo,
       title: {
+        // Single combined title field; store the same value in both languages
         en: form.title,
-        hi: form.titleHi || form.title,
+        hi: form.title,
       },
       postTitle: {
-        en: form.postTitle,
-        hi: form.postTitleHi || form.postTitle,
+        // No manual input; use auto-generated text so backend validations pass
+        en: autoPostTitle,
+        hi: autoPostTitle,
       },
       post: {
         en: form.post,
@@ -436,52 +445,21 @@ const JobPostingForm = ({
               </FormField>
             </div>
 
-            {/* Title - English and Hindi */}
+            {/* Title - Single Combined Field (English / Hindi Together) */}
             <div className="mt-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField label="Title (English)" required error={errors.title}>
-                  <input
-                    name="title"
-                    value={form.title}
-                    onChange={handleChange}
-                    placeholder="Enter job posting title"
-                    className={inputCls(errors.title)}
-                  />
-                </FormField>
-                <FormField label="Title (Hindi)" error={errors.titleHi}>
-                  <input
-                    name="titleHi"
-                    value={form.titleHi}
-                    onChange={handleChange}
-                    placeholder="नौकरी पोस्टिंग शीर्षक दर्ज करें"
-                    className={inputCls(errors.titleHi)}
-                  />
-                </FormField>
-              </div>
-            </div>
-
-            {/* Post Title - English and Hindi */}
-            <div className="mt-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField label="Post Title (English)" required error={errors.postTitle}>
-                  <input
-                    name="postTitle"
-                    value={form.postTitle}
-                    onChange={handleChange}
-                    placeholder="Enter post title (e.g. Recruitment for the Post of District Manager)"
-                    className={inputCls(errors.postTitle)}
-                  />
-                </FormField>
-                <FormField label="Post Title (Hindi)" error={errors.postTitleHi}>
-                  <input
-                    name="postTitleHi"
-                    value={form.postTitleHi}
-                    onChange={handleChange}
-                    placeholder="पद शीर्षक दर्ज करें"
-                    className={inputCls(errors.postTitleHi)}
-                  />
-                </FormField>
-              </div>
+              <FormField
+                label="Title (English / Hindi together)"
+                required
+                error={errors.title}
+              >
+                <input
+                  name="title"
+                  value={form.title}
+                  onChange={handleChange}
+                  placeholder="Enter job posting title (you can write in English and Hindi together)"
+                  className={inputCls(errors.title)}
+                />
+              </FormField>
             </div>
 
             <div className="mt-4">
@@ -541,17 +519,13 @@ const JobPostingForm = ({
                 required
                 error={errors.education}
               >
-                <select
+                <input
                   name="education"
                   value={form.education}
                   onChange={handleChange}
+                  placeholder="Enter education qualification (e.g. Graduate / 10+2 / Diploma)"
                   className={inputCls(errors.education)}
-                >
-                  <option value="">-- Please Select --</option>
-                  {EDUCATION_OPTIONS.map((o) => (
-                    <option key={o}>{o}</option>
-                  ))}
-                </select>
+                />
               </FormField>
               <FormField
                 label="Education Qualification (Hindi) / शैक्षणिक योग्यता"
@@ -639,6 +613,22 @@ const JobPostingForm = ({
           <FormSection title="Location & Selection Process / नौकरी करने का स्थान और चयन प्रक्रिया">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField label="Job Location (English) – Select States">
+                <div className="flex gap-2 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, jobLocation: [...JOB_STATES_EN], location: JOB_STATES_EN.join(", ") }))}
+                    className="px-3 py-1 text-xs font-semibold rounded border border-[#3AB000]/40 text-[#2d7f00] hover:bg-[#3AB000]/10"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, jobLocation: [], location: "" }))}
+                    className="px-3 py-1 text-xs font-semibold rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    Clear
+                  </button>
+                </div>
                 <CheckboxGrid
                   items={JOB_STATES_EN}
                   selected={form.jobLocation}
@@ -646,6 +636,28 @@ const JobPostingForm = ({
                 />
               </FormField>
               <FormField label="Job Location (Hindi) / नौकरी करने का स्थान – राज्य चुनें">
+                <div className="flex gap-2 mb-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm((f) => ({
+                        ...f,
+                        jobLocationHi: [...JOB_STATES_HI],
+                        locationHi: JOB_STATES_HI.join(", "),
+                      }))
+                    }
+                    className="px-3 py-1 text-xs font-semibold rounded border border-[#3AB000]/40 text-[#2d7f00] hover:bg-[#3AB000]/10"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, jobLocationHi: [], locationHi: "" }))}
+                    className="px-3 py-1 text-xs font-semibold rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    Clear
+                  </button>
+                </div>
                 <CheckboxGrid
                   items={JOB_STATES_HI}
                   selected={form.jobLocationHi}
