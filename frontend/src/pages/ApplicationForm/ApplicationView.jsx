@@ -395,6 +395,18 @@ const ApplicationView = () => {
                   </p>
                 </div>
               </div>
+              <span
+                className={`self-start flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${
+                  statusColors[application.status] || statusColors.Inactive
+                }`}
+              >
+                {isActive ? (
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                ) : (
+                  <XCircle className="w-3.5 h-3.5" />
+                )}
+                {application.status}
+              </span>
             </div>
           </div>
 
@@ -653,12 +665,30 @@ const ApplicationView = () => {
               Application Slip -{" "}
               {jobPosting?.postTitle?.en || jobPosting?.post?.en || "Recruitment"} 2024
             </span>
-            </div>
+          </div>
 
+          {/* Big Logo - Full Width */}
+          <div
+            style={{
+              width: "100%",
+              marginBottom: "12px",
+            }}
+          >
+            <img
+              src={img0}
+              alt="Jan Swasthya Sahayata Abhiyan"
+              style={{
+                width: "100%",
+                height: "auto",
+                objectFit: "contain",
+                display: "block",
+              }}
+            />
+          </div>
 
           {/* Post Title Banner */}
-              <div
-                style={{
+          <div
+            style={{
               border: "1px solid #555",
               textAlign: "center",
               padding: "5px 0",
@@ -705,7 +735,7 @@ const ApplicationView = () => {
                 hour12: true,
               })}
             </span>
-            </div>
+          </div>
 
           {/* Post Applied + Application Number */}
           <div
@@ -723,11 +753,11 @@ const ApplicationView = () => {
             <span>
               <strong>Application No.:</strong> {application.applicationNumber || "N/A"}
             </span>
-            </div>
+          </div>
 
           {/* Personal Details Heading */}
           <div
-              style={{
+            style={{
               fontWeight: "bold",
               fontSize: "14px",
               marginBottom: "5px",
@@ -737,8 +767,8 @@ const ApplicationView = () => {
           </div>
 
           {/* Personal Details Table + Photo Box */}
-              <div
-                style={{
+          <div
+            style={{
               display: "flex",
               gap: "14px",
               marginBottom: "4px",
@@ -746,7 +776,7 @@ const ApplicationView = () => {
             }}
           >
             <table
-                  style={{
+              style={{
                 borderCollapse: "collapse",
                 flex: 1,
               }}
@@ -754,7 +784,7 @@ const ApplicationView = () => {
               <tbody>
                 <tr>
                   <td
-              style={{
+                    style={{
                       fontWeight: "bold",
                       paddingRight: "16px",
                       paddingTop: "3px",
@@ -776,7 +806,7 @@ const ApplicationView = () => {
                       lineHeight: "1.45",
                     }}
                   >
-                  {(application.candidateName || "").toUpperCase()}
+                    {(application.candidateName || "").toUpperCase()}
                   </td>
                 </tr>
                 <tr>
@@ -857,13 +887,13 @@ const ApplicationView = () => {
                       lineHeight: "1.45",
                     }}
                   >
-                  {application.dob
-                    ? new Date(application.dob).toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                      })
-                    : ""}
+                    {application.dob
+                      ? new Date(application.dob).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        })
+                      : ""}
                   </td>
                 </tr>
                 <tr>
@@ -890,8 +920,8 @@ const ApplicationView = () => {
                       lineHeight: "1.45",
                     }}
                   >
-                  {application.gender?.charAt(0).toUpperCase() +
-                    application.gender?.slice(1) || ""}
+                    {application.gender?.charAt(0).toUpperCase() +
+                      application.gender?.slice(1) || ""}
                   </td>
                 </tr>
                 <tr>
@@ -918,13 +948,13 @@ const ApplicationView = () => {
                       lineHeight: "1.45",
                     }}
                   >
-                  {application.nationality?.charAt(0).toUpperCase() +
-                    application.nationality?.slice(1) || ""}
+                    {application.nationality?.charAt(0).toUpperCase() +
+                      application.nationality?.slice(1) || ""}
                   </td>
                 </tr>
                 <tr>
                   <td
-            style={{
+                    style={{
                       fontWeight: "bold",
                       paddingRight: "16px",
                       paddingTop: "3px",
@@ -938,7 +968,7 @@ const ApplicationView = () => {
                     Category:
                   </td>
                   <td
-              style={{
+                    style={{
                       paddingTop: "3px",
                       paddingBottom: "3px",
                       verticalAlign: "top",
@@ -951,7 +981,7 @@ const ApplicationView = () => {
                 </tr>
                 <tr>
                   <td
-              style={{
+                    style={{
                       fontWeight: "bold",
                       paddingRight: "16px",
                       paddingTop: "3px",
@@ -965,7 +995,7 @@ const ApplicationView = () => {
                     Aadhar Number:
                   </td>
                   <td
-                style={{
+                    style={{
                       paddingTop: "3px",
                       paddingBottom: "3px",
                       verticalAlign: "top",
@@ -1115,8 +1145,8 @@ const ApplicationView = () => {
             </table>
 
             {/* Photo Box */}
-                <div
-                  style={{
+            <div
+              style={{
                 flexShrink: 0,
                 width: "132px",
                 height: "158px",
@@ -1128,11 +1158,11 @@ const ApplicationView = () => {
                 <img
                   src={application.photo}
                   alt="Applicant Photo"
-                    style={{
+                  style={{
                     width: "100%",
                     height: "100%",
                     objectFit: "cover",
-                      display: "block",
+                    display: "block",
                   }}
                 />
               ) : null}
@@ -1178,15 +1208,15 @@ const ApplicationView = () => {
           </table>
 
           {/* Educational Details Heading */}
-                  <div
-                    style={{
+          <div
+            style={{
               fontWeight: "bold",
               fontSize: "14px",
               marginBottom: "5px",
             }}
           >
             &nbsp;Educational Details
-                  </div>
+          </div>
 
           <table
             style={{
@@ -1307,8 +1337,8 @@ const ApplicationView = () => {
           </table>
 
           {/* Declaration Checkboxes */}
-            <div
-              style={{
+          <div
+            style={{
               display: "flex",
               alignItems: "flex-start",
               gap: "8px",
@@ -1316,8 +1346,8 @@ const ApplicationView = () => {
               fontSize: "13px",
             }}
           >
-                <input
-                  type="checkbox"
+            <input
+              type="checkbox"
               defaultChecked
               style={{
                 marginTop: "2px",
@@ -1325,9 +1355,9 @@ const ApplicationView = () => {
                 width: "14px",
                 height: "14px",
               }}
-                />
-                <span>I have read and agree to the Terms and Conditions.</span>
-              </div>
+            />
+            <span>I have read and agree to the Terms and Conditions.</span>
+          </div>
 
           <div
             style={{
@@ -1339,8 +1369,8 @@ const ApplicationView = () => {
               fontSize: "13px",
             }}
           >
-                <input
-                  type="checkbox"
+            <input
+              type="checkbox"
               defaultChecked
               style={{
                 marginTop: "2px",
@@ -1348,32 +1378,32 @@ const ApplicationView = () => {
                 width: "14px",
                 height: "14px",
               }}
-                />
-                <span>
+            />
+            <span>
               I declare that all the information given in this application form is
               correct to the best of my knowledge and belief. If any information
               provided is found false, my candidature may be rejected at any point
               of time. I have read and understood the conditions which I would abide
               by. Thus, I have given the above declaration in my full consciousness
               without any pressure.
-                </span>
-              </div>
+            </span>
+          </div>
 
           {/* Signature Box */}
           <div
-              style={{
+            style={{
               display: "flex",
               justifyContent: "flex-end",
               marginBottom: "18px",
             }}
           >
             <div
-                    style={{
+              style={{
                 textAlign: "center",
               }}
             >
               <div
-                    style={{
+                style={{
                   border: "1px solid #aaa",
                   width: "145px",
                   height: "62px",
@@ -1420,7 +1450,7 @@ const ApplicationView = () => {
                   (h) => (
                     <th
                       key={h}
-                    style={{
+                      style={{
                         border: "1px solid #555",
                         padding: "6px 10px",
                         fontWeight: "bold",
@@ -1428,56 +1458,56 @@ const ApplicationView = () => {
                       }}
                     >
                       {h}
-                  </th>
+                    </th>
                   )
                 )}
-                </tr>
-              </thead>
-              <tbody>
+              </tr>
+            </thead>
+            <tbody>
               <tr>
-                  <td
-                    style={{
+                <td
+                  style={{
                     border: "1px solid #555",
                     padding: "6px 10px",
-                    }}
-                  >
-                    {application.applicationNumber || "N/A"}
-                  </td>
-                  <td
-                    style={{
+                  }}
+                >
+                  {application.applicationNumber || "N/A"}
+                </td>
+                <td
+                  style={{
                     border: "1px solid #555",
                     padding: "6px 10px",
-                    }}
-                  >
-                    {application.email || ""}
-                  </td>
-                  <td
-                    style={{
+                  }}
+                >
+                  {application.email || ""}
+                </td>
+                <td
+                  style={{
                     border: "1px solid #555",
                     padding: "6px 10px",
-                    }}
-                  >
-                    {application.paymentStatus === "paid" ? "Complete" : "Pending"}
-                  </td>
-                  <td
-                    style={{
+                  }}
+                >
+                  {application.paymentStatus === "paid" ? "Complete" : "Pending"}
+                </td>
+                <td
+                  style={{
                     border: "1px solid #555",
                     padding: "6px 10px",
-                    }}
-                  >
-                    {new Date().toLocaleString("en-US", {
-                      month: "numeric",
-                      day: "numeric",
-                      year: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                      second: "2-digit",
-                      hour12: true,
-                    })}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                  }}
+                >
+                  {new Date().toLocaleString("en-US", {
+                    month: "numeric",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: true,
+                  })}
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
           {/* Footer URL */}
           <div
