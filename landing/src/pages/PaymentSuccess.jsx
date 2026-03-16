@@ -333,49 +333,16 @@ function PaymentSuccess() {
           }
         }
 
-        // If we reach here, we don't have data yet
-        // Wait a bit more and try again (maybe data is still loading)
-        console.log("⏳ No data found yet, waiting a bit more...");
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Try one more time
-        const retryPendingData = sessionStorage.getItem("pendingApplication");
-        if (retryPendingData) {
-          try {
-            const data = JSON.parse(retryPendingData);
-            setApplicationData(data.applicationData);
-            setFormData(data.formData || {});
-            
-            // Load photo and signature in retry
-            if (data.formData?.photo) {
-              const photoSrc = data.formData.photo;
-              if (typeof photoSrc === 'string' && (photoSrc.startsWith('data:') || photoSrc.startsWith('http'))) {
-                setPhotoPreview(photoSrc);
-              } else if (typeof photoSrc === 'string') {
-                setPhotoPreview(`data:image/jpeg;base64,${photoSrc}`);
-              }
-            }
-            
-            if (data.formData?.signature) {
-              const signatureSrc = data.formData.signature;
-              if (typeof signatureSrc === 'string' && (signatureSrc.startsWith('data:') || signatureSrc.startsWith('http'))) {
-                setSignaturePreview(signatureSrc);
-              } else if (typeof signatureSrc === 'string') {
-                setSignaturePreview(`data:image/png;base64,${signatureSrc}`);
-              }
-            }
-            if (data.applicationData?.jobPostingId) {
-              const jobResponse = await jobPostingsAPI.getById(data.applicationData.jobPostingId);
-              if (jobResponse.success && jobResponse.data.posting) {
-                setJob(jobResponse.data.posting);
-              }
-            }
-          } catch (err) {
-            console.error("Error in retry:", err);
-          }
+        // If we reach here, we don't have any valid data (no pendingData and no application from API)
+        console.warn("⚠️ PaymentSuccess: No application data found. Redirecting to home page.");
+        // Safety: clear any stale pending data
+        try {
+          sessionStorage.removeItem("pendingApplication");
+        } catch (e) {
+          // ignore
         }
-
-        setLoading(false);
+        // Redirect to home
+        navigate("/");
       } catch (err) {
         console.error("Error loading payment success data:", err);
         setLoading(false);
