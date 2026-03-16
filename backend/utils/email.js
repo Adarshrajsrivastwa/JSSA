@@ -1165,16 +1165,22 @@ Jan Swasthya Sahayata Abhiyan
     
     try {
       const pdfResult = await generateAndSaveApplicationPDF(applicationData, jobPosting);
-      console.log("📧 PDF generation result:", JSON.stringify(pdfResult, null, 2));
+      console.log("📧 PDF generation result received");
+      console.log("📧 PDF result success:", pdfResult?.success);
+      console.log("📧 PDF result has buffer:", !!pdfResult?.buffer);
+      console.log("📧 PDF result buffer size:", pdfResult?.buffer?.length || 0);
+      console.log("📧 PDF result has filePath:", !!pdfResult?.filePath);
+      console.log("📧 PDF result fileName:", pdfResult?.fileName);
       
       if (pdfResult && pdfResult.success) {
         pdfFileName = pdfResult.fileName || pdfFileName;
         
         // First try to use buffer directly (if available)
-        if (pdfResult.buffer && pdfResult.buffer.length > 0) {
+        if (pdfResult.buffer && Buffer.isBuffer(pdfResult.buffer) && pdfResult.buffer.length > 0) {
           pdfBuffer = pdfResult.buffer;
           console.log("✅ Using PDF buffer directly from generation result");
           console.log("✅ PDF buffer size:", pdfBuffer.length, "bytes");
+          console.log("✅ PDF buffer is valid Buffer:", Buffer.isBuffer(pdfBuffer));
         } 
         // Fallback: Try to read from file if buffer not available
         else if (pdfResult.filePath) {
@@ -1186,6 +1192,7 @@ Jan Swasthya Sahayata Abhiyan
               pdfBuffer = fs.readFileSync(pdfResult.filePath);
               console.log("✅ Loaded PDF for attachment from:", pdfResult.filePath);
               console.log("✅ PDF buffer size:", pdfBuffer.length, "bytes");
+              console.log("✅ PDF buffer is valid Buffer:", Buffer.isBuffer(pdfBuffer));
             } catch (readErr) {
               console.error("❌ Failed to read generated PDF file:", readErr);
               console.error("❌ Read error message:", readErr.message);
@@ -1198,6 +1205,7 @@ Jan Swasthya Sahayata Abhiyan
           }
         } else {
           console.error("❌ PDF result has no buffer or filePath");
+          console.error("❌ PDF result keys:", Object.keys(pdfResult || {}));
           pdfBuffer = null;
         }
       } else {
@@ -1206,7 +1214,7 @@ Jan Swasthya Sahayata Abhiyan
         if (pdfResult && pdfResult.error) {
           console.error("⚠️ PDF generation error:", pdfResult.error);
         }
-        
+        pdfBuffer = null;
       }
     } catch (pdfGenErr) {
       console.error("❌ Exception while generating PDF for email attachment:", pdfGenErr);
@@ -1217,15 +1225,24 @@ Jan Swasthya Sahayata Abhiyan
 
     // Prepare email attachments
     const attachments = [];
-    if (pdfBuffer) {
+    if (pdfBuffer && Buffer.isBuffer(pdfBuffer) && pdfBuffer.length > 0) {
       attachments.push({
         filename: pdfFileName,
         content: pdfBuffer,
         contentType: 'application/pdf',
       });
       console.log("✅ PDF attachment prepared:", pdfFileName);
+      console.log("✅ PDF buffer size:", pdfBuffer.length, "bytes");
+      console.log("✅ PDF buffer type:", Buffer.isBuffer(pdfBuffer) ? "Buffer" : typeof pdfBuffer);
     } else {
       console.log("⚠️ No PDF attachment (generation/reading failed)");
+      if (pdfBuffer) {
+        console.log("⚠️ PDF buffer exists but invalid:", {
+          isBuffer: Buffer.isBuffer(pdfBuffer),
+          length: pdfBuffer?.length,
+          type: typeof pdfBuffer
+        });
+      }
     }
 
     // Send email (with or without PDF attachment)
@@ -1235,8 +1252,12 @@ Jan Swasthya Sahayata Abhiyan
       subject: `Application Submitted - ${applicationData.applicationNumber || "JSSA"}`,
       text: textContent,
       html: htmlContent,
-      attachments: attachments.length > 0 ? attachments : undefined,
     };
+
+    // Only add attachments if we have valid attachments
+    if (attachments.length > 0) {
+      mailOptions.attachments = attachments;
+    }
 
     console.log("📧 Sending email via SMTP...");
     console.log("📧 Email to:", applicationData.email);

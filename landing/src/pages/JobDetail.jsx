@@ -321,7 +321,7 @@ async function downloadJobPDF(job, lang) {
     ["Selection Process", job.selectionProcess?.en || ""],
     ["Application Opening On", job.applicationOpeningDate || ""],
     ["Last Date of Application", job.lastDate || ""],
-    ["Fee Structure", job.fee?.en || ""],
+    ["Application Fee", job.fee?.en || ""],
   ].filter((r) => r[1]);
   const rowsHi = [
     ["पद", job.post?.hi || job.postTitle?.hi || ""],
@@ -332,7 +332,7 @@ async function downloadJobPDF(job, lang) {
     ["चयन प्रक्रिया", job.selectionProcess?.hi || ""],
     ["आवेदन खुलने की तिथि", job.applicationOpeningDate || ""],
     ["आवेदन की अंतिम तिथि", job.lastDate || ""],
-    ["शुल्क संरचना", job.fee?.hi || ""],
+    ["आवेदन शुल्क", job.fee?.hi || ""],
   ].filter((r) => r[1]);
   const rows = isHi ? rowsHi : rowsEn;
   const advt = job.advtNo || "";
@@ -2978,7 +2978,7 @@ export default function JobDetail() {
     ["Last Date of Application", job.lastDate || ""],
     ["1st Merit List Released", job.firstMeritListDate || ""],
     ["Final Merit List Released", job.finalMeritListDate || ""],
-    ["Fee Structure", feeStructureText],
+    ["Application Fee", feeStructureText],
   ].filter((r) => r[1]);
 
   const rowsHi = [
@@ -2996,7 +2996,7 @@ export default function JobDetail() {
     ["आवेदन की अंतिम तिथि", job.lastDate || ""],
     ["1st मेधा सूची जारी", job.firstMeritListDate || ""],
     ["अंतिम मेधा सूची जारी", job.finalMeritListDate || ""],
-    ["शुल्क संरचना", feeStructureTextHi],
+    ["आवेदन शुल्क", feeStructureTextHi],
   ].filter((r) => r[1]);
 
   const rows = Math.max(rowsEn.length, rowsHi.length);
@@ -3276,8 +3276,8 @@ export default function JobDetail() {
             </div>
             {Array.from({ length: rows }).map((_, i) => {
               const isFee =
-                rowsEn[i]?.[0] === "Fee Structure" ||
-                rowsHi[i]?.[0] === "शुल्क संरचना";
+                rowsEn[i]?.[0] === "Application Fee" ||
+                rowsHi[i]?.[0] === "आवेदन शुल्क";
               return (
                 <div
                   key={i}
@@ -3418,23 +3418,7 @@ export default function JobDetail() {
                         accentColor: GREEN,
                       }}
                     />
-                    I have read and agree to the Terms and Conditions.{" "}
-                    <button
-                      onClick={() => navigate("/terms")}
-                      style={{
-                        color: "#000",
-                        fontWeight: 700,
-                        textDecoration: "underline",
-                        marginLeft: 4,
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        fontSize: "inherit",
-                        padding: 0,
-                      }}
-                    >
-                      Click here to read
-                    </button>
+                    I have read and agree to the Terms and Conditions.
                   </label>
                   {validationErrors.agreed1 && (
                     <div
@@ -3481,7 +3465,12 @@ export default function JobDetail() {
                       }}
                     />
                     I declare that all the information given in this application
-                    form is correct to the best of my knowledge and belief.
+                    form is correct to the best of my knowledge and belief. If
+                    any information provided is found false, my candidature may
+                    be rejected at any point of time. I have read and understood
+                    the conditions which I would abide by. Thus, I have given
+                    the above declaration in my full consciousness without any
+                    pressure.
                   </label>
                   {validationErrors.agreed2 && (
                     <div

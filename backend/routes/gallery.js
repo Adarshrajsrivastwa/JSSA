@@ -2,9 +2,22 @@ import express from "express";
 import { body, validationResult } from "express-validator";
 import Gallery from "../models/Gallery.js";
 import { authenticate } from "../middleware/auth.js";
-import { upload, uploadToCloudinary, deleteCloudinaryImage } from "../middleware/upload.js";
+import { upload } from "../middleware/upload.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
+
+// Ensure uploads directory exists
+const galleryUploadsDir = path.join(__dirname, "../uploads/gallery");
+if (!fs.existsSync(galleryUploadsDir)) {
+  fs.mkdirSync(galleryUploadsDir, { recursive: true });
+  console.log("✅ Created gallery uploads directory:", galleryUploadsDir);
+}
 
 /**
  * GET /api/gallery
@@ -105,17 +118,30 @@ router.post(
         });
       }
 
-      // Upload to Cloudinary
-      const cloudinaryResult = await uploadToCloudinary(
-        req.file.buffer,
-        "jssa/gallery"
-      );
+      // Generate unique filename
+      const timestamp = Date.now();
+      const randomStr = Math.random().toString(36).substring(2, 15);
+      const originalName = req.file.originalname || "image";
+      const ext = path.extname(originalName) || ".jpg";
+      const filename = `${timestamp}_${randomStr}${ext}`;
+      const filepath = path.join(galleryUploadsDir, filename);
+
+      // Save file to local storage
+      fs.writeFileSync(filepath, req.file.buffer);
+
+      // Get base URL from request or environment
+      const protocol = req.protocol || "http";
+      const host = req.get("host") || process.env.BACKEND_URL || `localhost:${process.env.PORT || 3006}`;
+      const baseUrl = `${protocol}://${host}`;
+      
+      // Return full local file URL
+      const fileUrl = `${baseUrl}/api/files/gallery/${filename}`;
 
       const gallery = new Gallery({
         title: req.body.title || "",
         description: req.body.description || "",
-        imageUrl: cloudinaryResult.url,
-        cloudinaryPublicId: cloudinaryResult.public_id,
+        imageUrl: fileUrl,
+        cloudinaryPublicId: "", // Keep for backward compatibility but empty
         imageName: req.file.originalname,
         uploadedBy: req.user.id,
         order: parseInt(req.body.order) || 0,
@@ -223,13 +249,22 @@ router.delete("/:id", async (req, res) => {
       });
     }
 
-    // Delete file from Cloudinary
+    // Delete file from local storage
     try {
-      const publicId = image.cloudinaryPublicId || image.imageUrl;
-      await deleteCloudinaryImage(publicId);
+      // Extract filename from imageUrl
+      if (image.imageUrl && image.imageUrl.includes('/api/files/gallery/')) {
+        const filename = image.imageUrl.split('/api/files/gallery/')[1];
+        if (filename) {
+          const filepath = path.join(galleryUploadsDir, filename);
+          if (fs.existsSync(filepath)) {
+            fs.unlinkSync(filepath);
+            console.log("✅ Deleted gallery image file:", filename);
+          }
+        }
+      }
     } catch (fileError) {
-      console.error("Error deleting Cloudinary image:", fileError);
-      // Continue with database deletion even if Cloudinary deletion fails
+      console.error("Error deleting gallery image file:", fileError);
+      // Continue with database deletion even if file deletion fails
     }
 
     await Gallery.findByIdAndDelete(req.params.id);
