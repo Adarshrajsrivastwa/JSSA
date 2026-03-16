@@ -3820,17 +3820,29 @@ export default function JobDetail() {
                       const pdf = new jsPDF({
                         unit: "mm",
                         format: "a4",
-                        orientation: "portrait",
+                        orientation: "landscape",
                       });
 
-                      const pdfWidth = pdf.internal.pageSize.getWidth();
-                      const pdfHeight = pdf.internal.pageSize.getHeight();
-                      const margin = 10;
+                      const pdfWidth = 297;
+                      const pdfHeight = 210;
+                      const margin = 0; // Full width - no margins
                       const imgWidth = pdfWidth - 2 * margin;
-                      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                      let imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-                      if (imgHeight <= pdfHeight - 2 * margin) {
-                        // Single page
+                      if (imgHeight > pdfHeight - 2 * margin) {
+                        const scaleFactor = (pdfHeight - 2 * margin) / imgHeight;
+                        imgHeight = pdfHeight - 2 * margin;
+                        const scaledWidth = imgWidth * scaleFactor;
+                        const xOffset = margin + (imgWidth - scaledWidth) / 2;
+                        pdf.addImage(
+                          imgData,
+                          "PNG",
+                          xOffset,
+                          margin,
+                          scaledWidth,
+                          imgHeight,
+                        );
+                      } else {
                         pdf.addImage(
                           imgData,
                           "PNG",
@@ -3839,44 +3851,6 @@ export default function JobDetail() {
                           imgWidth,
                           imgHeight,
                         );
-                      } else {
-                        // Multiple pages
-                        const ratio = canvas.width / imgWidth;
-                        const sliceHeight = (pdfHeight - 2 * margin) * ratio;
-                        let yOffset = 0;
-                        let page = 0;
-
-                        while (yOffset < canvas.height) {
-                          if (page > 0) {
-                            pdf.addPage();
-                          }
-
-                          const sliceCanvas = document.createElement("canvas");
-                          sliceCanvas.width = canvas.width;
-                          sliceCanvas.height = Math.min(
-                            sliceHeight,
-                            canvas.height - yOffset,
-                          );
-
-                          const ctx = sliceCanvas.getContext("2d");
-                          ctx.drawImage(canvas, 0, -yOffset);
-
-                          const sliceData = sliceCanvas.toDataURL("image/png", 1.0);
-                          const sliceImgHeight =
-                            (sliceCanvas.height * imgWidth) / canvas.width;
-
-                          pdf.addImage(
-                            sliceData,
-                            "PNG",
-                            margin,
-                            margin,
-                            imgWidth,
-                            sliceImgHeight,
-                          );
-
-                          yOffset += sliceHeight;
-                          page++;
-                        }
                       }
 
                       pdf.save(

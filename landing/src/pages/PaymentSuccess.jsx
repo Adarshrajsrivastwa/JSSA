@@ -512,7 +512,7 @@ function PaymentSuccess() {
                 
                 const pdfWidth = 297;
                 const pdfHeight = 210;
-                const margin = 5;
+                const margin = 0; // Full width - no margins
                 const imgWidth = pdfWidth - 2 * margin;
                 let imgHeight = (canvas.height * imgWidth) / canvas.width;
                 
