@@ -172,18 +172,46 @@ export async function createCashfreeOrder(orderData) {
       requestBody.order_meta = orderMeta;
     }
 
+    // Validate request body structure
+    if (!requestBody.order_id || !requestBody.order_amount || !requestBody.order_currency) {
+      throw new Error("Invalid request body: missing required fields (order_id, order_amount, order_currency)");
+    }
+    
+    if (!requestBody.customer_details || !requestBody.customer_details.customer_id) {
+      throw new Error("Invalid request body: missing required customer_details");
+    }
+
     // Log request details for debugging (without sensitive data)
     console.log("Creating Cashfree order:", {
       orderId: orderId,
       amount: amount / 100,
       currency: "INR",
       customerName: customerName || "Customer",
+      customerEmail: finalCustomerEmail.substring(0, 20) + "...", // Log partial email for debugging
       hasReturnUrl: !!orderMeta.return_url,
       hasNotifyUrl: !!orderMeta.notify_url,
       hasAppId: !!credentials.appId,
       appIdLength: credentials.appId?.length || 0,
       hasSecretKey: !!credentials.secretKey,
       secretKeyLength: credentials.secretKey?.length || 0,
+      requestBodyKeys: Object.keys(requestBody),
+      customerDetailsKeys: Object.keys(requestBody.customer_details),
+    });
+    
+    // Log the actual request body structure (without sensitive values)
+    console.log("Cashfree request body structure:", {
+      order_id: requestBody.order_id,
+      order_amount: requestBody.order_amount,
+      order_currency: requestBody.order_currency,
+      customer_details: {
+        customer_id: requestBody.customer_details.customer_id,
+        customer_name: requestBody.customer_details.customer_name,
+        customer_email: requestBody.customer_details.customer_email?.substring(0, 20) + "...",
+        customer_phone: requestBody.customer_details.customer_phone ? "***" : "",
+      },
+      has_order_meta: !!requestBody.order_meta,
+      order_meta_keys: requestBody.order_meta ? Object.keys(requestBody.order_meta) : [],
+      has_order_note: !!requestBody.order_note,
     });
 
     // Add timeout to fetch request (30 seconds)

@@ -123,6 +123,17 @@ router.post(
       // Note: Cashfree requires HTTPS for return_url, so HTTP localhost URLs will be skipped
       
       // Create Cashfree order
+      console.log("Creating Cashfree order with data:", {
+        orderId,
+        amountInPaise,
+        amountInRupees,
+        customerName: customerName || "Customer",
+        hasCustomerEmail: !!customerEmail,
+        hasCustomerPhone: !!customerPhone,
+        hasReturnUrl: !!returnUrl,
+        hasAppId: !!appId,
+      });
+      
       const order = await createCashfreeOrder({
         amount: amountInPaise,
         orderId: orderId,
@@ -136,6 +147,11 @@ router.post(
           category: category,
           returnUrl: returnUrl,
         },
+      });
+
+      console.log("Cashfree order created successfully:", {
+        orderId: order.order_id || orderId,
+        hasPaymentSessionId: !!order.payment_session_id,
       });
 
       res.json({
@@ -152,9 +168,30 @@ router.post(
       });
     } catch (error) {
       console.error("Create order error:", error);
+      console.error("Error stack:", error.stack);
+      console.error("Error details:", {
+        message: error.message,
+        name: error.name,
+        orderId: req.body?.orderId || "N/A",
+        jobPostingId: req.body?.jobPostingId || "N/A",
+      });
+      
+      // Provide more detailed error message
+      let errorMessage = error.message || "Payment gateway error";
+      
+      // If it's a Cashfree API error, include more context
+      if (error.message && error.message.includes("Cashfree")) {
+        errorMessage = error.message;
+      } else if (error.message && error.message.includes("credentials")) {
+        errorMessage = error.message;
+      } else {
+        // Generic error - provide helpful message
+        errorMessage = `Failed to create payment order: ${error.message || "Unknown error. Please check server logs for details."}`;
+      }
+      
       res.status(500).json({
         error: "Failed to create payment order",
-        message: error.message || "Payment gateway error",
+        message: errorMessage,
       });
     }
   }
