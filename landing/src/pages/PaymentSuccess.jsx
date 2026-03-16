@@ -570,25 +570,44 @@ function PaymentSuccess() {
         </div>
         <div
           style={{
-            fontSize: 16,
-            fontWeight: 600,
-            color: "#666",
+            background: "#f0fdf4",
+            border: `2px solid ${GREEN}`,
+            borderRadius: 8,
+            padding: "16px 24px",
             marginBottom: 16,
+            display: "inline-block",
           }}
         >
-          Application Number:{" "}
-          <span style={{ color: GREEN, fontSize: 18 }}>
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 600,
+              color: "#666",
+              marginBottom: 8,
+            }}
+          >
+            Application Number:
+          </div>
+          <div
+            style={{
+              fontSize: 28,
+              fontWeight: 900,
+              color: GREEN,
+              letterSpacing: "1px",
+            }}
+          >
             {applicationNumber || "N/A"}
-          </span>
+          </div>
         </div>
         <div
           style={{
             fontSize: 14,
             color: "#666",
             lineHeight: 1.6,
+            marginTop: 12,
           }}
         >
-          Please download your application slip below. Keep this application number
+          📥 Please download your application slip below. Keep this application number
           for future reference.
         </div>
       </div>
@@ -1413,30 +1432,75 @@ function PaymentSuccess() {
               background: GREEN,
               color: "#fff",
               border: "none",
-              padding: "12px 24px",
-              borderRadius: 4,
-              fontSize: 14,
+              padding: "16px 32px",
+              borderRadius: 6,
+              fontSize: 16,
               fontWeight: 700,
               cursor: "pointer",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+              boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+              transition: "all 0.3s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "scale(1.05)";
+              e.target.style.boxShadow = "0 6px 12px rgba(0,0,0,0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "scale(1)";
+              e.target.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
             }}
           >
             📥 Download PDF
           </button>
           <button
             onClick={() => {
-              navigate("/");
+              window.print();
             }}
             style={{
               background: "#1a2a4a",
               color: "#fff",
               border: "none",
-              padding: "12px 24px",
-              borderRadius: 4,
-              fontSize: 14,
+              padding: "16px 32px",
+              borderRadius: 6,
+              fontSize: 16,
               fontWeight: 700,
               cursor: "pointer",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+              boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+              transition: "all 0.3s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "scale(1.05)";
+              e.target.style.boxShadow = "0 6px 12px rgba(0,0,0,0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "scale(1)";
+              e.target.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
+            }}
+          >
+            🖨️ Print
+          </button>
+          <button
+            onClick={() => {
+              navigate("/");
+            }}
+            style={{
+              background: "#666",
+              color: "#fff",
+              border: "none",
+              padding: "16px 32px",
+              borderRadius: 6,
+              fontSize: 16,
+              fontWeight: 700,
+              cursor: "pointer",
+              boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+              transition: "all 0.3s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "scale(1.05)";
+              e.target.style.boxShadow = "0 6px 12px rgba(0,0,0,0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "scale(1)";
+              e.target.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
             }}
           >
             🏠 Home
