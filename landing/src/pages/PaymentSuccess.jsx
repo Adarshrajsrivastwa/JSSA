@@ -744,6 +744,7 @@ function PaymentSuccess() {
               <div
                 style={{ 
                   marginLeft: 20,
+                  marginTop: 10, // move photo a bit down from the top
                   width: 100,
                   textAlign: "center",
                   flexShrink: 0,
