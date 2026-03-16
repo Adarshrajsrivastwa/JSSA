@@ -160,39 +160,61 @@ export async function createCashfreeOrder(orderData) {
 
     console.log("💳 Request body:", JSON.stringify(requestBody, null, 2));
     console.log("💳 Making request to Cashfree API...");
-    
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-version": "2022-09-01",
-        "x-client-id": credentials.appId,
-        "x-client-secret": credentials.secretKey,
-      },
-      body: JSON.stringify(requestBody),
+    console.log("💳 API URL:", apiUrl);
+    console.log("💳 Headers:", {
+      "Content-Type": "application/json",
+      "x-api-version": "2022-09-01",
+      "x-client-id": credentials.appId ? credentials.appId.substring(0, 10) + "..." : "MISSING",
+      "x-client-secret": credentials.secretKey ? "***" + credentials.secretKey.slice(-4) : "MISSING"
     });
-
-    console.log("💳 Cashfree API response status:", response.status, response.statusText);
+    
+    let response;
+    try {
+      response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-version": "2022-09-01",
+          "x-client-id": credentials.appId,
+          "x-client-secret": credentials.secretKey,
+        },
+        body: JSON.stringify(requestBody),
+      });
+      console.log("💳 Cashfree API response status:", response.status, response.statusText);
+    } catch (fetchError) {
+      console.error("❌ Fetch error calling Cashfree API:", fetchError);
+      console.error("❌ Fetch error message:", fetchError.message);
+      console.error("❌ Fetch error name:", fetchError.name);
+      console.error("❌ Fetch error stack:", fetchError.stack);
+      throw new Error(`Failed to connect to Cashfree API: ${fetchError.message || "Network error"}`);
+    }
 
     if (!response.ok) {
-      let errorMessage = `Cashfree API error: ${response.status}`;
+      let errorMessage = `Cashfree API error: ${response.status} ${response.statusText}`;
       let errorDetails = null;
       try {
         const errorData = await response.json();
-        errorMessage = errorData.message || errorData.error?.message || errorMessage;
+        console.error("❌ Cashfree API error response (JSON):", JSON.stringify(errorData, null, 2));
+        errorMessage = errorData.message || 
+                      errorData.error?.message || 
+                      errorData.error?.description ||
+                      errorData.error ||
+                      errorMessage;
         errorDetails = errorData;
-        console.error("❌ Cashfree API error response:", errorData);
       } catch (e) {
         try {
           const errorText = await response.text();
+          console.error("❌ Cashfree API error response (text):", errorText);
           errorMessage = errorText || errorMessage;
-          console.error("❌ Cashfree API error text:", errorText);
         } catch (e2) {
           console.error("❌ Could not parse Cashfree error response");
+          console.error("❌ Parse error:", e2);
         }
       }
-      console.error("❌ Cashfree API call failed:", errorMessage);
-      throw new Error(errorMessage);
+      console.error("❌ Cashfree API call failed with status:", response.status);
+      console.error("❌ Error message:", errorMessage);
+      console.error("❌ Error details:", errorDetails);
+      throw new Error(`Cashfree API error (${response.status}): ${errorMessage}`);
     }
 
     const data = await response.json();
