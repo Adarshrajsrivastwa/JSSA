@@ -2979,22 +2979,22 @@ function MarqueeBand({ labelLine1, labelLine2, items = [], animId }) {
                     }}
                   >
                     {[0, 1].map((copy) => (
-                      getIsNew(item) ? (
-                        <a
-                          key={copy}
-                          href={getLink(item)}
-                          style={{
-                            display: "inline-block",
-                            color: "#1a4fa0",
-                            fontWeight: 600,
-                            fontSize: 15,
-                            textDecoration: "underline",
-                            textUnderlineOffset: 3,
-                            whiteSpace: "nowrap",
-                            paddingRight: 80,
-                          }}
-                        >
-                          {getText(item)}
+                      <a
+                        key={copy}
+                        href={getLink(item)}
+                        style={{
+                          display: "inline-block",
+                          color: "#1a4fa0",
+                          fontWeight: 600,
+                          fontSize: 15,
+                          textDecoration: "underline",
+                          textUnderlineOffset: 3,
+                          whiteSpace: "nowrap",
+                          paddingRight: 80,
+                        }}
+                      >
+                        {getText(item)}
+                        {getIsNew(item) && (
                           <span
                             style={{
                               marginLeft: 6,
@@ -3009,38 +3009,8 @@ function MarqueeBand({ labelLine1, labelLine2, items = [], animId }) {
                           >
                             NEW
                           </span>
-                        </a>
-                      ) : (
-                        <span
-                          key={copy}
-                          style={{
-                            display: "inline-block",
-                            color: "#666",
-                            fontWeight: 600,
-                            fontSize: 15,
-                            textDecoration: "none",
-                            whiteSpace: "nowrap",
-                            paddingRight: 80,
-                            cursor: "not-allowed",
-                          }}
-                        >
-                          {getText(item)}
-                          <span
-                            style={{
-                              marginLeft: 6,
-                              background: "#8B1a1a",
-                              color: "#fff",
-                              fontSize: 10,
-                              fontWeight: 900,
-                              padding: "1px 5px",
-                              borderRadius: 3,
-                              verticalAlign: "middle",
-                            }}
-                          >
-                            CLOSED
-                          </span>
-                        </span>
-                      )
+                        )}
+                      </a>
                     ))}
                   </div>
                 ) : (
@@ -3141,22 +3111,22 @@ function MarqueeBand({ labelLine1, labelLine2, items = [], animId }) {
                     }}
                   >
                     {[0, 1].map((copy) => (
-                      getIsNew(item) ? (
-                        <a
-                          key={copy}
-                          href={getLink(item)}
-                          style={{
-                            display: "inline-block",
-                            color: "#1a4fa0",
-                            fontWeight: 600,
-                            fontSize: 9,
-                            textDecoration: "underline",
-                            textUnderlineOffset: 2,
-                            whiteSpace: "nowrap",
-                            paddingRight: 40,
-                          }}
-                        >
-                          {getText(item)}
+                      <a
+                        key={copy}
+                        href={getLink(item)}
+                        style={{
+                          display: "inline-block",
+                          color: "#1a4fa0",
+                          fontWeight: 600,
+                          fontSize: 9,
+                          textDecoration: "underline",
+                          textUnderlineOffset: 2,
+                          whiteSpace: "nowrap",
+                          paddingRight: 40,
+                        }}
+                      >
+                        {getText(item)}
+                        {getIsNew(item) && (
                           <span
                             style={{
                               marginLeft: 3,
@@ -3171,38 +3141,8 @@ function MarqueeBand({ labelLine1, labelLine2, items = [], animId }) {
                           >
                             NEW
                           </span>
-                        </a>
-                      ) : (
-                        <span
-                          key={copy}
-                          style={{
-                            display: "inline-block",
-                            color: "#666",
-                            fontWeight: 600,
-                            fontSize: 9,
-                            textDecoration: "none",
-                            whiteSpace: "nowrap",
-                            paddingRight: 40,
-                            cursor: "not-allowed",
-                          }}
-                        >
-                          {getText(item)}
-                          <span
-                            style={{
-                              marginLeft: 3,
-                              background: "#8B1a1a",
-                              color: "#fff",
-                              fontSize: 6,
-                              fontWeight: 900,
-                              padding: "1px 3px",
-                              borderRadius: 2,
-                              verticalAlign: "middle",
-                            }}
-                          >
-                            CLOSED
-                          </span>
-                        </span>
-                      )
+                        )}
+                      </a>
                     ))}
                   </div>
                 ) : (
@@ -3775,22 +3715,7 @@ function HomePage({ onNavigate }) {
       try {
         setLoadingVacancies(true);
         const r = await jobPostingsAPI.getLatestVacancies();
-        const list = r.success && r.data?.vacancies ? r.data.vacancies : [];
-        const today = new Date();
-        const mapped = Array.isArray(list)
-          ? list.map((p) => {
-              const last = p?.lastDate ? new Date(p.lastDate) : null;
-              const isClosed = last ? last < today : false;
-              const isActive = (p?.status || "") === "Active" && !isClosed;
-              const id = p?._id || p?.id;
-              return {
-                english: p?.title || p?.post?.en || p?.postTitle?.en || "Vacancy",
-                link: id ? `/job-postings/view/${id}` : "#",
-                isNew: !!isActive,
-              };
-            })
-          : [];
-        setVacancies(mapped);
+        setVacancies(r.success && r.data?.vacancies ? r.data.vacancies : []);
       } catch {
         setVacancies([]);
       } finally {
