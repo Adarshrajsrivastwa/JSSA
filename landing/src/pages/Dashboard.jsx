@@ -4703,7 +4703,7 @@ export default function JSSAbhiyan() {
             }}
           >
             <a
-              href="https://admin.jssabhiyan.com/login"
+              href="https://account.jssabhiyan.com/login"
               className="login-blink"
               style={{
                 background: "#e53e3e",
