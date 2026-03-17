@@ -10,6 +10,7 @@ const ApplicationForm = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState("all");
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const itemsPerPage = 7;
@@ -40,6 +41,12 @@ const ApplicationForm = () => {
     if (normalized === "pending") return "Pending";
     if (normalized === "failed") return "Failed";
     return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  };
+
+  const normalizePaymentStatus = (status) => {
+    const normalized = String(status || "").toLowerCase();
+    if (normalized === "success") return "paid";
+    return normalized || "pending";
   };
 
   // Fetch job postings (only for admin)
@@ -103,9 +110,6 @@ const ApplicationForm = () => {
       
       const response = await applicationsAPI.getAll(params);
       if (response.success && response.data) {
-        console.log("📥 /applications API response:", response);
-        console.log("📥 /applications raw applications:", response.data.applications);
-
         // Transform API data to match frontend format
         const transformed = response.data.applications.map((app) => {
           const posting =
@@ -127,16 +131,6 @@ const ApplicationForm = () => {
             jobPostingId: postingId,
           };
         });
-
-        console.table(
-          transformed.map((app) => ({
-            id: app.id,
-            applicationNumber: app.applicationNumber,
-            jobPostingId: app.jobPostingId,
-            jobTitle: app.jobTitle,
-            paymentStatus: app.paymentStatus,
-          })),
-        );
 
         setApplications(transformed);
       }
@@ -184,12 +178,18 @@ const ApplicationForm = () => {
   };
 
   // Filter + Search
-  const filteredApplications = applications.filter((app) =>
-    [app.applicationNumber, getJobTitleForApplication(app), app.paymentStatus]
+  const filteredApplications = applications.filter((app) => {
+    const matchesSearch = [app.applicationNumber, getJobTitleForApplication(app), app.paymentStatus]
       .join(" ")
       .toLowerCase()
-      .includes(searchQuery.toLowerCase())
-  );
+      .includes(searchQuery.toLowerCase());
+
+    const appPaymentStatus = normalizePaymentStatus(app.paymentStatus);
+    const matchesPayment =
+      paymentStatusFilter === "all" || appPaymentStatus === paymentStatusFilter;
+
+    return matchesSearch && matchesPayment;
+  });
 
   // Pagination
   const indexOfLast = currentPage * itemsPerPage;
@@ -242,6 +242,7 @@ const ApplicationForm = () => {
     setSelectedJobPostingId(jobId);
     setCurrentPage(1);
     setSearchQuery("");
+    setPaymentStatusFilter("all");
   };
 
   // Handle back to job list
@@ -251,6 +252,7 @@ const ApplicationForm = () => {
     setApplications([]);
     setCurrentPage(1);
     setSearchQuery("");
+    setPaymentStatusFilter("all");
   };
 
   // Show job postings list (only for admin)
@@ -338,21 +340,37 @@ const ApplicationForm = () => {
               <p className="text-sm text-gray-600">Advt. No: {selectedJobPosting.advtNo}</p>
             </div>
           )}
-          {/* Search */}
-          <div className="flex items-center border border-gray-300 rounded overflow-hidden h-10 flex-1 w-full sm:max-w-[500px]">
-            <input
-              type="text"
-              placeholder="Search by Application Number, Job Title, Payment Status..."
-              className="flex-1 px-3 sm:px-4 text-xs sm:text-sm text-gray-700 focus:outline-none h-full bg-white"
-              value={searchQuery}
+          {/* Search + Payment Filter */}
+          <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto lg:items-center lg:justify-end lg:flex-1">
+            <div className="flex items-center border border-gray-300 rounded overflow-hidden h-10 flex-1 w-full sm:max-w-[500px]">
+              <input
+                type="text"
+                placeholder="Search by Application Number, Job Title, Payment Status..."
+                className="flex-1 px-3 sm:px-4 text-xs sm:text-sm text-gray-700 focus:outline-none h-full bg-white"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+              <button className="bg-[#3AB000] hover:bg-[#2d8a00] text-white text-xs sm:text-sm px-4 sm:px-6 h-full font-medium transition-colors whitespace-nowrap">
+                Search
+              </button>
+            </div>
+            <select
+              value={paymentStatusFilter}
               onChange={(e) => {
-                setSearchQuery(e.target.value);
+                setPaymentStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
-            />
-            <button className="bg-[#3AB000] hover:bg-[#2d8a00] text-white text-xs sm:text-sm px-4 sm:px-6 h-full font-medium transition-colors whitespace-nowrap">
-              Search
-            </button>
+              className="h-10 min-w-[160px] rounded border border-gray-300 bg-white px-3 text-xs sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#3AB000]/30"
+            >
+              <option value="all">All Payments</option>
+              <option value="pending">Pending</option>
+              <option value="paid">Paid</option>
+              <option value="failed">Failed</option>
+              <option value="refunded">Refunded</option>
+            </select>
           </div>
         </div>
 
@@ -476,9 +494,9 @@ const ApplicationForm = () => {
               <div
                 key={app.id}
                 onClick={() => navigate(`/applications/view/${app.id}`)}
-                className="bg-white rounded border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer"
+                className="bg-white rounded-lg border border-gray-200 p-3.5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
               >
-                <div className="flex items-start gap-3 mb-3">
+                <div className="flex items-start justify-between gap-3 mb-2.5">
                   <div className="flex-shrink-0">
                     {app.photo ? (
                       <img
@@ -496,19 +514,31 @@ const ApplicationForm = () => {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-gray-500 mb-1">S.N: {indexOfFirst + idx + 1}</div>
-                    <div className="text-xs text-gray-500">App No: {app.applicationNumber || "N/A"}</div>
+                    <div className="text-[11px] text-gray-500 mb-1">S.N: {indexOfFirst + idx + 1}</div>
+                    <div className="text-xs font-semibold text-gray-800 mb-1">
+                      App No: {app.applicationNumber || "N/A"}
+                    </div>
+                    <div className="text-[11px] text-gray-500 truncate">
+                      {getJobTitleForApplication(app)}
+                    </div>
+                  </div>
+                  <div
+                    className={`text-[11px] px-2 py-1 rounded-full border font-semibold ${
+                      normalizePaymentStatus(app.paymentStatus) === "paid"
+                        ? "bg-green-50 text-green-700 border-green-200"
+                        : normalizePaymentStatus(app.paymentStatus) === "pending"
+                          ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                          : "bg-red-50 text-red-700 border-red-200"
+                    }`}
+                  >
+                    {formatPaymentStatus(app.paymentStatus)}
                   </div>
                 </div>
 
-                <div className="space-y-2 text-sm text-gray-700 mb-3">
+                <div className="space-y-2 text-sm text-gray-700 mb-2.5">
                   <div className="flex items-start">
                     <span className="font-medium w-28 flex-shrink-0">Job Title:</span>
                     <span className="flex-1">{getJobTitleForApplication(app)}</span>
-                  </div>
-                  <div className="flex items-start">
-                    <span className="font-medium w-28 flex-shrink-0">Payment:</span>
-                    <span className="flex-1">{formatPaymentStatus(app.paymentStatus)}</span>
                   </div>
                 </div>
 
