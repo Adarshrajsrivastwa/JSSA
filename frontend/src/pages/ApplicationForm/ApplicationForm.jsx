@@ -11,6 +11,7 @@ const ApplicationForm = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const itemsPerPage = 7;
@@ -187,8 +188,10 @@ const ApplicationForm = () => {
     const appPaymentStatus = normalizePaymentStatus(app.paymentStatus);
     const matchesPayment =
       paymentStatusFilter === "all" || appPaymentStatus === paymentStatusFilter;
+    const appType = String(app.status || "").toLowerCase();
+    const matchesType = typeFilter === "all" || appType === typeFilter;
 
-    return matchesSearch && matchesPayment;
+    return matchesSearch && matchesPayment && matchesType;
   });
 
   // Pagination
@@ -243,6 +246,7 @@ const ApplicationForm = () => {
     setCurrentPage(1);
     setSearchQuery("");
     setPaymentStatusFilter("all");
+    setTypeFilter("all");
   };
 
   // Handle back to job list
@@ -253,6 +257,7 @@ const ApplicationForm = () => {
     setCurrentPage(1);
     setSearchQuery("");
     setPaymentStatusFilter("all");
+    setTypeFilter("all");
   };
 
   // Show job postings list (only for admin)
@@ -372,6 +377,24 @@ const ApplicationForm = () => {
               <option value="refunded">Refunded</option>
             </select>
           </div>
+        </div>
+        <div className="inline-flex rounded border border-gray-300 overflow-hidden mb-4">
+          {["all", "active", "inactive"].map((option) => (
+            <button
+              key={option}
+              onClick={() => {
+                setTypeFilter(option);
+                setCurrentPage(1);
+              }}
+              className={`px-5 py-2 text-sm font-semibold capitalize transition-colors ${
+                typeFilter === option
+                  ? "bg-[#3AB000] text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {option}
+            </button>
+          ))}
         </div>
 
         {/* ── Desktop Table ── */}
