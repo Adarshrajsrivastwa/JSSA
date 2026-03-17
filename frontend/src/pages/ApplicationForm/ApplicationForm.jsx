@@ -20,6 +20,15 @@ const ApplicationForm = () => {
   const [selectedJobPosting, setSelectedJobPosting] = useState(null);
   const [jobPostingsLoading, setJobPostingsLoading] = useState(true);
 
+  const formatPaymentStatus = (status) => {
+    if (!status) return "N/A";
+    const normalized = String(status).toLowerCase();
+    if (normalized === "paid" || normalized === "success") return "Paid";
+    if (normalized === "pending") return "Pending";
+    if (normalized === "failed") return "Failed";
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  };
+
   // Fetch job postings (only for admin)
   const fetchJobPostings = async () => {
     if (role !== "admin") return;
@@ -78,19 +87,25 @@ const ApplicationForm = () => {
       const response = await applicationsAPI.getAll(params);
       if (response.success && response.data) {
         // Transform API data to match frontend format
-        const transformed = response.data.applications.map((app) => ({
-          id: app._id,
-          photo: app.photo,
-          candidateName: app.candidateName,
-          fatherName: app.fatherName,
-          mobile: app.mobile,
-          district: app.district,
-          higherEducation: app.higherEducation,
-          status: app.status,
-          paymentStatus: app.paymentStatus || null,
-          jobPostingId: app.jobPostingId || null,
-          applicationNumber: app.applicationNumber,
-        }));
+        const transformed = response.data.applications.map((app) => {
+          const posting = app.jobPostingId && typeof app.jobPostingId === "object" ? app.jobPostingId : null;
+          const postingTitle =
+            posting && posting.post
+              ? typeof posting.post === "object"
+                ? posting.post.en || posting.post.hi || null
+                : posting.post
+              : null;
+
+          return {
+            id: app._id,
+            photo: app.photo,
+            candidateName: app.candidateName,
+            status: app.status,
+            paymentStatus: app.paymentStatus || null,
+            applicationNumber: app.applicationNumber,
+            jobTitle: postingTitle,
+          };
+        });
         setApplications(transformed);
       }
     } catch (err) {
@@ -130,7 +145,7 @@ const ApplicationForm = () => {
 
   // Filter + Search
   const filteredApplications = applications.filter((app) =>
-    [app.candidateName, app.applicationNumber, app.mobile, app.district]
+    [app.applicationNumber, app.jobTitle, app.paymentStatus]
       .join(" ")
       .toLowerCase()
       .includes(searchQuery.toLowerCase())
@@ -147,7 +162,7 @@ const ApplicationForm = () => {
     <tbody>
       {Array.from({ length: itemsPerPage }).map((_, idx) => (
         <tr key={idx} className="animate-pulse border-b border-gray-100">
-          {Array.from({ length: 8 }).map((__, j) => (
+          {Array.from({ length: 6 }).map((__, j) => (
             <td key={j} className="px-4 py-4 text-center">
               <div
                 className={`bg-gray-200 rounded mx-auto ${j === 1 ? "h-9 w-9 rounded-full" : "h-4 w-4/5"}`}
@@ -163,7 +178,7 @@ const ApplicationForm = () => {
   const EmptyState = () => (
     <tbody>
       <tr>
-        <td colSpan="8" className="text-center py-12 text-gray-400 text-sm">
+        <td colSpan="6" className="text-center py-12 text-gray-400 text-sm">
           {error ? (
             <div className="flex flex-col items-center gap-2">
               <p className="text-red-500">Error: {error}</p>
@@ -287,7 +302,7 @@ const ApplicationForm = () => {
           <div className="flex items-center border border-gray-300 rounded overflow-hidden h-10 flex-1 w-full sm:max-w-[500px]">
             <input
               type="text"
-              placeholder="Search by Name, Application Number, Mobile, District..."
+              placeholder="Search by Application Number, Job Title, Payment Status..."
               className="flex-1 px-3 sm:px-4 text-xs sm:text-sm text-gray-700 focus:outline-none h-full bg-white"
               value={searchQuery}
               onChange={(e) => {
@@ -304,7 +319,7 @@ const ApplicationForm = () => {
         {/* ── Desktop Table ── */}
         <div className="hidden md:block bg-white rounded overflow-hidden border border-gray-200">
           <div className="overflow-x-auto -mx-2 md:mx-0">
-            <table className="w-full text-sm min-w-[900px]">
+            <table className="w-full text-sm min-w-[760px]">
               <thead>
                 <tr className="bg-[#3AB000]">
                   <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
@@ -317,16 +332,10 @@ const ApplicationForm = () => {
                     Application No.
                   </th>
                   <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
-                    Candidate Name
+                    Job Title
                   </th>
                   <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
-                    Father's Name
-                  </th>
-                  <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
-                    Mobile
-                  </th>
-                  <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
-                    District
+                    Payment Status
                   </th>
                   <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
                     Action
@@ -361,7 +370,7 @@ const ApplicationForm = () => {
                           />
                         ) : (
                           <div className="h-9 w-9 rounded-full bg-[#e8f5e2] flex items-center justify-center mx-auto text-[#3AB000] font-bold text-sm">
-                            {app.candidateName.charAt(0).toUpperCase()}
+                            {(app.candidateName || "A").charAt(0).toUpperCase()}
                           </div>
                         )}
                       </td>
@@ -369,16 +378,10 @@ const ApplicationForm = () => {
                         {app.applicationNumber || "N/A"}
                       </td>
                       <td className="px-4 py-4 text-center text-gray-700">
-                        {app.candidateName}
+                        {app.jobTitle || selectedJobPosting?.post?.en || selectedJobPosting?.post || "N/A"}
                       </td>
                       <td className="px-4 py-4 text-center text-gray-700">
-                        {app.fatherName}
-                      </td>
-                      <td className="px-4 py-4 text-center text-gray-700">
-                        {app.mobile}
-                      </td>
-                      <td className="px-4 py-4 text-center text-gray-700">
-                        {app.district}
+                        {formatPaymentStatus(app.paymentStatus)}
                       </td>
                       <td className="px-4 py-4 text-center">
                         <button
@@ -440,7 +443,7 @@ const ApplicationForm = () => {
                     {app.photo ? (
                       <img
                         src={app.photo}
-                        alt={app.candidateName}
+                        alt={app.candidateName || "Applicant"}
                         className="h-12 w-12 rounded-full object-cover"
                         onError={(e) => {
                           e.target.style.display = "none";
@@ -448,28 +451,24 @@ const ApplicationForm = () => {
                       />
                     ) : (
                       <div className="h-12 w-12 rounded-full bg-[#e8f5e2] flex items-center justify-center text-[#3AB000] font-bold text-base">
-                        {app.candidateName.charAt(0).toUpperCase()}
+                        {(app.candidateName || "A").charAt(0).toUpperCase()}
                       </div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs text-gray-500 mb-1">S.N: {indexOfFirst + idx + 1}</div>
-                    <div className="text-base font-semibold text-gray-800 mb-1">
-                      {app.candidateName}
-                    </div>
-                    <div className="text-sm text-gray-600 mb-1">{app.fatherName}</div>
                     <div className="text-xs text-gray-500">App No: {app.applicationNumber || "N/A"}</div>
                   </div>
                 </div>
 
                 <div className="space-y-2 text-sm text-gray-700 mb-3">
                   <div className="flex items-start">
-                    <span className="font-medium w-20 flex-shrink-0">Mobile:</span>
-                    <span className="flex-1">{app.mobile}</span>
+                    <span className="font-medium w-28 flex-shrink-0">Job Title:</span>
+                    <span className="flex-1">{app.jobTitle || selectedJobPosting?.post?.en || selectedJobPosting?.post || "N/A"}</span>
                   </div>
                   <div className="flex items-start">
-                    <span className="font-medium w-20 flex-shrink-0">District:</span>
-                    <span className="flex-1">{app.district}</span>
+                    <span className="font-medium w-28 flex-shrink-0">Payment:</span>
+                    <span className="flex-1">{formatPaymentStatus(app.paymentStatus)}</span>
                   </div>
                 </div>
 
