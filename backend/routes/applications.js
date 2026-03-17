@@ -330,6 +330,17 @@ router.get("/", async (req, res) => {
       .populate("jobPostingId", "advtNo post title");
 
     const applicationObjects = applications.map((application) => application.toObject());
+    const requestedPosting = jobPostingId
+      ? await JobPosting.findById(jobPostingId).select("post title").lean()
+      : null;
+    const requestedFallbackTitle = getJobTitleFromPosting(requestedPosting);
+    const activePostings = await JobPosting.find({ status: "Active" })
+      .select("post title")
+      .sort({ createdAt: -1 })
+      .lean();
+    const globalFallbackTitle =
+      requestedFallbackTitle ||
+      (activePostings.length > 0 ? getJobTitleFromPosting(activePostings[0]) : null);
     const unresolvedJobPostingIds = applicationObjects
       .map((application) => {
         const title = getJobTitleFromPosting(application.jobPostingId) || application.jobTitle || null;
@@ -366,7 +377,9 @@ router.get("/", async (req, res) => {
 
       return {
         ...applicationObj,
-        jobTitle: postingId ? fallbackTitleMap.get(postingId) || null : null,
+        jobTitle: postingId
+          ? fallbackTitleMap.get(postingId) || globalFallbackTitle || null
+          : globalFallbackTitle || null,
       };
     });
 
@@ -420,6 +433,17 @@ router.get("/:id", async (req, res) => {
       });
     }
 
+    let fallbackTitle = null;
+    if (!application.jobPostingId) {
+      const activePostings = await JobPosting.find({ status: "Active" })
+        .select("post title")
+        .sort({ createdAt: -1 })
+        .lean();
+      if (activePostings.length > 0) {
+        fallbackTitle = getJobTitleFromPosting(activePostings[0]);
+      }
+    }
+
     res.json({
       success: true,
       data: {
@@ -432,7 +456,7 @@ router.get("/:id", async (req, res) => {
               ? getJobTitleFromPosting(
                   await JobPosting.findById(application.jobPostingId).select("post title").lean(),
                 )
-              : null),
+              : fallbackTitle),
         },
       },
     });
