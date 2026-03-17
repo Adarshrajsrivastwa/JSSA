@@ -80,10 +80,12 @@ const ApplicationView = () => {
             updatedAt: app.updatedAt,
             createdBy: app.createdBy,
             jobPostingId: getPostingId(app.jobPostingId),
+            resolvedJobPostingId: getPostingId(app.resolvedJobPostingId),
           });
           
           // Fetch job posting details if available
-          const postingId = getPostingId(app.jobPostingId);
+          const postingId =
+            getPostingId(app.jobPostingId) || getPostingId(app.resolvedJobPostingId);
           if (postingId) {
             try {
               const jobResponse = await jobPostingsAPI.getById(postingId);
@@ -272,7 +274,9 @@ const ApplicationView = () => {
   const handlePayNow = async () => {
     if (!application) return;
 
-    const jobPostingId = getPostingId(application.jobPostingId);
+    const jobPostingId =
+      getPostingId(application.jobPostingId) ||
+      getPostingId(application.resolvedJobPostingId);
     if (!jobPostingId) {
       alert("Job posting ID missing in application. Please contact support.");
       return;
@@ -335,6 +339,10 @@ const ApplicationView = () => {
         theme: { color: "#3AB000" },
         modal: {
           ondismiss: () => setProcessingPayment(false),
+        },
+        notes: {
+          applicationId: application.id,
+          jobPostingId,
         },
       };
 
@@ -419,7 +427,7 @@ const ApplicationView = () => {
   const isPaid = paymentStatus === "paid";
   const isPendingPayment = paymentStatus === "pending";
   const canInitiatePayment =
-    !!getPostingId(application.jobPostingId) &&
+    !!(getPostingId(application.jobPostingId) || getPostingId(application.resolvedJobPostingId)) &&
     !!application.gender &&
     !!application.category;
   const statusColors = {

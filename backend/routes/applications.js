@@ -22,6 +22,11 @@ const getJobTitleFromPosting = (jobPosting) => {
   return jobPosting.title || null;
 };
 
+const normalizeText = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
+
 // Public route for applying with auto-user creation
 /**
  * POST /api/applications/apply
@@ -434,13 +439,28 @@ router.get("/:id", async (req, res) => {
     }
 
     let fallbackTitle = null;
-    if (!application.jobPostingId) {
+    let resolvedJobPostingId = null;
+    if (application.jobPostingId) {
+      resolvedJobPostingId =
+        typeof application.jobPostingId === "object"
+          ? application.jobPostingId._id?.toString() || null
+          : application.jobPostingId.toString();
+    } else {
       const activePostings = await JobPosting.find({ status: "Active" })
-        .select("post title")
+        .select("_id post title")
         .sort({ createdAt: -1 })
         .lean();
+
       if (activePostings.length > 0) {
-        fallbackTitle = getJobTitleFromPosting(activePostings[0]);
+        const appTitle = normalizeText(application.jobTitle);
+        const matchedByTitle = appTitle
+          ? activePostings.find(
+              (posting) => normalizeText(getJobTitleFromPosting(posting)) === appTitle,
+            )
+          : null;
+        const fallbackPosting = matchedByTitle || activePostings[0];
+        fallbackTitle = getJobTitleFromPosting(fallbackPosting);
+        resolvedJobPostingId = fallbackPosting?._id?.toString() || null;
       }
     }
 
@@ -457,6 +477,7 @@ router.get("/:id", async (req, res) => {
                   await JobPosting.findById(application.jobPostingId).select("post title").lean(),
                 )
               : fallbackTitle),
+          resolvedJobPostingId,
         },
       },
     });
