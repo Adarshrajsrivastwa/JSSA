@@ -20,6 +20,19 @@ const ApplicationForm = () => {
   const [selectedJobPosting, setSelectedJobPosting] = useState(null);
   const [jobPostingsLoading, setJobPostingsLoading] = useState(true);
 
+  const extractJobTitle = (posting) => {
+    if (!posting) return null;
+    if (typeof posting === "string") return null;
+    if (posting.post) {
+      if (typeof posting.post === "object") {
+        return posting.post.en || posting.post.hi || null;
+      }
+      return posting.post;
+    }
+    if (posting.title) return posting.title;
+    return null;
+  };
+
   const formatPaymentStatus = (status) => {
     if (!status) return "N/A";
     const normalized = String(status).toLowerCase();
@@ -31,7 +44,6 @@ const ApplicationForm = () => {
 
   // Fetch job postings (only for admin)
   const fetchJobPostings = async () => {
-    if (role !== "admin") return;
     setJobPostingsLoading(true);
     try {
       const response = await jobPostingsAPI.getAll({ limit: 1000 });
@@ -39,32 +51,37 @@ const ApplicationForm = () => {
         const postings = response.data.postings.map((post) => ({
           id: post._id,
           advtNo: post.advtNo || "N/A",
-          post: typeof post.post === 'object' ? post.post.en : post.post,
+          post: typeof post.post === "object" ? post.post.en : post.post,
           postHi: typeof post.post === 'object' ? post.post.hi : post.post,
           location: typeof post.location === 'object' ? post.location.en : post.location,
           status: post.status,
         }));
-        
-        // Fetch application counts for each job
-        const postingsWithCounts = await Promise.all(
-          postings.map(async (job) => {
-            try {
-              const appsResponse = await applicationsAPI.getAll({ 
-                jobPostingId: job.id,
-                limit: 1 
-              });
-              return {
-                ...job,
-                applicationCount: appsResponse.success && appsResponse.data 
-                  ? appsResponse.data.pagination?.total || 0 
-                  : 0
-              };
-            } catch {
-              return { ...job, applicationCount: 0 };
-            }
-          })
-        );
-        setJobPostings(postingsWithCounts);
+
+        if (role === "admin") {
+          // Fetch application counts for each job
+          const postingsWithCounts = await Promise.all(
+            postings.map(async (job) => {
+              try {
+                const appsResponse = await applicationsAPI.getAll({
+                  jobPostingId: job.id,
+                  limit: 1,
+                });
+                return {
+                  ...job,
+                  applicationCount:
+                    appsResponse.success && appsResponse.data
+                      ? appsResponse.data.pagination?.total || 0
+                      : 0,
+                };
+              } catch {
+                return { ...job, applicationCount: 0 };
+              }
+            }),
+          );
+          setJobPostings(postingsWithCounts);
+        } else {
+          setJobPostings(postings);
+        }
       }
     } catch (err) {
       console.error("Fetch job postings error:", err);
@@ -88,13 +105,13 @@ const ApplicationForm = () => {
       if (response.success && response.data) {
         // Transform API data to match frontend format
         const transformed = response.data.applications.map((app) => {
-          const posting = app.jobPostingId && typeof app.jobPostingId === "object" ? app.jobPostingId : null;
-          const postingTitle =
-            posting && posting.post
-              ? typeof posting.post === "object"
-                ? posting.post.en || posting.post.hi || null
-                : posting.post
+          const posting =
+            app.jobPostingId && typeof app.jobPostingId === "object"
+              ? app.jobPostingId
               : null;
+          const postingTitle = extractJobTitle(posting);
+          const postingId =
+            posting?._id || (typeof app.jobPostingId === "string" ? app.jobPostingId : null);
 
           return {
             id: app._id,
@@ -104,6 +121,7 @@ const ApplicationForm = () => {
             paymentStatus: app.paymentStatus || null,
             applicationNumber: app.applicationNumber,
             jobTitle: postingTitle,
+            jobPostingId: postingId,
           };
         });
         setApplications(transformed);
@@ -117,12 +135,20 @@ const ApplicationForm = () => {
   };
 
   useEffect(() => {
-    if (role === "admin") {
-      fetchJobPostings();
-    } else {
+    fetchJobPostings();
+    if (role !== "admin") {
       fetchApplications();
     }
   }, [role]);
+
+  const getJobTitleForApplication = (app) => {
+    if (app.jobTitle) return app.jobTitle;
+    if (app.jobPostingId) {
+      const matchedPosting = jobPostings.find((job) => job.id === app.jobPostingId);
+      if (matchedPosting?.post) return matchedPosting.post;
+    }
+    return selectedJobPosting?.post?.en || selectedJobPosting?.post || "N/A";
+  };
 
   useEffect(() => {
     if (selectedJobPostingId) {
@@ -145,7 +171,7 @@ const ApplicationForm = () => {
 
   // Filter + Search
   const filteredApplications = applications.filter((app) =>
-    [app.applicationNumber, app.jobTitle, app.paymentStatus]
+    [app.applicationNumber, getJobTitleForApplication(app), app.paymentStatus]
       .join(" ")
       .toLowerCase()
       .includes(searchQuery.toLowerCase())
@@ -378,7 +404,7 @@ const ApplicationForm = () => {
                         {app.applicationNumber || "N/A"}
                       </td>
                       <td className="px-4 py-4 text-center text-gray-700">
-                        {app.jobTitle || selectedJobPosting?.post?.en || selectedJobPosting?.post || "N/A"}
+                        {getJobTitleForApplication(app)}
                       </td>
                       <td className="px-4 py-4 text-center text-gray-700">
                         {formatPaymentStatus(app.paymentStatus)}
@@ -464,7 +490,7 @@ const ApplicationForm = () => {
                 <div className="space-y-2 text-sm text-gray-700 mb-3">
                   <div className="flex items-start">
                     <span className="font-medium w-28 flex-shrink-0">Job Title:</span>
-                    <span className="flex-1">{app.jobTitle || selectedJobPosting?.post?.en || selectedJobPosting?.post || "N/A"}</span>
+                    <span className="flex-1">{getJobTitleForApplication(app)}</span>
                   </div>
                   <div className="flex items-start">
                     <span className="font-medium w-28 flex-shrink-0">Payment:</span>
