@@ -329,11 +329,44 @@ router.get("/", async (req, res) => {
       .populate("createdBy", "email phone role")
       .populate("jobPostingId", "advtNo post title");
 
-    const applicationsWithJobTitle = applications.map((application) => {
-      const applicationObj = application.toObject();
+    const applicationObjects = applications.map((application) => application.toObject());
+    const unresolvedJobPostingIds = applicationObjects
+      .map((application) => {
+        const title = getJobTitleFromPosting(application.jobPostingId) || application.jobTitle || null;
+        if (title) return null;
+        if (application.jobPostingId && typeof application.jobPostingId === "object") {
+          return application.jobPostingId._id?.toString() || null;
+        }
+        if (application.jobPostingId) return application.jobPostingId.toString();
+        return null;
+      })
+      .filter(Boolean);
+
+    const uniqueUnresolvedIds = [...new Set(unresolvedJobPostingIds)];
+    let fallbackTitleMap = new Map();
+    if (uniqueUnresolvedIds.length > 0) {
+      const fallbackPostings = await JobPosting.find({
+        _id: { $in: uniqueUnresolvedIds },
+      }).select("_id post title");
+      fallbackTitleMap = new Map(
+        fallbackPostings.map((posting) => [posting._id.toString(), getJobTitleFromPosting(posting.toObject())]),
+      );
+    }
+
+    const applicationsWithJobTitle = applicationObjects.map((applicationObj) => {
+      const primaryTitle = getJobTitleFromPosting(applicationObj.jobPostingId) || applicationObj.jobTitle || null;
+      if (primaryTitle) {
+        return { ...applicationObj, jobTitle: primaryTitle };
+      }
+
+      const postingId =
+        applicationObj.jobPostingId && typeof applicationObj.jobPostingId === "object"
+          ? applicationObj.jobPostingId._id?.toString()
+          : applicationObj.jobPostingId?.toString();
+
       return {
         ...applicationObj,
-        jobTitle: getJobTitleFromPosting(applicationObj.jobPostingId),
+        jobTitle: postingId ? fallbackTitleMap.get(postingId) || null : null,
       };
     });
 
@@ -392,7 +425,14 @@ router.get("/:id", async (req, res) => {
       data: {
         application: {
           ...application.toObject(),
-          jobTitle: getJobTitleFromPosting(application.jobPostingId),
+          jobTitle:
+            getJobTitleFromPosting(application.jobPostingId) ||
+            application.jobTitle ||
+            (application.jobPostingId
+              ? getJobTitleFromPosting(
+                  await JobPosting.findById(application.jobPostingId).select("post title").lean(),
+                )
+              : null),
         },
       },
     });

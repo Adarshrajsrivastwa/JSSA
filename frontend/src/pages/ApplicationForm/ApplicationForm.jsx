@@ -103,6 +103,9 @@ const ApplicationForm = () => {
       
       const response = await applicationsAPI.getAll(params);
       if (response.success && response.data) {
+        console.log("📥 /applications API response:", response);
+        console.log("📥 /applications raw applications:", response.data.applications);
+
         // Transform API data to match frontend format
         const transformed = response.data.applications.map((app) => {
           const posting =
@@ -120,10 +123,21 @@ const ApplicationForm = () => {
             status: app.status,
             paymentStatus: app.paymentStatus || null,
             applicationNumber: app.applicationNumber,
-            jobTitle: postingTitle,
+            jobTitle: app.jobTitle || postingTitle || null,
             jobPostingId: postingId,
           };
         });
+
+        console.table(
+          transformed.map((app) => ({
+            id: app.id,
+            applicationNumber: app.applicationNumber,
+            jobPostingId: app.jobPostingId,
+            jobTitle: app.jobTitle,
+            paymentStatus: app.paymentStatus,
+          })),
+        );
+
         setApplications(transformed);
       }
     } catch (err) {
