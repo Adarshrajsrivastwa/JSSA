@@ -520,7 +520,17 @@ const JobPostingView = () => {
     );
   }
 
-  const isActive = posting.status === "Active";
+  const computeStatusFromLastDate = (lastDate) => {
+    if (!lastDate) return "Active";
+    const d = new Date(lastDate);
+    if (Number.isNaN(d.getTime())) return "Active";
+    // Treat "lastDate" as inclusive through the end of that day.
+    d.setHours(23, 59, 59, 999);
+    return d >= new Date() ? "Active" : "Inactive";
+  };
+
+  const computedStatus = computeStatusFromLastDate(posting.lastDate);
+  const isActive = computedStatus === "Active";
 
   return (
     <DashboardLayout activePath="/job-postings">
@@ -612,7 +622,7 @@ const JobPostingView = () => {
                 ) : (
                   <XCircle className="w-3.5 h-3.5" />
                 )}
-                {posting.status}
+                {computedStatus}
               </span>
             </div>
           </div>

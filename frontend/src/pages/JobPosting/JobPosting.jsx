@@ -253,6 +253,15 @@ const JobPostingList = () => {
   const [postings, setPostings] = useState([]);
   const itemsPerPage = 7;
 
+  const computeStatusFromLastDate = (lastDate) => {
+    if (!lastDate) return "Active";
+    const d = new Date(lastDate);
+    if (Number.isNaN(d.getTime())) return "Active";
+    // Treat "lastDate" as inclusive through the end of that day.
+    d.setHours(23, 59, 59, 999);
+    return d >= new Date() ? "Active" : "Inactive";
+  };
+
   const fetchPostings = async () => {
     setLoading(true);
     setError(null);
@@ -338,8 +347,9 @@ const JobPostingList = () => {
 
   const filteredPostings = postings
     .filter((p) => {
-      if (activeTab === "active") return p.status === "Active";
-      if (activeTab === "inactive") return p.status === "Inactive";
+      const computed = computeStatusFromLastDate(p.lastDate);
+      if (activeTab === "active") return computed === "Active";
+      if (activeTab === "inactive") return computed === "Inactive";
       return true;
     })
     .filter((p) =>
@@ -347,7 +357,18 @@ const JobPostingList = () => {
         .join(" ")
         .toLowerCase()
         .includes(searchQuery.toLowerCase()),
-    );
+    )
+    // Always keep Active on top and Inactive at bottom (based on lastDate).
+    .sort((a, b) => {
+      const sa = computeStatusFromLastDate(a.lastDate);
+      const sb = computeStatusFromLastDate(b.lastDate);
+      if (sa !== sb) return sa === "Active" ? -1 : 1;
+      // Within same group, show newest first when possible.
+      const da = new Date(a.date || a.createdAt || 0).getTime();
+      const db = new Date(b.date || b.createdAt || 0).getTime();
+      if (!Number.isNaN(da) && !Number.isNaN(db) && da !== db) return db - da;
+      return String(b.advtNo || "").localeCompare(String(a.advtNo || ""));
+    });
 
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
@@ -480,11 +501,14 @@ const JobPostingList = () => {
                 <EmptyState />
               ) : (
                 <tbody>
-                  {currentPostings.map((posting, idx) => (
-                    <tr
-                      key={posting.id}
-                      className="border-b border-gray-100 hover:bg-[#e8f5e2] transition-colors"
-                    >
+                  {currentPostings.map((posting, idx) => {
+                    const computedStatus = computeStatusFromLastDate(posting.lastDate);
+                    const isActiveRow = computedStatus === "Active";
+                    return (
+                      <tr
+                        key={posting.id}
+                        className="border-b border-gray-100 hover:bg-[#e8f5e2] transition-colors"
+                      >
                       <td className="px-4 py-4 text-center text-gray-700">
                         {indexOfFirst + idx + 1}
                       </td>
@@ -507,9 +531,9 @@ const JobPostingList = () => {
                         {posting.lastDate}
                       </td>
                       <td
-                        className={`px-4 py-4 text-center ${statusColor(posting.status)}`}
+                        className={`px-4 py-4 text-center ${statusColor(computeStatusFromLastDate(posting.lastDate))}`}
                       >
-                        {posting.status}
+                        {computeStatusFromLastDate(posting.lastDate)}
                       </td>
                       <td className="px-4 py-4 text-center">
                         <div className="flex items-center justify-center gap-3">
@@ -534,19 +558,22 @@ const JobPostingList = () => {
                               </button>
                             </>
                           )}
-                          <button
-                            onClick={() =>
-                              navigate(`/job-postings/view/${posting.id}`)
-                            }
-                            className="text-[#3AB000] hover:text-[#2d8a00] transition-colors"
-                            title="View"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
+                          {isActiveRow && (
+                            <button
+                              onClick={() =>
+                                navigate(`/job-postings/view/${posting.id}`)
+                              }
+                              className="text-[#3AB000] hover:text-[#2d8a00] transition-colors"
+                              title="View"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
-                    </tr>
-                  ))}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               )}
             </table>
@@ -582,11 +609,14 @@ const JobPostingList = () => {
               )}
             </div>
           ) : (
-            currentPostings.map((posting, idx) => (
-              <div
-                key={posting.id}
-                className="bg-white rounded border border-gray-200 p-4 hover:shadow-md transition-shadow"
-              >
+            currentPostings.map((posting, idx) => {
+              const computedStatus = computeStatusFromLastDate(posting.lastDate);
+              const isActiveRow = computedStatus === "Active";
+              return (
+                <div
+                  key={posting.id}
+                  className="bg-white rounded border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="text-xs text-gray-500 mb-1">S.N: {indexOfFirst + idx + 1}</div>
@@ -598,7 +628,7 @@ const JobPostingList = () => {
                     </div>
                   </div>
                   <div className={`text-xs font-semibold px-2 py-1 rounded ${statusColor(posting.status)}`}>
-                    {posting.status}
+                    {computeStatusFromLastDate(posting.lastDate)}
                   </div>
                 </div>
 
@@ -643,16 +673,19 @@ const JobPostingList = () => {
                       </button>
                     </>
                   )}
-                  <button
-                    onClick={() => navigate(`/job-postings/view/${posting.id}`)}
-                    className="text-[#3AB000] hover:text-[#2d8a00] transition-colors p-2"
-                    title="View"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </button>
+                  {isActiveRow && (
+                    <button
+                      onClick={() => navigate(`/job-postings/view/${posting.id}`)}
+                      className="text-[#3AB000] hover:text-[#2d8a00] transition-colors p-2"
+                      title="View"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
-              </div>
-            ))
+                </div>
+              );
+            })
           )}
         </div>
 

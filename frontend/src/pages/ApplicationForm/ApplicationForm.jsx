@@ -248,13 +248,6 @@ const ApplicationForm = () => {
                         </div>
                         <p className="text-xs text-gray-500">Applications</p>
                       </div>
-                      <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        job.status === "Active" 
-                          ? "bg-green-100 text-green-700" 
-                          : "bg-gray-100 text-gray-700"
-                      }`}>
-                        {job.status}
-                      </div>
                     </div>
                   </div>
                 </div>

@@ -2979,22 +2979,22 @@ function MarqueeBand({ labelLine1, labelLine2, items = [], animId }) {
                     }}
                   >
                     {[0, 1].map((copy) => (
-                      <a
-                        key={copy}
-                        href={getLink(item)}
-                        style={{
-                          display: "inline-block",
-                          color: "#1a4fa0",
-                          fontWeight: 600,
-                          fontSize: 15,
-                          textDecoration: "underline",
-                          textUnderlineOffset: 3,
-                          whiteSpace: "nowrap",
-                          paddingRight: 80,
-                        }}
-                      >
-                        {getText(item)}
-                        {getIsNew(item) && (
+                      getIsNew(item) ? (
+                        <a
+                          key={copy}
+                          href={getLink(item)}
+                          style={{
+                            display: "inline-block",
+                            color: "#1a4fa0",
+                            fontWeight: 600,
+                            fontSize: 15,
+                            textDecoration: "underline",
+                            textUnderlineOffset: 3,
+                            whiteSpace: "nowrap",
+                            paddingRight: 80,
+                          }}
+                        >
+                          {getText(item)}
                           <span
                             style={{
                               marginLeft: 6,
@@ -3009,8 +3009,38 @@ function MarqueeBand({ labelLine1, labelLine2, items = [], animId }) {
                           >
                             NEW
                           </span>
-                        )}
-                      </a>
+                        </a>
+                      ) : (
+                        <span
+                          key={copy}
+                          style={{
+                            display: "inline-block",
+                            color: "#666",
+                            fontWeight: 600,
+                            fontSize: 15,
+                            textDecoration: "none",
+                            whiteSpace: "nowrap",
+                            paddingRight: 80,
+                            cursor: "not-allowed",
+                          }}
+                        >
+                          {getText(item)}
+                          <span
+                            style={{
+                              marginLeft: 6,
+                              background: "#8B1a1a",
+                              color: "#fff",
+                              fontSize: 10,
+                              fontWeight: 900,
+                              padding: "1px 5px",
+                              borderRadius: 3,
+                              verticalAlign: "middle",
+                            }}
+                          >
+                            CLOSED
+                          </span>
+                        </span>
+                      )
                     ))}
                   </div>
                 ) : (
@@ -3111,22 +3141,22 @@ function MarqueeBand({ labelLine1, labelLine2, items = [], animId }) {
                     }}
                   >
                     {[0, 1].map((copy) => (
-                      <a
-                        key={copy}
-                        href={getLink(item)}
-                        style={{
-                          display: "inline-block",
-                          color: "#1a4fa0",
-                          fontWeight: 600,
-                          fontSize: 9,
-                          textDecoration: "underline",
-                          textUnderlineOffset: 2,
-                          whiteSpace: "nowrap",
-                          paddingRight: 40,
-                        }}
-                      >
-                        {getText(item)}
-                        {getIsNew(item) && (
+                      getIsNew(item) ? (
+                        <a
+                          key={copy}
+                          href={getLink(item)}
+                          style={{
+                            display: "inline-block",
+                            color: "#1a4fa0",
+                            fontWeight: 600,
+                            fontSize: 9,
+                            textDecoration: "underline",
+                            textUnderlineOffset: 2,
+                            whiteSpace: "nowrap",
+                            paddingRight: 40,
+                          }}
+                        >
+                          {getText(item)}
                           <span
                             style={{
                               marginLeft: 3,
@@ -3141,8 +3171,38 @@ function MarqueeBand({ labelLine1, labelLine2, items = [], animId }) {
                           >
                             NEW
                           </span>
-                        )}
-                      </a>
+                        </a>
+                      ) : (
+                        <span
+                          key={copy}
+                          style={{
+                            display: "inline-block",
+                            color: "#666",
+                            fontWeight: 600,
+                            fontSize: 9,
+                            textDecoration: "none",
+                            whiteSpace: "nowrap",
+                            paddingRight: 40,
+                            cursor: "not-allowed",
+                          }}
+                        >
+                          {getText(item)}
+                          <span
+                            style={{
+                              marginLeft: 3,
+                              background: "#8B1a1a",
+                              color: "#fff",
+                              fontSize: 6,
+                              fontWeight: 900,
+                              padding: "1px 3px",
+                              borderRadius: 2,
+                              verticalAlign: "middle",
+                            }}
+                          >
+                            CLOSED
+                          </span>
+                        </span>
+                      )
                     ))}
                   </div>
                 ) : (
@@ -3188,28 +3248,58 @@ function NotificationTicker({
   onSeeMore,
   isMobile = false,
 }) {
+  const fs = isMobile ? 11 : 13;
+  const pad = isMobile ? "9px 11px" : "11px 14px";
+  const height = isMobile ? 130 : 200;
+
   const tickerRef = useRef(null);
   const innerRef = useRef(null);
   const animRef = useRef(null);
   const posRef = useRef(0);
+  const [canScroll, setCanScroll] = useState(false);
+
+  // Decide whether content actually overflows. If not, don't animate (prevents "jitter" and avoids
+  // looking like items are repeating).
+  useEffect(() => {
+    const inner = innerRef.current;
+    if (!inner || notifications.length === 0) {
+      setCanScroll(false);
+      return;
+    }
+    // Measure after paint
+    const id = requestAnimationFrame(() => {
+      const contentH = inner.scrollHeight;
+      setCanScroll(contentH > height);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [notifications, isMobile, height]);
 
   useEffect(() => {
     const ticker = tickerRef.current;
     const inner = innerRef.current;
-    if (!ticker || !inner || notifications.length === 0) return;
+    // Animate only when we have enough content to scroll. Single pass from bottom → top, then stop.
+    if (!ticker || !inner || notifications.length === 0 || !canScroll) return;
     posRef.current = 0;
     inner.style.transform = "translateY(0px)";
     const SPEED = isMobile ? 0.4 : 0.5;
+    const maxScroll = Math.max(0, inner.scrollHeight - height);
+    if (maxScroll <= 0) return;
     const tick = () => {
       posRef.current += SPEED;
-      const halfH = inner.scrollHeight / 2;
-      if (halfH > 0 && posRef.current >= halfH) posRef.current = 0;
+      if (posRef.current >= maxScroll) {
+        posRef.current = maxScroll;
+        inner.style.transform = `translateY(-${posRef.current}px)`;
+        cancelAnimationFrame(animRef.current);
+        return;
+      }
       inner.style.transform = `translateY(-${posRef.current}px)`;
       animRef.current = requestAnimationFrame(tick);
     };
     animRef.current = requestAnimationFrame(tick);
     const pause = () => cancelAnimationFrame(animRef.current);
     const resume = () => {
+      // If we've already finished the one-pass scroll, don't restart it.
+      if (posRef.current >= maxScroll) return;
       animRef.current = requestAnimationFrame(tick);
     };
     ticker.addEventListener("mouseenter", pause);
@@ -3219,49 +3309,81 @@ function NotificationTicker({
       ticker.removeEventListener("mouseenter", pause);
       ticker.removeEventListener("mouseleave", resume);
     };
-  }, [notifications, isMobile]);
+  }, [notifications, isMobile, canScroll, height]);
 
-  const fs = isMobile ? 11 : 13;
-  const pad = isMobile ? "9px 11px" : "11px 14px";
-  const height = isMobile ? 130 : 200;
+  const cards = notifications.slice(0, 8).map((n, i) => {
+    const commonStyle = {
+      display: "block",
+      color: "#000",
+      fontWeight: 700,
+      fontSize: fs,
+      padding: pad,
+      lineHeight: 1.7,
+      textDecoration: "underline",
+      textUnderlineOffset: 2,
+      borderBottom: "none",
+      flexShrink: 0,
+      background: "transparent",
+      border: "none",
+      textAlign: "left",
+      width: "100%",
+      cursor: "pointer",
+    };
 
-  const cards = notifications.slice(0, 8).map((n, i) => (
-    <a
-      key={i}
-      href={n.url || "#"}
-      target={n.url ? "_blank" : undefined}
-      rel={n.url ? "noopener noreferrer" : undefined}
-      style={{
-        display: "block",
-        color: "#000",
-        fontWeight: 700,
-        fontSize: fs,
-        padding: pad,
-        lineHeight: 1.7,
-        textDecoration: "underline",
-        textUnderlineOffset: 2,
-        borderBottom: "none",
-        flexShrink: 0,
-      }}
-    >
-      {">>"} {n.title}{" "}
-      <span
-        style={{
-          display: "inline-block",
-          fontSize: isMobile ? 7 : 9,
-          fontWeight: 900,
-          padding: "1px 4px",
-          borderRadius: 2,
-          verticalAlign: "middle",
-          animation: "newBadge 1.5s infinite",
-          color: "#fff",
-          letterSpacing: "0.04em",
+    const content = (
+      <>
+        {">>"} {n.title}{" "}
+        <span
+          style={{
+            display: "inline-block",
+            fontSize: isMobile ? 7 : 9,
+            fontWeight: 900,
+            padding: "1px 4px",
+            borderRadius: 2,
+            verticalAlign: "middle",
+            animation: "newBadge 1.5s infinite",
+            color: "#fff",
+            letterSpacing: "0.04em",
+          }}
+        >
+          NEW
+        </span>
+      </>
+    );
+
+    // If URL exists, open it in a new tab; otherwise route to the notifications page.
+    if (n.url) {
+      return (
+        <a
+          key={i}
+          href={n.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            ...commonStyle,
+            width: "auto",
+            cursor: "pointer",
+          }}
+        >
+          {content}
+        </a>
+      );
+    }
+
+    return (
+      <button
+        key={i}
+        type="button"
+        style={commonStyle}
+        onClick={() => onSeeMore && onSeeMore()}
+        onKeyDown={(e) => {
+          if ((e.key === "Enter" || e.key === " ") && onSeeMore) onSeeMore();
         }}
       >
-        NEW
-      </span>
-    </a>
-  ));
+        {content}
+      </button>
+    );
+  });
 
   return (
     <div
@@ -3309,12 +3431,26 @@ function NotificationTicker({
         >
           <div ref={innerRef} style={{ willChange: "transform" }}>
             {cards}
-            {cards}
           </div>
         </div>
       )}
     </div>
   );
+}
+
+function dedupeNotifications(items) {
+  const arr = Array.isArray(items) ? items : [];
+  const seen = new Set();
+  const out = [];
+  for (const n of arr) {
+    const key =
+      n?._id ||
+      `${n?.title || ""}__${n?.notificationDate || ""}__${n?.notificationTime || ""}__${n?.url || ""}`;
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(n);
+  }
+  return out;
 }
 
 /* ─── Cert Slider ─── */
@@ -3639,7 +3775,22 @@ function HomePage({ onNavigate }) {
       try {
         setLoadingVacancies(true);
         const r = await jobPostingsAPI.getLatestVacancies();
-        setVacancies(r.success && r.data.vacancies ? r.data.vacancies : []);
+        const list = r.success && r.data?.vacancies ? r.data.vacancies : [];
+        const today = new Date();
+        const mapped = Array.isArray(list)
+          ? list.map((p) => {
+              const last = p?.lastDate ? new Date(p.lastDate) : null;
+              const isClosed = last ? last < today : false;
+              const isActive = (p?.status || "") === "Active" && !isClosed;
+              const id = p?._id || p?.id;
+              return {
+                english: p?.title || p?.post?.en || p?.postTitle?.en || "Vacancy",
+                link: id ? `/job-postings/view/${id}` : "#",
+                isNew: !!isActive,
+              };
+            })
+          : [];
+        setVacancies(mapped);
       } catch {
         setVacancies([]);
       } finally {
@@ -3659,8 +3810,10 @@ function HomePage({ onNavigate }) {
   useEffect(() => {
     const fetch_ = async () => {
       try {
-        const r = await notificationsAPI.getAll("true");
-        setNotifications(r.success && r.data ? r.data.notifications || [] : []);
+        // Fetch ALL notifications (active + inactive). Backend filtering can be applied server-side if needed.
+        const r = await notificationsAPI.getAll();
+        const list = r.success && r.data ? r.data.notifications || [] : [];
+        setNotifications(dedupeNotifications(list));
       } catch {
         setNotifications([]);
       }

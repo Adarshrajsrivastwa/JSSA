@@ -916,10 +916,23 @@ function JobDetailPage({ job, onBack, onApply }) {
 }
 
 /* ── Vacancy item — lighter weight, no duplicate bold advt ── */
-function VacancyItem({ job, onClick }) {
+function VacancyItem({ job, onClick, disabled = false }) {
   return (
     <div>
-      <div onClick={() => onClick(job)} className="jobs-vacancy-item">
+      <div
+        onClick={() => {
+          if (disabled) return;
+          onClick(job);
+        }}
+        className={`jobs-vacancy-item ${disabled ? "jobs-vacancy-item--disabled" : ""}`}
+        role="button"
+        aria-disabled={disabled}
+        tabIndex={disabled ? -1 : 0}
+        onKeyDown={(e) => {
+          if (disabled) return;
+          if (e.key === "Enter" || e.key === " ") onClick(job);
+        }}
+      >
         <span
           style={{ fontWeight: 600, flexShrink: 0, marginTop: 1, color: GREEN }}
         >
@@ -943,6 +956,23 @@ function VacancyItem({ job, onClick }) {
               }}
             >
               NEW
+            </span>
+          )}
+          {disabled && (
+            <span
+              style={{
+                display: "inline-block",
+                fontSize: 10,
+                fontWeight: 900,
+                padding: "1px 6px",
+                borderRadius: 3,
+                marginLeft: 6,
+                verticalAlign: "middle",
+                color: "#fff",
+                background: "#8B1a1a",
+              }}
+            >
+              CLOSED
             </span>
           )}
         </span>
@@ -1044,6 +1074,11 @@ const jobsCSS = `
     align-items: flex-start;
     gap: 10px;
     transition: none;
+  }
+
+  .jobs-vacancy-item--disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
   }
 
 
@@ -1198,6 +1233,8 @@ export default function JobsPage() {
   }, []);
 
   const openDetail = (job) => {
+    // Only allow opening details for current/open vacancies
+    if (!job?.isNew) return;
     navigate(`/job-postings/view/${job.id}`);
   };
   const openApply = () => setView("apply");
@@ -1259,7 +1296,7 @@ export default function JobsPage() {
             )}
           </div>
 
-          {/* Old Vacancies */}
+          {/* Old Vacancies (visible but not clickable) */}
           <div>
             <h2 className="jobs-list-heading">List of Old Vacancies</h2>
             <div
@@ -1267,7 +1304,12 @@ export default function JobsPage() {
             />
             {oldJobs.length > 0 ? (
               oldJobs.map((job) => (
-                <VacancyItem key={job.id} job={job} onClick={openDetail} />
+                <VacancyItem
+                  key={job.id}
+                  job={job}
+                  onClick={openDetail}
+                  disabled
+                />
               ))
             ) : (
               <div

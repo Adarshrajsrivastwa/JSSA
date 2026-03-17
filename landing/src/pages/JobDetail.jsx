@@ -2056,17 +2056,20 @@ export default function JobDetail() {
       return;
     }
     
-    // If we have pendingData, we're definitely coming back from payment - redirect immediately
-    if (pendingData) {
+    // IMPORTANT: do NOT redirect based on pendingData alone (it can be stale and breaks navigation to job details).
+    // Only redirect when URL indicates a payment return.
+    if (pendingData && hasPaymentParams) {
       try {
         const data = JSON.parse(pendingData);
-        const finalApplicationId = applicationId || data.applicationId || data.applicationData?._id || "";
+        const finalApplicationId =
+          applicationId || data.applicationId || data.applicationData?._id || "";
         const finalOrderId = orderId || data.orderId || "";
-        
-        const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
-        console.log("🚨 IMMEDIATE REDIRECT (has pendingData):", redirectUrl);
-        window.location.replace(redirectUrl);
-        return;
+        if (finalApplicationId) {
+          const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
+          console.log("🚨 IMMEDIATE REDIRECT (payment return):", redirectUrl);
+          window.location.replace(redirectUrl);
+          return;
+        }
       } catch (e) {
         console.error("Error parsing pendingData:", e);
       }
@@ -2249,7 +2252,7 @@ export default function JobDetail() {
       const pendingData = sessionStorage.getItem("pendingApplication");
       
       // Only proceed if there are actual payment indicators
-      if (!pendingData && !payment && !orderId && !applicationId && !paymentStatus) {
+      if (!payment && !orderId && !applicationId && !paymentStatus) {
         return; // No payment indicators, skip check silently
       }
       
@@ -3000,7 +3003,56 @@ export default function JobDetail() {
   ].filter((r) => r[1]);
 
   const rows = Math.max(rowsEn.length, rowsHi.length);
-  const isActive = job.status === "Active";
+
+  // A job is considered "open for application" only if:
+  // - status is Active
+  // - AND lastDate is not in the past (if lastDate is present and parseable)
+  const parsePossibleDate = (value) => {
+    if (!value || typeof value !== "string") return null;
+    const s = value.trim();
+    if (!s) return null;
+
+    // Try native parsing first (handles ISO / RFC formats)
+    const native = new Date(s);
+    if (!Number.isNaN(native.getTime())) return native;
+
+    // Try dd/mm/yyyy or dd-mm-yyyy
+    const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (m) {
+      const dd = Number(m[1]);
+      const mm = Number(m[2]);
+      const yyyy = Number(m[3]);
+      const d = new Date(yyyy, mm - 1, dd);
+      // Guard against invalid rollovers (e.g., 32/13/2026)
+      if (
+        d.getFullYear() === yyyy &&
+        d.getMonth() === mm - 1 &&
+        d.getDate() === dd
+      ) {
+        return d;
+      }
+    }
+
+    return null;
+  };
+
+  const lastDateObj = parsePossibleDate(job.lastDate);
+  const isExpiredByLastDate = (() => {
+    if (!lastDateObj) return false;
+    // Compare at end-of-day local time so the last date remains valid through the day.
+    const endOfDay = new Date(
+      lastDateObj.getFullYear(),
+      lastDateObj.getMonth(),
+      lastDateObj.getDate(),
+      23,
+      59,
+      59,
+      999,
+    );
+    return endOfDay.getTime() < Date.now();
+  })();
+
+  const isActive = job.status === "Active" && !isExpiredByLastDate;
   // Use fully dynamic titles from API (admin-configurable)
   // Prioritize job.title field if it exists
   const displayTitleEn = job.title?.en || (typeof job.title === 'string' ? job.title : null);

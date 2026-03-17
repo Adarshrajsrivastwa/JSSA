@@ -30,12 +30,17 @@ function PaymentRedirectHandler() {
       // Get data from sessionStorage first
       const pendingData = sessionStorage.getItem("pendingApplication");
       
-      // Check if we have payment-related parameters OR pendingData in sessionStorage
-      // This handles cases where Razorpay redirects without parameters but we have sessionStorage
-      const hasPaymentParams = orderId || applicationId || paymentId || payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success";
-      const hasPendingData = !!pendingData;
+      // IMPORTANT: Do NOT redirect based on pendingData alone (it can be stale and breaks navigation).
+      // Only redirect when the URL indicates a payment return.
+      const hasPaymentParams =
+        orderId ||
+        applicationId ||
+        paymentId ||
+        payment === "success" ||
+        paymentStatus === "SUCCESS" ||
+        paymentStatus === "success";
 
-      if (hasPaymentParams || hasPendingData) {
+      if (hasPaymentParams) {
         // Get payment status to check if payment failed
         const txStatus = urlParams.get("txStatus") || urlParams.get("tx_status") || urlParams.get("payment_status") || "";
         
@@ -68,7 +73,7 @@ function PaymentRedirectHandler() {
           const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
           console.log("🌐 GLOBAL PAYMENT REDIRECT: Redirecting to", redirectUrl, {
             hasPaymentParams,
-            hasPendingData,
+            hasPendingData: !!pendingData,
             finalApplicationId,
             finalOrderId,
             currentPath: window.location.pathname,

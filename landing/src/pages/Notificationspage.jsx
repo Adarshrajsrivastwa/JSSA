@@ -168,13 +168,29 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const dedupe = (items) => {
+    const arr = Array.isArray(items) ? items : [];
+    const seen = new Set();
+    const out = [];
+    for (const n of arr) {
+      const key =
+        n?._id ||
+        `${n?.title || ""}__${n?.notificationDate || ""}__${n?.notificationTime || ""}__${n?.url || ""}`;
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(n);
+    }
+    return out;
+  };
+
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
         setLoading(true);
-        const response = await notificationsAPI.getAll("true");
+        // Fetch ALL notifications (active + inactive)
+        const response = await notificationsAPI.getAll();
         if (response.success && response.data) {
-          setNotifications(response.data.notifications || []);
+          setNotifications(dedupe(response.data.notifications || []));
         }
       } catch (error) {
         console.error("Failed to fetch notifications:", error);

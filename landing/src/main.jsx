@@ -25,11 +25,17 @@ import App from "./App";
     // sessionStorage might not be available in some cases
   }
 
-  // Check if we have payment-related parameters OR pendingData in sessionStorage
-  const hasPaymentParams = orderId || applicationId || paymentId || payment === "success" || paymentStatus === "SUCCESS" || paymentStatus === "success";
-  const hasPendingData = !!pendingData;
+  // IMPORTANT: Do NOT redirect based on pendingData alone (it can be stale and breaks navigation).
+  // Only redirect when the URL indicates a payment return.
+  const hasPaymentParams =
+    orderId ||
+    applicationId ||
+    paymentId ||
+    payment === "success" ||
+    paymentStatus === "SUCCESS" ||
+    paymentStatus === "success";
 
-  if (hasPaymentParams || hasPendingData) {
+  if (hasPaymentParams) {
     // Get payment status to check if payment failed
     const txStatus = urlParams.get("txStatus") || urlParams.get("tx_status") || urlParams.get("payment_status") || "";
 
@@ -59,7 +65,7 @@ import App from "./App";
         const redirectUrl = `/payment-success?orderId=${finalOrderId}&applicationId=${finalApplicationId}`;
         console.log("🚀 EARLY PAYMENT REDIRECT (before React): Redirecting to", redirectUrl, {
           hasPaymentParams,
-          hasPendingData,
+          hasPendingData: !!pendingData,
           finalApplicationId,
           finalOrderId,
           currentPath: window.location.pathname,
