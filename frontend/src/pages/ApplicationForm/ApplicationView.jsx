@@ -16,7 +16,7 @@ import {
   CreditCard,
   Download,
 } from "lucide-react";
-import { applicationsAPI, jobPostingsAPI } from "../../utils/api";
+import { applicationsAPI, jobPostingsAPI, paymentsAPI } from "../../utils/api";
 import logo1 from "../../assets/jss.png";
 import img0 from "../../assets/img0.png";
 
@@ -28,6 +28,17 @@ const ApplicationView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false);
+
+  const normalizePaymentStatus = (status) =>
+    String(status || "pending").toLowerCase();
+
+  const getPostingId = (jobPostingId) => {
+    if (!jobPostingId) return null;
+    if (typeof jobPostingId === "string") return jobPostingId;
+    if (typeof jobPostingId === "object") return jobPostingId._id || null;
+    return null;
+  };
 
   useEffect(() => {
     const fetchApplication = async () => {
@@ -68,13 +79,14 @@ const ApplicationView = () => {
             createdAt: app.createdAt,
             updatedAt: app.updatedAt,
             createdBy: app.createdBy,
-            jobPostingId: app.jobPostingId,
+            jobPostingId: getPostingId(app.jobPostingId),
           });
           
           // Fetch job posting details if available
-          if (app.jobPostingId) {
+          const postingId = getPostingId(app.jobPostingId);
+          if (postingId) {
             try {
-              const jobResponse = await jobPostingsAPI.getById(app.jobPostingId);
+              const jobResponse = await jobPostingsAPI.getById(postingId);
               if (jobResponse.success && jobResponse.data) {
                 setJobPosting(jobResponse.data.posting);
               }
@@ -257,6 +269,86 @@ const ApplicationView = () => {
     }
   };
 
+  const handlePayNow = async () => {
+    if (!application) return;
+
+    const jobPostingId = getPostingId(application.jobPostingId);
+    if (!jobPostingId) {
+      alert("Job posting ID missing in application. Please contact support.");
+      return;
+    }
+    if (!application.gender || !application.category) {
+      alert("Application gender/category details are missing.");
+      return;
+    }
+
+    try {
+      setProcessingPayment(true);
+      await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+
+      if (!window.Razorpay) {
+        throw new Error("Razorpay SDK not loaded");
+      }
+
+      const orderResponse = await paymentsAPI.createOrder(
+        jobPostingId,
+        application.gender,
+        application.category,
+      );
+
+      if (!orderResponse.success || !orderResponse.data) {
+        throw new Error(orderResponse.error || "Failed to create payment order");
+      }
+
+      const { orderId, amount, amountInRupees, keyId } = orderResponse.data;
+      const options = {
+        key: keyId,
+        amount,
+        currency: "INR",
+        name: "JSSA Application Fee",
+        description: `Application Fee - Rs ${amountInRupees}`,
+        order_id: orderId,
+        handler: async (response) => {
+          try {
+            const verifyResponse = await paymentsAPI.verifyPayment(
+              response.razorpay_order_id,
+              response.razorpay_payment_id,
+              response.razorpay_signature,
+              application.id,
+            );
+
+            if (!verifyResponse.success) {
+              throw new Error(
+                verifyResponse.error || "Payment verification failed",
+              );
+            }
+
+            alert("Payment successful");
+            window.location.reload();
+          } catch (verifyError) {
+            alert(
+              verifyError.message || "Payment verification failed. Please try again.",
+            );
+            setProcessingPayment(false);
+          }
+        },
+        theme: { color: "#3AB000" },
+        modal: {
+          ondismiss: () => setProcessingPayment(false),
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.on("payment.failed", () => {
+        setProcessingPayment(false);
+      });
+      razorpay.open();
+    } catch (payError) {
+      alert(payError.message || "Failed to initiate payment");
+      setProcessingPayment(false);
+    }
+  };
+
   // ── Skeleton ──────────────────────────────────────────────────────────────
 
   // ── Skeleton ──────────────────────────────────────────────────────────────
@@ -323,8 +415,13 @@ const ApplicationView = () => {
     );
   }
 
-  const paymentStatus = application.paymentStatus || "pending";
+  const paymentStatus = normalizePaymentStatus(application.paymentStatus);
   const isPaid = paymentStatus === "paid";
+  const isPendingPayment = paymentStatus === "pending";
+  const canInitiatePayment =
+    !!getPostingId(application.jobPostingId) &&
+    !!application.gender &&
+    !!application.category;
   const statusColors = {
     paid: "bg-green-50 text-green-700 border-green-200",
     pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
@@ -351,14 +448,30 @@ const ApplicationView = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={downloadApplicationPDF}
-              disabled={downloadingPDF}
-              className="flex items-center gap-1.5 bg-white border border-[#3AB000] text-[#3AB000] hover:bg-[#3AB000] hover:text-white px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Download className="w-3.5 h-3.5" />
-              {downloadingPDF ? "Generating..." : "Download PDF"}
-            </button>
+            {isPendingPayment ? (
+              <button
+                onClick={handlePayNow}
+                disabled={processingPayment || !canInitiatePayment}
+                title={
+                  canInitiatePayment
+                    ? "Proceed to payment"
+                    : "Required payment details are missing"
+                }
+                className="flex items-center gap-1.5 bg-[#3AB000] border border-[#3AB000] text-white hover:bg-[#2d8a00] px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <CreditCard className="w-3.5 h-3.5" />
+                {processingPayment ? "Processing..." : "Pay Now"}
+              </button>
+            ) : (
+              <button
+                onClick={downloadApplicationPDF}
+                disabled={downloadingPDF}
+                className="flex items-center gap-1.5 bg-white border border-[#3AB000] text-[#3AB000] hover:bg-[#3AB000] hover:text-white px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Download className="w-3.5 h-3.5" />
+                {downloadingPDF ? "Generating..." : "Download PDF"}
+              </button>
+            )}
           </div>
         </div>
 
