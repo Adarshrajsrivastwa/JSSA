@@ -11,7 +11,6 @@ const ApplicationForm = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const itemsPerPage = 7;
@@ -188,10 +187,8 @@ const ApplicationForm = () => {
     const appPaymentStatus = normalizePaymentStatus(app.paymentStatus);
     const matchesPayment =
       paymentStatusFilter === "all" || appPaymentStatus === paymentStatusFilter;
-    const appType = String(app.status || "").toLowerCase();
-    const matchesType = typeFilter === "all" || appType === typeFilter;
 
-    return matchesSearch && matchesPayment && matchesType;
+    return matchesSearch && matchesPayment;
   });
 
   // Pagination
@@ -246,7 +243,6 @@ const ApplicationForm = () => {
     setCurrentPage(1);
     setSearchQuery("");
     setPaymentStatusFilter("all");
-    setTypeFilter("all");
   };
 
   // Handle back to job list
@@ -257,7 +253,6 @@ const ApplicationForm = () => {
     setCurrentPage(1);
     setSearchQuery("");
     setPaymentStatusFilter("all");
-    setTypeFilter("all");
   };
 
   // Show job postings list (only for admin)
@@ -345,7 +340,7 @@ const ApplicationForm = () => {
               <p className="text-sm text-gray-600">Advt. No: {selectedJobPosting.advtNo}</p>
             </div>
           )}
-          {/* Search + Payment Filter */}
+          {/* Search */}
           <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto lg:items-center lg:justify-end lg:flex-1">
             <div className="flex items-center border border-gray-300 rounded overflow-hidden h-10 flex-1 w-full sm:max-w-[500px]">
               <input
@@ -362,32 +357,18 @@ const ApplicationForm = () => {
                 Search
               </button>
             </div>
-            <select
-              value={paymentStatusFilter}
-              onChange={(e) => {
-                setPaymentStatusFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="h-10 min-w-[160px] rounded border border-gray-300 bg-white px-3 text-xs sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#3AB000]/30"
-            >
-              <option value="all">All Payments</option>
-              <option value="pending">Pending</option>
-              <option value="paid">Paid</option>
-              <option value="failed">Failed</option>
-              <option value="refunded">Refunded</option>
-            </select>
           </div>
         </div>
         <div className="inline-flex rounded border border-gray-300 overflow-hidden mb-4">
-          {["all", "active", "inactive"].map((option) => (
+          {["all", "pending", "paid"].map((option) => (
             <button
               key={option}
               onClick={() => {
-                setTypeFilter(option);
+                setPaymentStatusFilter(option);
                 setCurrentPage(1);
               }}
               className={`px-5 py-2 text-sm font-semibold capitalize transition-colors ${
-                typeFilter === option
+                paymentStatusFilter === option
                   ? "bg-[#3AB000] text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
