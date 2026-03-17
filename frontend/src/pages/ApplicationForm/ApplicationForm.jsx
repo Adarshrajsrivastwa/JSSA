@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
-import { Eye } from "lucide-react";
+import { Eye, ArrowLeft, Briefcase, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { applicationsAPI } from "../../utils/api";
+import { applicationsAPI, jobPostingsAPI } from "../../utils/api";
 import { useAuth } from "../../auth/AuthProvider";
 
 const ApplicationForm = () => {
@@ -15,15 +15,67 @@ const ApplicationForm = () => {
   const itemsPerPage = 7;
 
   const [applications, setApplications] = useState([]);
+  const [jobPostings, setJobPostings] = useState([]);
+  const [selectedJobPostingId, setSelectedJobPostingId] = useState(null);
+  const [selectedJobPosting, setSelectedJobPosting] = useState(null);
+  const [jobPostingsLoading, setJobPostingsLoading] = useState(true);
+
+  // Fetch job postings (only for admin)
+  const fetchJobPostings = async () => {
+    if (role !== "admin") return;
+    setJobPostingsLoading(true);
+    try {
+      const response = await jobPostingsAPI.getAll({ limit: 1000 });
+      if (response.success && response.data) {
+        const postings = response.data.postings.map((post) => ({
+          id: post._id,
+          advtNo: post.advtNo || "N/A",
+          post: typeof post.post === 'object' ? post.post.en : post.post,
+          postHi: typeof post.post === 'object' ? post.post.hi : post.post,
+          location: typeof post.location === 'object' ? post.location.en : post.location,
+          status: post.status,
+        }));
+        
+        // Fetch application counts for each job
+        const postingsWithCounts = await Promise.all(
+          postings.map(async (job) => {
+            try {
+              const appsResponse = await applicationsAPI.getAll({ 
+                jobPostingId: job.id,
+                limit: 1 
+              });
+              return {
+                ...job,
+                applicationCount: appsResponse.success && appsResponse.data 
+                  ? appsResponse.data.pagination?.total || 0 
+                  : 0
+              };
+            } catch {
+              return { ...job, applicationCount: 0 };
+            }
+          })
+        );
+        setJobPostings(postingsWithCounts);
+      }
+    } catch (err) {
+      console.error("Fetch job postings error:", err);
+    } finally {
+      setJobPostingsLoading(false);
+    }
+  };
 
   // Fetch applications from API - backend automatically filters by role
   // Applicants will only see their own applications, admins see all
-  const fetchApplications = async () => {
+  const fetchApplications = async (jobPostingId = null) => {
     setLoading(true);
     setError(null);
     try {
-      // Backend automatically filters: applicants see only their own, admins see all
-      const response = await applicationsAPI.getAll({ limit: 1000 });
+      const params = { limit: 1000 };
+      if (jobPostingId) {
+        params.jobPostingId = jobPostingId;
+      }
+      
+      const response = await applicationsAPI.getAll(params);
       if (response.success && response.data) {
         // Transform API data to match frontend format
         const transformed = response.data.applications.map((app) => ({
@@ -50,22 +102,26 @@ const ApplicationForm = () => {
   };
 
   useEffect(() => {
-    fetchApplications();
-    const interval = setInterval(() => {
+    if (role === "admin") {
+      fetchJobPostings();
+    } else {
       fetchApplications();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    }
+  }, [role]);
 
   useEffect(() => {
-    const onVisible = () => {
-      if (document.visibilityState === "visible") {
-        fetchApplications();
-      }
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
-  }, []);
+    if (selectedJobPostingId) {
+      fetchApplications(selectedJobPostingId);
+      // Fetch job posting details
+      jobPostingsAPI.getById(selectedJobPostingId).then((response) => {
+        if (response.success && response.data) {
+          setSelectedJobPosting(response.data.posting);
+        }
+      });
+    } else if (role !== "admin") {
+      fetchApplications();
+    }
+  }, [selectedJobPostingId, role]);
 
   const statusColors = {
     Active: "text-[#3AB000] font-semibold",
@@ -126,11 +182,114 @@ const ApplicationForm = () => {
     </tbody>
   );
 
+  // Handle job posting selection
+  const handleJobPostingClick = (jobId) => {
+    setSelectedJobPostingId(jobId);
+    setCurrentPage(1);
+    setSearchQuery("");
+  };
+
+  // Handle back to job list
+  const handleBackToJobs = () => {
+    setSelectedJobPostingId(null);
+    setSelectedJobPosting(null);
+    setApplications([]);
+    setCurrentPage(1);
+    setSearchQuery("");
+  };
+
+  // Show job postings list (only for admin)
+  if (role === "admin" && !selectedJobPostingId) {
+    return (
+      <DashboardLayout>
+        <div className="p-0 ml-0 md:ml-6 px-2 md:px-0">
+          <div className="mb-4">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">All Job Openings</h2>
+            <p className="text-gray-600">Select a job to view applications</p>
+          </div>
+
+          {jobPostingsLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, idx) => (
+                <div key={idx} className="bg-white rounded border border-gray-200 p-4 animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              ))}
+            </div>
+          ) : jobPostings.length === 0 ? (
+            <div className="bg-white rounded border border-gray-200 p-8 text-center text-gray-400">
+              No job postings found.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {jobPostings.map((job) => (
+                <div
+                  key={job.id}
+                  onClick={() => handleJobPostingClick(job.id)}
+                  className="bg-white rounded border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer hover:border-[#3AB000]"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Briefcase className="w-5 h-5 text-[#3AB000]" />
+                        <div>
+                          <h3 className="text-lg font-bold text-gray-900">{job.post}</h3>
+                          <p className="text-sm text-gray-600">Advt. No: {job.advtNo}</p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-600 ml-8">{job.location}</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className="flex items-center gap-2 text-[#3AB000]">
+                          <Users className="w-5 h-5" />
+                          <span className="text-lg font-bold">{job.applicationCount || 0}</span>
+                        </div>
+                        <p className="text-xs text-gray-500">Applications</p>
+                      </div>
+                      <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        job.status === "Active" 
+                          ? "bg-green-100 text-green-700" 
+                          : "bg-gray-100 text-gray-700"
+                      }`}>
+                        {job.status}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="p-0 ml-0 md:ml-6 px-2 md:px-0">
         {/* ── Top Bar ── */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+          {role === "admin" && selectedJobPostingId && (
+            <button
+              onClick={handleBackToJobs}
+              className="flex items-center gap-2 text-[#3AB000] hover:text-[#2d8a00] font-medium transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Job List
+            </button>
+          )}
+          {selectedJobPosting && (
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-gray-900">
+                {typeof selectedJobPosting.post === 'object' 
+                  ? selectedJobPosting.post.en 
+                  : selectedJobPosting.post}
+              </h3>
+              <p className="text-sm text-gray-600">Advt. No: {selectedJobPosting.advtNo}</p>
+            </div>
+          )}
           {/* Search */}
           <div className="flex items-center border border-gray-300 rounded overflow-hidden h-10 flex-1 w-full sm:max-w-[500px]">
             <input
