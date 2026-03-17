@@ -11,6 +11,17 @@ import { sendPaymentSuccessEmail } from "../utils/email.js"; // Email sent on fo
 
 const router = express.Router();
 
+const getJobTitleFromPosting = (jobPosting) => {
+  if (!jobPosting || typeof jobPosting !== "object") return null;
+  if (jobPosting.post && typeof jobPosting.post === "object") {
+    return jobPosting.post.en || jobPosting.post.hi || jobPosting.title || null;
+  }
+  if (typeof jobPosting.post === "string" && jobPosting.post.trim()) {
+    return jobPosting.post;
+  }
+  return jobPosting.title || null;
+};
+
 // Public route for applying with auto-user creation
 /**
  * POST /api/applications/apply
@@ -318,12 +329,20 @@ router.get("/", async (req, res) => {
       .populate("createdBy", "email phone role")
       .populate("jobPostingId", "advtNo post title");
 
+    const applicationsWithJobTitle = applications.map((application) => {
+      const applicationObj = application.toObject();
+      return {
+        ...applicationObj,
+        jobTitle: getJobTitleFromPosting(applicationObj.jobPostingId),
+      };
+    });
+
     const total = await Application.countDocuments(query);
 
     res.json({
       success: true,
       data: {
-        applications,
+        applications: applicationsWithJobTitle,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -370,7 +389,12 @@ router.get("/:id", async (req, res) => {
 
     res.json({
       success: true,
-      data: { application },
+      data: {
+        application: {
+          ...application.toObject(),
+          jobTitle: getJobTitleFromPosting(application.jobPostingId),
+        },
+      },
     });
   } catch (error) {
     console.error("Get application error:", error);
