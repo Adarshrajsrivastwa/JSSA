@@ -674,15 +674,16 @@ export async function sendPaymentSuccessEmail(applicationData, loginCredentials,
       return nat.charAt(0).toUpperCase() + nat.slice(1);
     };
 
-    // Get photo and signature as base64 (if available)
-    const photoBase64 = applicationData.photo || "";
-    const signatureBase64 = applicationData.signature || "";
-    const photoSrc = photoBase64 
-      ? (photoBase64.startsWith('data:') ? photoBase64 : `data:image/jpeg;base64,${photoBase64}`)
-      : "";
-    const signatureSrc = signatureBase64
-      ? (signatureBase64.startsWith('data:') ? signatureBase64 : `data:image/png;base64,${signatureBase64}`)
-      : "";
+    // Support server-hosted URLs in addition to data URLs/base64 values.
+    const resolveImageSource = (value, fallbackMime) => {
+      if (!value) return "";
+      if (value.startsWith("data:")) return value;
+      if (value.startsWith("http://") || value.startsWith("https://")) return value;
+      return `data:${fallbackMime};base64,${value}`;
+    };
+
+    const photoSrc = resolveImageSource(applicationData.photo || "", "image/jpeg");
+    const signatureSrc = resolveImageSource(applicationData.signature || "", "image/png");
     
     // Logo URL - use public URL for email, file path for PDF
     const logoUrl = "https://jssabhiyan.com/assets/jss.png";
@@ -1218,12 +1219,15 @@ export async function generateAndSaveApplicationPDF(applicationData, jobPosting)
     const fileName = `Application_Slip_${applicationData.applicationNumber || 'JSSA'}_${timestamp}.pdf`;
     const filePath = path.join(uploadsDir, fileName);
 
-    const photoSrc = applicationData.photo 
-      ? (applicationData.photo.startsWith('data:') ? applicationData.photo : `data:image/jpeg;base64,${applicationData.photo}`)
-      : "";
-    const signatureSrc = applicationData.signature
-      ? (applicationData.signature.startsWith('data:') ? applicationData.signature : `data:image/png;base64,${applicationData.signature}`)
-      : "";
+    const resolveImageSource = (value, fallbackMime) => {
+      if (!value) return "";
+      if (value.startsWith("data:")) return value;
+      if (value.startsWith("http://") || value.startsWith("https://")) return value;
+      return `data:${fallbackMime};base64,${value}`;
+    };
+
+    const photoSrc = resolveImageSource(applicationData.photo || "", "image/jpeg");
+    const signatureSrc = resolveImageSource(applicationData.signature || "", "image/png");
 
     let logoForPdf = "https://jssabhiyan.com/assets/jss.png"; // Default to URL
     try {

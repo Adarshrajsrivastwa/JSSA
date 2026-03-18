@@ -2218,13 +2218,32 @@ export default function JobDetail() {
     reader.readAsDataURL(file);
   };
 
-  const convertFileToBase64 = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
+  const uploadApplicationFile = async (file, type, apiUrl) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("type", type);
+
+    const uploadResponse = await fetch(`${apiUrl}/upload/application-file`, {
+      method: "POST",
+      body: formData,
     });
+
+    const contentType = uploadResponse.headers.get("content-type");
+    const uploadData =
+      contentType && contentType.includes("application/json")
+        ? await uploadResponse.json()
+        : null;
+
+    if (!uploadResponse.ok || !uploadData?.success || !uploadData?.data?.url) {
+      throw new Error(
+        uploadData?.message ||
+          uploadData?.error ||
+          `Failed to upload ${type}`,
+      );
+    }
+
+    return uploadData.data.url;
+  };
 
   // Validation functions
   const validateAge = () => {
@@ -2408,12 +2427,11 @@ export default function JobDetail() {
   const handleSubmit = async () => {
     setApplying(true);
     try {
-      const photoBase64 = await convertFileToBase64(photo);
-      const signatureBase64 = await convertFileToBase64(signature);
       const apiUrl =
         import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "";
       if (!apiUrl)
         throw new Error("VITE_API_URL or VITE_BACKEND_URL must be set");
+
       if (!formData.candidateName?.trim())
         throw new Error("Candidate name is required");
       if (!formData.fatherName?.trim())
@@ -2425,12 +2443,19 @@ export default function JobDetail() {
       if (!formData.higherEducation?.trim())
         throw new Error("Higher education is required");
 
+      const photoUrl = await uploadApplicationFile(photo, "photo", apiUrl);
+      const signatureUrl = await uploadApplicationFile(
+        signature,
+        "signature",
+        apiUrl,
+      );
+
       const requestBody = {
         ...formData,
         mobile: normalizedMobile,
         jobPostingId: id,
-        photo: photoBase64,
-        signature: signatureBase64,
+        photo: photoUrl,
+        signature: signatureUrl,
       };
       const applyResponse = await fetch(`${apiUrl}/applications/apply`, {
         method: "POST",
