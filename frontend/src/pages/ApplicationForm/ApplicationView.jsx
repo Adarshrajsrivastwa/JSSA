@@ -471,14 +471,14 @@ const ApplicationView = () => {
                 {processingPayment ? "Processing..." : "Pay Now"}
               </button>
             ) : (
-              <button
-                onClick={downloadApplicationPDF}
-                disabled={downloadingPDF}
-                className="flex items-center gap-1.5 bg-white border border-[#3AB000] text-[#3AB000] hover:bg-[#3AB000] hover:text-white px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Download className="w-3.5 h-3.5" />
-                {downloadingPDF ? "Generating..." : "Download PDF"}
-              </button>
+            <button
+              onClick={downloadApplicationPDF}
+              disabled={downloadingPDF}
+              className="flex items-center gap-1.5 bg-white border border-[#3AB000] text-[#3AB000] hover:bg-[#3AB000] hover:text-white px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download className="w-3.5 h-3.5" />
+              {downloadingPDF ? "Generating..." : "Download PDF"}
+            </button>
             )}
           </div>
         </div>

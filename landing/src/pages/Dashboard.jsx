@@ -3712,10 +3712,58 @@ function HomePage({ onNavigate }) {
 
   useEffect(() => {
     const fetch_ = async () => {
+      const parseFlexibleDate = (value) => {
+        if (!value) return null;
+        const raw = String(value).trim();
+        const nativeParsed = new Date(raw);
+        if (!Number.isNaN(nativeParsed.getTime())) return nativeParsed;
+
+        const dayFirst = raw.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+        if (dayFirst) {
+          const day = Number(dayFirst[1]);
+          const month = Number(dayFirst[2]);
+          const year = Number(dayFirst[3]);
+          const parsed = new Date(year, month - 1, day);
+          if (
+            parsed.getFullYear() === year &&
+            parsed.getMonth() === month - 1 &&
+            parsed.getDate() === day
+          ) {
+            return parsed;
+          }
+        }
+
+        const yearFirst = raw.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})$/);
+        if (yearFirst) {
+          const year = Number(yearFirst[1]);
+          const month = Number(yearFirst[2]);
+          const day = Number(yearFirst[3]);
+          const parsed = new Date(year, month - 1, day);
+          if (
+            parsed.getFullYear() === year &&
+            parsed.getMonth() === month - 1 &&
+            parsed.getDate() === day
+          ) {
+            return parsed;
+          }
+        }
+
+        return null;
+      };
+
+      const isOpenVacancy = (item) => {
+        if (!item?.lastDate) return true;
+        const parsed = parseFlexibleDate(item.lastDate);
+        if (!parsed) return true;
+        parsed.setHours(23, 59, 59, 999);
+        return parsed >= new Date();
+      };
+
       try {
         setLoadingVacancies(true);
         const r = await jobPostingsAPI.getLatestVacancies();
-        setVacancies(r.success && r.data?.vacancies ? r.data.vacancies : []);
+        const list = r.success && r.data?.vacancies ? r.data.vacancies : [];
+        setVacancies(list.filter(isOpenVacancy));
       } catch {
         setVacancies([]);
       } finally {

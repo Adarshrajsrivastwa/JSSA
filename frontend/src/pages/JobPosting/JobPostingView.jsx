@@ -520,10 +520,54 @@ const JobPostingView = () => {
     );
   }
 
+  const parseFlexibleDate = (value) => {
+    if (!value) return null;
+
+    const raw = String(value).trim();
+    const nativeParsed = new Date(raw);
+    if (!Number.isNaN(nativeParsed.getTime())) {
+      return nativeParsed;
+    }
+
+    // Support DD-MM-YYYY, DD/MM/YYYY, DD.MM.YYYY
+    const dayFirstMatch = raw.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+    if (dayFirstMatch) {
+      const day = Number(dayFirstMatch[1]);
+      const month = Number(dayFirstMatch[2]);
+      const year = Number(dayFirstMatch[3]);
+      const parsed = new Date(year, month - 1, day);
+      if (
+        parsed.getFullYear() === year &&
+        parsed.getMonth() === month - 1 &&
+        parsed.getDate() === day
+      ) {
+        return parsed;
+      }
+    }
+
+    // Support YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD
+    const yearFirstMatch = raw.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})$/);
+    if (yearFirstMatch) {
+      const year = Number(yearFirstMatch[1]);
+      const month = Number(yearFirstMatch[2]);
+      const day = Number(yearFirstMatch[3]);
+      const parsed = new Date(year, month - 1, day);
+      if (
+        parsed.getFullYear() === year &&
+        parsed.getMonth() === month - 1 &&
+        parsed.getDate() === day
+      ) {
+        return parsed;
+      }
+    }
+
+    return null;
+  };
+
   const computeStatusFromLastDate = (lastDate) => {
     if (!lastDate) return "Active";
-    const d = new Date(lastDate);
-    if (Number.isNaN(d.getTime())) return "Active";
+    const d = parseFlexibleDate(lastDate);
+    if (!d) return "Active";
     // Treat "lastDate" as inclusive through the end of that day.
     d.setHours(23, 59, 59, 999);
     return d >= new Date() ? "Active" : "Inactive";

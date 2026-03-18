@@ -6,6 +6,56 @@ import { authenticate } from "../middleware/auth.js";
 
 const router = express.Router();
 
+const parseFlexibleDate = (value) => {
+  if (!value) return null;
+  const raw = String(value).trim();
+
+  const nativeParsed = new Date(raw);
+  if (!Number.isNaN(nativeParsed.getTime())) return nativeParsed;
+
+  // Support DD-MM-YYYY / DD/MM/YYYY / DD.MM.YYYY
+  const dayFirst = raw.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+  if (dayFirst) {
+    const day = Number(dayFirst[1]);
+    const month = Number(dayFirst[2]);
+    const year = Number(dayFirst[3]);
+    const parsed = new Date(year, month - 1, day);
+    if (
+      parsed.getFullYear() === year &&
+      parsed.getMonth() === month - 1 &&
+      parsed.getDate() === day
+    ) {
+      return parsed;
+    }
+  }
+
+  // Support YYYY-MM-DD / YYYY/MM/DD / YYYY.MM.DD
+  const yearFirst = raw.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})$/);
+  if (yearFirst) {
+    const year = Number(yearFirst[1]);
+    const month = Number(yearFirst[2]);
+    const day = Number(yearFirst[3]);
+    const parsed = new Date(year, month - 1, day);
+    if (
+      parsed.getFullYear() === year &&
+      parsed.getMonth() === month - 1 &&
+      parsed.getDate() === day
+    ) {
+      return parsed;
+    }
+  }
+
+  return null;
+};
+
+const isVacancyOpenByLastDate = (lastDate) => {
+  if (!lastDate) return true;
+  const parsed = parseFlexibleDate(lastDate);
+  if (!parsed) return true;
+  parsed.setHours(23, 59, 59, 999); // inclusive of full last day
+  return parsed >= new Date();
+};
+
 /**
  * GET /api/job-postings
  * Get all job postings (public, but filtered by status)
@@ -66,15 +116,18 @@ router.get("/", async (req, res) => {
  */
 router.get("/latest-vacancies", async (req, res) => {
   try {
-    // Get all active job postings
+    // Get all active job postings, then keep only still-open vacancies by lastDate.
     const postings = await JobPosting.find({
       status: "Active",
     })
-      .sort({ createdAt: -1 })
-      .limit(20); // Limit to latest 20 vacancies
+      .sort({ createdAt: -1 });
+
+    const openPostings = postings.filter((posting) =>
+      isVacancyOpenByLastDate(posting.lastDate),
+    );
 
     // Format vacancies - show only title (combined English + Hindi string)
-    const vacancies = postings.map((posting) => {
+    const vacancies = openPostings.slice(0, 20).map((posting) => {
       // title is a single combined string (English + Hindi together)
       const title = posting.title || "";
 
@@ -83,6 +136,8 @@ router.get("/latest-vacancies", async (req, res) => {
         english: title, // Show title for both English and Hindi
         hindi: title,   // Same title (combined) for both
         advtNo: posting.advtNo || "",
+        lastDate: posting.lastDate || "",
+        status: posting.status || "Active",
         link: `/job-postings/view/${posting._id}`,
       };
     });
