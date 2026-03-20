@@ -1046,7 +1046,7 @@ function SharedLayout({ children, navigate }) {
             fontWeight: 700,
           }}
         >
-          2026 JSS Nirmanbharat Assistance Council. All Rights Reserved. Trademark &amp; Brands are
+          2026 Nirmanbharat Assistance Council. All Rights Reserved. Trademark &amp; Brands are
           property of their respective owner.
         </div>
       </footer>
