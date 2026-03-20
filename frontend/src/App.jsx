@@ -11,7 +11,6 @@ import TopBarMail from "./pages/TopBarComponents/TopBarMail";
 import ApplicationForm from "./pages/ApplicationForm/ApplicationForm";
 import ApplicationView from "./pages/ApplicationForm/ApplicationView";
 import JobPosting from "./pages/JobPosting/JobPosting";
-import JobPostingView from "./pages/JobPosting/JobPostingView.jsx";
 import JobPostingApplicants from "./pages/JobPosting/JobPostingApplicants.jsx";
 
 import Login from "./pages/Login";
@@ -85,7 +84,7 @@ function App() {
 
             {/* Shared routes (both roles can open) */}
             <Route path="/job-postings" element={<JobPosting />} />
-            <Route path="/job-postings/view/:id" element={<JobPostingView />} />
+            <Route path="/job-postings/view/:id" element={<JobDetail />} />
             <Route
               path="/job-postings/:id/applicants"
               element={<JobPostingApplicants />}

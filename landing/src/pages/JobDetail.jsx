@@ -652,7 +652,7 @@ function SharedLayout({ children, navigate }) {
         >
           <div style={{ display: "flex", gap: 14, marginTop: -8 }}>
             <a
-              href="https://frontend.jssabhiyan.com/login"
+              href="https://account.jssabhiyan.com/"
               className="login-blink"
               style={{
                 background: "#e53e3e",
@@ -762,7 +762,7 @@ function SharedLayout({ children, navigate }) {
           </button>
           <div style={{ display: "flex", gap: 5 }}>
             <a
-              href="https://frontend.jssabhiyan.com/login"
+              href="https://account.jssabhiyan.com/"
               className="login-blink"
               style={{
                 background: "#e53e3e",
@@ -3129,7 +3129,7 @@ export default function JobDetail() {
     )
       return "";
     const categories = [
-      { key: "general", label: "à¤¸à¤¾à¤®à¤¾à¤¨à¥à¤¯" },
+      { key: "general", label: "\u0938\u093e\u092e\u093e\u0928\u094d\u092f" },
       { key: "obc", label: "OBC" },
       { key: "sc", label: "SC" },
       { key: "st", label: "ST" },
@@ -3144,15 +3144,15 @@ export default function JobDetail() {
     });
     const uniqueFees = [...new Set(allFees)];
     if (uniqueFees.length === 1 && allFees.length > 0)
-      return `\u20B9${uniqueFees[0]} (à¤¸à¤­à¥€ à¤¶à¥à¤°à¥‡à¤£à¤¿à¤¯à¥‹à¤‚ à¤•à¥‡ à¤²à¤¿à¤)`;
+      return `\u20B9${uniqueFees[0]} (\u0938\u092d\u0940 \u0936\u094d\u0930\u0947\u0923\u093f\u092f\u094b\u0902 \u0915\u0947 \u0932\u093f\u090f)`;
     const parts = [];
     categories.forEach((cat) => {
       const mf = feeStructure[`male_${cat.key}`];
       const ff = feeStructure[`female_${cat.key}`];
       if (mf || ff) {
         const fp = [];
-        if (mf) fp.push(`à¤ªà¥à¤°à¥à¤·: ${mf}`);
-        if (ff) fp.push(`à¤®à¤¹à¤¿à¤²à¤¾: ${ff}`);
+        if (mf) fp.push(`\u092a\u0941\u0930\u0941\u0937: ${mf}`);
+        if (ff) fp.push(`\u092e\u0939\u093f\u0932\u093e: ${ff}`);
         if (fp.length > 0) parts.push(`${cat.label} (${fp.join(", ")})`);
       }
     });
@@ -3160,11 +3160,9 @@ export default function JobDetail() {
   };
 
   const feeStructureText =
-    job.fee?.en ||
-    (job.feeStructure ? JSON.stringify(job.feeStructure) : "");
+    formatFeeStructure(job.feeStructure) || job.fee?.en || "";
   const feeStructureTextHi =
-    job.fee?.hi ||
-    (job.feeStructure ? JSON.stringify(job.feeStructure) : "");
+    formatFeeStructureHi(job.feeStructure) || job.fee?.hi || "";
 
   const rowsEn = [
     ["Post", job.post?.en || job.postTitle?.en || ""],

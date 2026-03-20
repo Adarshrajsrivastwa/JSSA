@@ -293,6 +293,18 @@ const quickLinks = [
   { label: "Terms & Condition", page: "/" },
 ];
 
+const MOJIBAKE_PATTERN = /(à¤|à¥|â‚|âœ|ï¸|ðŸ|â|â€”|â€|Ã|Â)/;
+
+const isMojibake = (value) =>
+  typeof value === "string" && MOJIBAKE_PATTERN.test(value);
+
+const pickHindiOrFallback = (hiValue, enValue = "") => {
+  const hi = typeof hiValue === "string" ? hiValue.trim() : "";
+  const en = typeof enValue === "string" ? enValue.trim() : "";
+  if (!hi || isMojibake(hi)) return en;
+  return hi;
+};
+
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     if (document.querySelector(`script[src="${src}"]`)) {
@@ -327,15 +339,15 @@ async function downloadJobPDF(job, lang) {
     ["Fee Structure", job.fee?.en || ""],
   ].filter((r) => r[1]);
   const rowsHi = [
-    ["à¤ªà¤¦", job.post?.hi || job.postTitle?.hi || ""],
-    ["à¤®à¤¾à¤¸à¤¿à¤• à¤†à¤¯", job.income?.hi || ""],
-    ["à¤¶à¥ˆà¤•à¥à¤·à¤£à¤¿à¤• à¤¯à¥‹à¤—à¥à¤¯à¤¤à¤¾", job.education?.hi || ""],
-    ["à¤†à¤¯à¥ à¤¸à¥€à¤®à¤¾", job.ageLimit?.hi || ""],
-    ["à¤¨à¥Œà¤•à¤°à¥€ à¤•à¤°à¤¨à¥‡ à¤•à¤¾ à¤¸à¥à¤¥à¤¾à¤¨", job.location?.hi || ""],
-    ["à¤šà¤¯à¤¨ à¤ªà¥à¤°à¤•à¥à¤°à¤¿à¤¯à¤¾", job.selectionProcess?.hi || ""],
-    ["à¤†à¤µà¥‡à¤¦à¤¨ à¤–à¥à¤²à¤¨à¥‡ à¤•à¥€ à¤¤à¤¿à¤¥à¤¿", job.applicationOpeningDate || ""],
-    ["à¤†à¤µà¥‡à¤¦à¤¨ à¤•à¥€ à¤…à¤‚à¤¤à¤¿à¤® à¤¤à¤¿à¤¥à¤¿", job.lastDate || ""],
-    ["à¤¶à¥à¤²à¥à¤• à¤¸à¤‚à¤°à¤šà¤¨à¤¾", job.fee?.hi || ""],
+    ["पद", pickHindiOrFallback(job.post?.hi || job.postTitle?.hi, job.post?.en || job.postTitle?.en || "")],
+    ["मासिक आय", pickHindiOrFallback(job.income?.hi, job.income?.en || "")],
+    ["शैक्षणिक योग्यता", pickHindiOrFallback(job.education?.hi, job.education?.en || "")],
+    ["आयु सीमा", pickHindiOrFallback(job.ageLimit?.hi, job.ageLimit?.en || "")],
+    ["नौकरी करने का स्थान", pickHindiOrFallback(job.location?.hi, job.location?.en || "")],
+    ["चयन प्रक्रिया", pickHindiOrFallback(job.selectionProcess?.hi, job.selectionProcess?.en || "")],
+    ["आवेदन खुलने की तिथि", job.applicationOpeningDate || ""],
+    ["आवेदन की अंतिम तिथि", job.lastDate || ""],
+    ["शुल्क संरचना", pickHindiOrFallback(job.fee?.hi, job.fee?.en || "")],
   ].filter((r) => r[1]);
   const rows = isHi ? rowsHi : rowsEn;
   const advt = job.advtNo || "";
@@ -1020,7 +1032,7 @@ function SharedLayout({ children, navigate, activePath = "/jobs" }) {
             fontWeight: 700,
           }}
         >
-          Â© 2021 JSS Abhiyan. All Rights Reserved. Trademark &amp; Brands are
+          © 2021 JSS Abhiyan. All Rights Reserved. Trademark &amp; Brands are
           property of their respective owner.
         </div>
       </footer>
@@ -1059,11 +1071,11 @@ function FormFields({
   return (
     <>
       <h3 className="jobs-section-heading">
-        PERSONAL DETAILS / à¤µà¥à¤¯à¤•à¥à¤¤à¤¿à¤—à¤¤ à¤µà¤¿à¤µà¤°à¤£
+        PERSONAL DETAILS / व्यक्तिगत विवरण
       </h3>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div>
-          <label style={lStyle}>Candidate's Name/à¤…à¤­à¥à¤¯à¤°à¥à¤¥à¥€ à¤•à¤¾ à¤¨à¤¾à¤® :</label>
+          <label style={lStyle}>Candidate's Name / अभ्यर्थी का नाम :</label>
           <input
             name="candidateName"
             value={formData.candidateName}
@@ -1081,7 +1093,7 @@ function FormFields({
         </div>
         <div className="jobs-grid-2">
           <div>
-            <label style={lStyle}>Father's Name/à¤ªà¤¿à¤¤à¤¾ à¤•à¤¾ à¤¨à¤¾à¤® :</label>
+            <label style={lStyle}>Father's Name / पिता का नाम :</label>
             <input
               name="fatherName"
               value={formData.fatherName}
@@ -1098,7 +1110,7 @@ function FormFields({
             )}
           </div>
           <div>
-            <label style={lStyle}>Mother's Name/à¤®à¤¾à¤¤à¤¾ à¤•à¤¾ à¤¨à¤¾à¤® :</label>
+            <label style={lStyle}>Mother's Name / माता का नाम :</label>
             <input
               name="motherName"
               value={formData.motherName}
@@ -1117,7 +1129,7 @@ function FormFields({
         </div>
         <div className="jobs-grid-2">
           <div>
-            <label style={lStyle}>Date Of Birth/à¤œà¤¨à¥à¤®à¤¤à¤¿à¤¥à¤¿ :</label>
+            <label style={lStyle}>Date Of Birth / जन्मतिथि :</label>
             <input
               name="dob"
               type="date"
@@ -1136,7 +1148,7 @@ function FormFields({
             )}
           </div>
           <div>
-            <label style={lStyle}>Gender/à¤²à¤¿à¤‚à¤— :</label>
+            <label style={lStyle}>Gender / लिंग :</label>
             <select
               name="gender"
               value={formData.gender}
@@ -1147,9 +1159,9 @@ function FormFields({
               }}
             >
               <option value="">--Please Select--</option>
-              <option value="male">Male / à¤ªà¥à¤°à¥à¤·</option>
-              <option value="female">Female / à¤®à¤¹à¤¿à¤²à¤¾</option>
-              <option value="other">Other / à¤…à¤¨à¥à¤¯</option>
+              <option value="male">Male / पुरुष</option>
+              <option value="female">Female / महिला</option>
+              <option value="other">Other / अन्य</option>
             </select>
             {validationErrors.gender && (
               <div style={{ color: "#e53e3e", fontSize: 11, marginTop: 4 }}>
@@ -1160,7 +1172,7 @@ function FormFields({
         </div>
         <div className="jobs-grid-2">
           <div>
-            <label style={lStyle}>Nationality/à¤°à¤¾à¤·à¥à¤Ÿà¥à¤°à¥€à¤¯à¤¤à¤¾ :</label>
+            <label style={lStyle}>Nationality / राष्ट्रीयता :</label>
             <select
               name="nationality"
               value={formData.nationality}
@@ -1171,8 +1183,8 @@ function FormFields({
               }}
             >
               <option value="">---Please Select---</option>
-              <option value="indian">Indian / à¤­à¤¾à¤°à¤¤à¥€à¤¯</option>
-              <option value="other">Other / à¤…à¤¨à¥à¤¯</option>
+              <option value="indian">Indian / भारतीय</option>
+              <option value="other">Other / अन्य</option>
             </select>
             {validationErrors.nationality && (
               <div style={{ color: "#e53e3e", fontSize: 11, marginTop: 4 }}>
@@ -1181,7 +1193,7 @@ function FormFields({
             )}
           </div>
           <div>
-            <label style={lStyle}>Category/à¤¶à¥à¤°à¥‡à¤£à¥€ :</label>
+            <label style={lStyle}>Category / श्रेणी :</label>
             <select
               name="category"
               value={formData.category}
@@ -1192,7 +1204,7 @@ function FormFields({
               }}
             >
               <option value="">---Please Select---</option>
-              <option value="general">General / à¤¸à¤¾à¤®à¤¾à¤¨à¥à¤¯</option>
+              <option value="general">General / सामान्य</option>
               <option value="obc">OBC</option>
               <option value="sc">SC</option>
               <option value="st">ST</option>
@@ -1207,7 +1219,7 @@ function FormFields({
         </div>
         <div className="jobs-grid-2">
           <div>
-            <label style={lStyle}>Aadhar Number/à¤†à¤§à¤¾à¤° à¤¸à¤‚à¤–à¥à¤¯à¤¾ :</label>
+            <label style={lStyle}>Aadhar Number / आधार संख्या :</label>
             <input
               name="aadhar"
               value={formData.aadhar}
@@ -1225,7 +1237,7 @@ function FormFields({
             )}
           </div>
           <div>
-            <label style={lStyle}>Pan Number/à¤ªà¥‡à¤¨ à¤¸à¤‚à¤–à¥à¤¯à¤¾ :</label>
+            <label style={lStyle}>Pan Number / पैन संख्या :</label>
             <input
               name="pan"
               value={formData.pan}
@@ -1246,7 +1258,7 @@ function FormFields({
         </div>
         <div className="jobs-grid-2">
           <div>
-            <label style={lStyle}>Mobile Number/à¤®à¥‹à¤¬à¤¾à¤‡à¤² à¤¨à¤‚à¤¬à¤° :</label>
+            <label style={lStyle}>Mobile Number / मोबाइल नंबर :</label>
             <input
               name="mobile"
               value={formData.mobile}
@@ -1265,7 +1277,7 @@ function FormFields({
             )}
           </div>
           <div>
-            <label style={lStyle}>Email Id/à¤ˆà¤®à¥‡à¤² à¤†à¤ˆà¤¡à¥€ :</label>
+            <label style={lStyle}>Email Id / ईमेल आईडी :</label>
             <input
               name="email"
               type="email"
@@ -1284,7 +1296,7 @@ function FormFields({
           </div>
         </div>
         <div>
-          <label style={lStyle}>Permanenet Address/à¤¸à¥à¤¥à¤¾à¤ˆ à¤ªà¤¤à¤¾ :</label>
+          <label style={lStyle}>Permanenet Address / स्थायी पता :</label>
           <input
             name="address"
             value={formData.address}
@@ -1302,7 +1314,7 @@ function FormFields({
         </div>
         <div className="jobs-grid-2">
           <div>
-            <label style={lStyle}>State/à¤°à¤¾à¤œà¥à¤¯ :</label>
+            <label style={lStyle}>State / राज्य :</label>
             <select
               name="state"
               value={formData.state || ""}
@@ -1324,7 +1336,7 @@ function FormFields({
             )}
           </div>
           <div>
-            <label style={lStyle}>District/à¤œà¤¿à¤²à¤¾ :</label>
+            <label style={lStyle}>District / जिला :</label>
             <input
               name="district"
               value={formData.district}
@@ -1343,7 +1355,7 @@ function FormFields({
         </div>
         <div className="jobs-grid-3">
           <div>
-            <label style={lStyle}>Block/à¤¬à¥à¤²à¥‰à¤• :</label>
+            <label style={lStyle}>Block / ब्लॉक :</label>
             <input
               name="block"
               value={formData.block}
@@ -1352,7 +1364,7 @@ function FormFields({
             />
           </div>
           <div>
-            <label style={lStyle}>Panchayat/à¤ªà¤‚à¤šà¤¾à¤¯à¤¤ :</label>
+            <label style={lStyle}>Panchayat / पंचायत :</label>
             <input
               name="panchayat"
               value={formData.panchayat}
@@ -1361,7 +1373,7 @@ function FormFields({
             />
           </div>
           <div>
-            <label style={lStyle}>Postal Pin Code/à¤¡à¤¾à¤• à¤ªà¤¿à¤¨ à¤•à¥‹à¤¡ :</label>
+            <label style={lStyle}>Postal Pin Code / डाक पिन कोड :</label>
             <input
               name="pincode"
               value={formData.pincode}
@@ -1381,7 +1393,7 @@ function FormFields({
         </div>
         <div className="jobs-grid-2">
           <div>
-            <label style={lStyle}>Attach Photograph/à¤«à¥‹à¤Ÿà¥‹ à¤²à¤—à¤¾à¤à¤‚ :</label>
+            <label style={lStyle}>Attach Photograph / फोटो लगाएं :</label>
             <input
               name="photo"
               type="file"
@@ -1417,7 +1429,7 @@ function FormFields({
             </p>
           </div>
           <div>
-            <label style={lStyle}>Attach Signature/à¤¹à¤¸à¥à¤¤à¤¾à¤•à¥à¤·à¤° à¤²à¤—à¤¾à¤à¤‚ :</label>
+            <label style={lStyle}>Attach Signature / हस्ताक्षर लगाएं :</label>
             <input
               name="signature"
               type="file"
@@ -1457,12 +1469,12 @@ function FormFields({
         </div>
       </div>
       <h3 className="jobs-section-heading" style={{ marginTop: 22 }}>
-        EDUCATION DETAILS / à¤¶à¥ˆà¤•à¥à¤·à¤£à¤¿à¤• à¤µà¤¿à¤µà¤°à¤£
+        EDUCATION DETAILS / शैक्षणिक विवरण
       </h3>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div className="jobs-grid-2">
           <div>
-            <label style={lStyle}>Higher Education/à¤‰à¤šà¥à¤š à¤¶à¤¿à¤•à¥à¤·à¤¾ :</label>
+            <label style={lStyle}>Higher Education / उच्च शिक्षा :</label>
             <input
               name="higherEducation"
               value={formData.higherEducation}
@@ -1498,7 +1510,7 @@ function FormFields({
         </div>
         <div className="jobs-grid-2">
           <div>
-            <label style={lStyle}>Marks/à¤…à¤‚à¤• :</label>
+            <label style={lStyle}>Marks / अंक :</label>
             <input
               name="marks"
               value={formData.marks}
@@ -1515,7 +1527,7 @@ function FormFields({
             )}
           </div>
           <div>
-            <label style={lStyle}>Percentage/à¤ªà¥à¤°à¤¤à¤¿à¤¶à¤¤ :</label>
+            <label style={lStyle}>Percentage / प्रतिशत :</label>
             <input
               name="markPercentage"
               value={formData.markPercentage}
@@ -1596,7 +1608,7 @@ function InlineReview({
           marginBottom: 20,
         }}
       >
-        Form Preview / à¤ªà¥à¤°à¤ªà¤¤à¥à¤° à¤ªà¥‚à¤°à¥à¤µà¤¾à¤µà¤²à¥‹à¤•à¤¨
+        Form Preview / प्रपत्र पूर्वावलोकन
       </h1>
 
       {/* Subtitle with green lines */}
@@ -1617,7 +1629,7 @@ function InlineReview({
             margin: 0,
           }}
         >
-          {titleEn} à¤•à¥‡ à¤²à¤¿à¤ à¤à¤®à¤“à¤¯à¥‚ à¤”à¤° à¤¸à¤¹à¤®à¤¤à¤¿ à¤•à¤¾ à¤‘à¤¨à¤²à¤¾à¤‡à¤¨ à¤«à¥‰à¤°à¥à¤® / {titleHi} à¤•à¥‡ à¤²à¤¿à¤ à¤à¤®à¤“à¤¯à¥‚ à¤”à¤° à¤¸à¤¹à¤®à¤¤à¤¿ à¤•à¤¾ à¤‘à¤¨à¤²à¤¾à¤‡à¤¨ à¤«à¥‰à¤°à¥à¤®
+          {titleEn} के लिए एमओयू और सहमति का ऑनलाइन फॉर्म / {titleHi} के लिए एमओयू और सहमति का ऑनलाइन फॉर्म
         </h2>
         <div
           style={{
@@ -1658,9 +1670,9 @@ function InlineReview({
             margin: 0,
           }}
         >
-          <strong>à¤¹à¤¿à¤‚à¤¦à¥€:</strong> à¤†à¤ªà¤¸à¥‡ à¤…à¤¨à¥à¤°à¥‹à¤§ à¤¹à¥ˆ à¤•à¤¿ à¤•à¥ƒà¤ªà¤¯à¤¾ à¤¸à¤­à¥€ à¤•à¥‰à¤²à¤®, à¤«à¥‹à¤Ÿà¥‹ à¤”à¤°
-          à¤¹à¤¸à¥à¤¤à¤¾à¤•à¥à¤·à¤° à¤¸à¤¹à¥€ à¤¸à¥‡ à¤œà¤¾à¤‚à¤š à¤²à¥‡à¤‚, à¤¯à¤¦à¤¿ à¤•à¥‹à¤ˆ à¤¤à¥à¤°à¥à¤Ÿà¤¿ à¤¹à¥‹ à¤¤à¥‹ à¤‰à¤¸à¥‡ à¤¸à¥à¤§à¤¾à¤° à¤²à¥‡à¤‚ à¤”à¤° à¤¨à¥€à¤šà¥‡
-          à¤¦à¤¿à¤ à¤—à¤ à¤…à¤ªà¤¡à¥‡à¤Ÿ à¤à¤‚à¤¡ à¤•à¤‚à¤Ÿà¤¿à¤¨à¥à¤¯à¥‚ à¤ªà¤° à¤•à¥à¤²à¤¿à¤• à¤•à¤°à¤•à¥‡ à¤«à¥‰à¤°à¥à¤® à¤¸à¤¬à¤®à¤¿à¤Ÿ à¤•à¤° à¤¦à¥‡à¤‚à¥¤
+          <strong>हिंदी:</strong> आपसे अनुरोध है कि कृपया सभी कॉलम, फोटो और
+          हस्ताक्षर सही से जांच लें, यदि कोई त्रुटि हो तो उसे सुधार लें और नीचे
+          दिए गए अपडेट एंड कंटिन्यू पर क्लिक करके फॉर्म सबमिट कर दें।
         </p>
       </div>
 
@@ -1674,14 +1686,14 @@ function InlineReview({
           margin: "24px 0 16px",
         }}
       >
-        PERSONAL DETAILS / à¤µà¥à¤¯à¤•à¥à¤¤à¤¿à¤—à¤¤ à¤µà¤¿à¤µà¤°à¤£
+        PERSONAL DETAILS / व्यक्तिगत विवरण
       </h3>
 
       {/* Editable Form Fields */}
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
           <label style={lStyle}>
-            Candidate's Name / à¤…à¤­à¥à¤¯à¤°à¥à¤¥à¥€ à¤•à¤¾ à¤¨à¤¾à¤® :
+            Candidate's Name / अभ्यर्थी का नाम :
           </label>
           <input
             name="candidateName"
@@ -1692,7 +1704,7 @@ function InlineReview({
         </div>
         <div className="jobs-grid-2">
           <div>
-            <label style={lStyle}>Father's Name / à¤ªà¤¿à¤¤à¤¾ à¤•à¤¾ à¤¨à¤¾à¤® :</label>
+            <label style={lStyle}>Father's Name / पिता का नाम :</label>
             <input
               name="fatherName"
               value={formData.fatherName}
@@ -1701,7 +1713,7 @@ function InlineReview({
             />
           </div>
           <div>
-            <label style={lStyle}>Mother's Name / à¤®à¤¾à¤¤à¤¾ à¤•à¤¾ à¤¨à¤¾à¤® :</label>
+            <label style={lStyle}>Mother's Name / माता का नाम :</label>
             <input
               name="motherName"
               value={formData.motherName}
@@ -1712,7 +1724,7 @@ function InlineReview({
         </div>
         <div className="jobs-grid-2">
           <div>
-            <label style={lStyle}>Date Of Birth / à¤œà¤¨à¥à¤®à¤¤à¤¿à¤¥à¤¿ :</label>
+            <label style={lStyle}>Date Of Birth / जन्मतिथि :</label>
             <input
               name="dob"
               type="date"
@@ -1723,7 +1735,7 @@ function InlineReview({
             />
           </div>
           <div>
-            <label style={lStyle}>Gender / à¤²à¤¿à¤‚à¤— :</label>
+            <label style={lStyle}>Gender / लिंग :</label>
             <select
               name="gender"
               value={formData.gender}
@@ -1731,15 +1743,15 @@ function InlineReview({
               style={iStyle}
             >
               <option value="">--Please Select--</option>
-              <option value="male">Male / à¤ªà¥à¤°à¥à¤·</option>
-              <option value="female">Female / à¤®à¤¹à¤¿à¤²à¤¾</option>
-              <option value="other">Other / à¤…à¤¨à¥à¤¯</option>
+              <option value="male">Male / पुरुष</option>
+              <option value="female">Female / महिला</option>
+              <option value="other">Other / अन्य</option>
             </select>
           </div>
         </div>
         <div className="jobs-grid-2">
           <div>
-            <label style={lStyle}>Nationality / à¤°à¤¾à¤·à¥à¤Ÿà¥à¤°à¥€à¤¯à¤¤à¤¾ :</label>
+            <label style={lStyle}>Nationality / राष्ट्रीयता :</label>
             <select
               name="nationality"
               value={formData.nationality}
@@ -1747,12 +1759,12 @@ function InlineReview({
               style={iStyle}
             >
               <option value="">---Please Select---</option>
-              <option value="indian">Indian / à¤­à¤¾à¤°à¤¤à¥€à¤¯</option>
-              <option value="other">Other / à¤…à¤¨à¥à¤¯</option>
+              <option value="indian">Indian / भारतीय</option>
+              <option value="other">Other / अन्य</option>
             </select>
           </div>
           <div>
-            <label style={lStyle}>Category / à¤¶à¥à¤°à¥‡à¤£à¥€ :</label>
+            <label style={lStyle}>Category / श्रेणी :</label>
             <select
               name="category"
               value={formData.category}
@@ -1760,7 +1772,7 @@ function InlineReview({
               style={iStyle}
             >
               <option value="">---Please Select---</option>
-              <option value="general">General / à¤¸à¤¾à¤®à¤¾à¤¨à¥à¤¯</option>
+              <option value="general">General / सामान्य</option>
               <option value="obc">OBC</option>
               <option value="sc">SC</option>
               <option value="st">ST</option>
@@ -1770,7 +1782,7 @@ function InlineReview({
         </div>
         <div className="jobs-grid-2">
           <div>
-            <label style={lStyle}>Aadhar Number / à¤†à¤§à¤¾à¤° à¤¸à¤‚à¤–à¥à¤¯à¤¾ :</label>
+            <label style={lStyle}>Aadhar Number / आधार संख्या :</label>
             <input
               name="aadhar"
               value={formData.aadhar}
@@ -1780,7 +1792,7 @@ function InlineReview({
             />
           </div>
           <div>
-            <label style={lStyle}>Pan Number / à¤ªà¥‡à¤¨ à¤¸à¤‚à¤–à¥à¤¯à¤¾ :</label>
+            <label style={lStyle}>Pan Number / पैन संख्या :</label>
             <input
               name="pan"
               value={formData.pan}
@@ -1792,7 +1804,7 @@ function InlineReview({
         </div>
         <div className="jobs-grid-2">
           <div>
-            <label style={lStyle}>Mobile Number / à¤®à¥‹à¤¬à¤¾à¤‡à¤² à¤¨à¤‚à¤¬à¤° :</label>
+            <label style={lStyle}>Mobile Number / मोबाइल नंबर :</label>
             <input
               name="mobile"
               value={formData.mobile}
@@ -1803,7 +1815,7 @@ function InlineReview({
             />
           </div>
           <div>
-            <label style={lStyle}>Email Id / à¤ˆà¤®à¥‡à¤² à¤†à¤ˆà¤¡à¥€ :</label>
+            <label style={lStyle}>Email Id / ईमेल आईडी :</label>
             <input
               name="email"
               type="email"
@@ -1814,7 +1826,7 @@ function InlineReview({
           </div>
         </div>
         <div>
-          <label style={lStyle}>Permanenet Address / à¤¸à¥à¤¥à¤¾à¤ˆ à¤ªà¤¤à¤¾ :</label>
+          <label style={lStyle}>Permanenet Address / स्थायी पता :</label>
           <input
             name="address"
             value={formData.address}
@@ -1824,7 +1836,7 @@ function InlineReview({
         </div>
         <div className="jobs-grid-2">
           <div>
-            <label style={lStyle}>State / à¤°à¤¾à¤œà¥à¤¯ :</label>
+            <label style={lStyle}>State / राज्य :</label>
             <select
               name="state"
               value={formData.state || ""}
@@ -1838,7 +1850,7 @@ function InlineReview({
             </select>
           </div>
           <div>
-            <label style={lStyle}>District / à¤œà¤¿à¤²à¤¾ :</label>
+            <label style={lStyle}>District / जिला :</label>
             <input
               name="district"
               value={formData.district}
@@ -1849,7 +1861,7 @@ function InlineReview({
         </div>
         <div className="jobs-grid-3">
           <div>
-            <label style={lStyle}>Block / à¤¬à¥à¤²à¥‰à¤• :</label>
+            <label style={lStyle}>Block / ब्लॉक :</label>
             <input
               name="block"
               value={formData.block}
@@ -1858,7 +1870,7 @@ function InlineReview({
             />
           </div>
           <div>
-            <label style={lStyle}>Panchayat / à¤ªà¤‚à¤šà¤¾à¤¯à¤¤ :</label>
+            <label style={lStyle}>Panchayat / पंचायत :</label>
             <input
               name="panchayat"
               value={formData.panchayat}
@@ -1867,7 +1879,7 @@ function InlineReview({
             />
           </div>
           <div>
-            <label style={lStyle}>Postal Pin Code / à¤¡à¤¾à¤• à¤ªà¤¿à¤¨ à¤•à¥‹à¤¡ :</label>
+            <label style={lStyle}>Postal Pin Code / डाक पिन कोड :</label>
             <input
               name="pincode"
               value={formData.pincode}
@@ -1879,7 +1891,7 @@ function InlineReview({
         </div>
         <div className="jobs-grid-2">
           <div>
-            <label style={lStyle}>Attach Photograph / à¤«à¥‹à¤Ÿà¥‹ à¤²à¤—à¤¾à¤à¤‚ :</label>
+            <label style={lStyle}>Attach Photograph / फोटो लगाएं :</label>
             <input
               name="photo"
               type="file"
@@ -1906,7 +1918,7 @@ function InlineReview({
             </p>
           </div>
           <div>
-            <label style={lStyle}>Attach Signature / à¤¹à¤¸à¥à¤¤à¤¾à¤•à¥à¤·à¤° à¤²à¤—à¤¾à¤à¤‚ :</label>
+            <label style={lStyle}>Attach Signature / हस्ताक्षर लगाएं :</label>
             <input
               name="signature"
               type="file"
@@ -1938,12 +1950,12 @@ function InlineReview({
       </div>
 
       <h3 className="jobs-section-heading" style={{ marginTop: 24 }}>
-        EDUCATION DETAILS / à¤¶à¥ˆà¤•à¥à¤·à¤£à¤¿à¤• à¤µà¤¿à¤µà¤°à¤£
+        EDUCATION DETAILS / शैक्षणिक विवरण
       </h3>
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div className="jobs-grid-2">
           <div>
-            <label style={lStyle}>Higher Education / à¤‰à¤šà¥à¤š à¤¶à¤¿à¤•à¥à¤·à¤¾ :</label>
+            <label style={lStyle}>Higher Education / उच्च शिक्षा :</label>
             <input
               name="higherEducation"
               value={formData.higherEducation}
@@ -1963,7 +1975,7 @@ function InlineReview({
         </div>
         <div className="jobs-grid-2">
           <div>
-            <label style={lStyle}>Marks / à¤…à¤‚à¤• :</label>
+            <label style={lStyle}>Marks / अंक :</label>
             <input
               name="marks"
               value={formData.marks}
@@ -1972,7 +1984,7 @@ function InlineReview({
             />
           </div>
           <div>
-            <label style={lStyle}>Percentage / à¤ªà¥à¤°à¤¤à¤¿à¤¶à¤¤ :</label>
+            <label style={lStyle}>Percentage / प्रतिशत :</label>
             <input
               name="markPercentage"
               value={formData.markPercentage}
@@ -2003,8 +2015,8 @@ function InlineReview({
           {applying
             ? "Processing..."
             : feeAmount > 0
-              ? "Update and Continue / à¤…à¤ªà¤¡à¥‡à¤Ÿ à¤à¤‚à¤¡ à¤•à¤‚à¤Ÿà¤¿à¤¨à¥à¤¯à¥‚"
-              : "Update and Continue / à¤…à¤ªà¤¡à¥‡à¤Ÿ à¤à¤‚à¤¡ à¤•à¤‚à¤Ÿà¤¿à¤¨à¥à¤¯à¥‚"}
+              ? "Update and Continue / अपडेट एंड कंटिन्यू"
+              : "Update and Continue / अपडेट एंड कंटिन्यू"}
         </button>
       </div>
     </div>
@@ -2659,7 +2671,7 @@ export default function JobDetail() {
         amount,
         currency: "INR",
         name: "JSSA Application Fee",
-        description: `Application Fee - â‚¹${amountInRupees}`,
+        description: `Application Fee - ₹${amountInRupees}`,
         order_id: orderId,
         handler: async (response) => {
           try {
@@ -2795,7 +2807,7 @@ export default function JobDetail() {
     const allSame = uniqueFees.length === 1 && allFees.length > 0;
     
     if (allSame) {
-      return `â‚¹${uniqueFees[0]} (FOR ALL CATEGORIES)`;
+      return `₹${uniqueFees[0]} (FOR ALL CATEGORIES)`;
     }
     
     // If not all same, show detailed format
@@ -2821,7 +2833,7 @@ export default function JobDetail() {
     )
       return "";
     const categories = [
-      { key: "general", label: "à¤¸à¤¾à¤®à¤¾à¤¨à¥à¤¯" },
+      { key: "general", label: "सामान्य" },
       { key: "obc", label: "OBC" },
       { key: "sc", label: "SC" },
       { key: "st", label: "ST" },
@@ -2841,7 +2853,7 @@ export default function JobDetail() {
     const allSame = uniqueFees.length === 1 && allFees.length > 0;
     
     if (allSame) {
-      return `â‚¹${uniqueFees[0]} (à¤¸à¤­à¥€ à¤¶à¥à¤°à¥‡à¤£à¤¿à¤¯à¥‹à¤‚ à¤•à¥‡ à¤²à¤¿à¤)`;
+      return `₹${uniqueFees[0]} (सभी श्रेणियों के लिए)`;
     }
     
     // If not all same, show detailed format
@@ -2851,8 +2863,8 @@ export default function JobDetail() {
       const femaleFee = feeStructure[`female_${cat.key}`];
       if (maleFee || femaleFee) {
         const feeParts = [];
-        if (maleFee) feeParts.push(`à¤ªà¥à¤°à¥à¤·: ${maleFee}`);
-        if (femaleFee) feeParts.push(`à¤®à¤¹à¤¿à¤²à¤¾: ${femaleFee}`);
+        if (maleFee) feeParts.push(`पुरुष: ${maleFee}`);
+        if (femaleFee) feeParts.push(`महिला: ${femaleFee}`);
         if (feeParts.length > 0)
           parts.push(`${cat.label} (${feeParts.join(", ")})`);
       }
@@ -2863,7 +2875,8 @@ export default function JobDetail() {
   const feeStructureText =
     formatFeeStructure(job.feeStructure) || job.fee?.en || "";
   const feeStructureTextHi =
-    formatFeeStructureHi(job.feeStructure) || job.fee?.hi || "";
+    formatFeeStructureHi(job.feeStructure) ||
+    pickHindiOrFallback(job.fee?.hi, job.fee?.en || "");
 
   const rowsEn = [
     ["Post", job.post?.en || job.postTitle?.en || ""],
@@ -2884,27 +2897,30 @@ export default function JobDetail() {
   ].filter((r) => r[1]);
 
   const rowsHi = [
-    ["à¤ªà¤¦", job.post?.hi || job.postTitle?.hi || ""],
-    ["à¤•à¥à¤² à¤ªà¤¦", job.totalPost || ""],
-    ["à¤®à¤¾à¤¸à¤¿à¤• à¤†à¤¯", job.income?.hi || ""],
-    ["à¤¶à¥ˆà¤•à¥à¤·à¤£à¤¿à¤• à¤¯à¥‹à¤—à¥à¤¯à¤¤à¤¾", job.education?.hi || ""],
+    ["पद", pickHindiOrFallback(job.post?.hi || job.postTitle?.hi, job.post?.en || job.postTitle?.en || "")],
+    ["कुल पद", job.totalPost || ""],
+    ["मासिक आय", pickHindiOrFallback(job.income?.hi, job.income?.en || "")],
+    ["शैक्षणिक योग्यता", pickHindiOrFallback(job.education?.hi, job.education?.en || "")],
     [
-      "à¤†à¤¯à¥ à¤¸à¥€à¤®à¤¾",
-      `${job.ageLimit?.hi || ""}${job.ageAsOn ? ` (${job.ageAsOn} à¤•à¥‹)` : ""}`,
+      "आयु सीमा",
+      `${pickHindiOrFallback(job.ageLimit?.hi, job.ageLimit?.en || "")}${job.ageAsOn ? ` (${job.ageAsOn} को)` : ""}`,
     ],
-    ["à¤¨à¥Œà¤•à¤°à¥€ à¤•à¤°à¤¨à¥‡ à¤•à¤¾ à¤¸à¥à¤¥à¤¾à¤¨", job.location?.hi || ""],
-    ["à¤šà¤¯à¤¨ à¤ªà¥à¤°à¤•à¥à¤°à¤¿à¤¯à¤¾", job.selectionProcess?.hi || ""],
-    ["à¤†à¤µà¥‡à¤¦à¤¨ à¤–à¥à¤²à¤¨à¥‡ à¤•à¥€ à¤¤à¤¿à¤¥à¤¿", job.applicationOpeningDate || ""],
-    ["à¤†à¤µà¥‡à¤¦à¤¨ à¤•à¥€ à¤…à¤‚à¤¤à¤¿à¤® à¤¤à¤¿à¤¥à¤¿", job.lastDate || ""],
-    ["1st à¤®à¥‡à¤§à¤¾ à¤¸à¥‚à¤šà¥€ à¤œà¤¾à¤°à¥€", job.firstMeritListDate || ""],
-    ["à¤…à¤‚à¤¤à¤¿à¤® à¤®à¥‡à¤§à¤¾ à¤¸à¥‚à¤šà¥€ à¤œà¤¾à¤°à¥€", job.finalMeritListDate || ""],
-    ["à¤¶à¥à¤²à¥à¤• à¤¸à¤‚à¤°à¤šà¤¨à¤¾", feeStructureTextHi],
+    ["नौकरी करने का स्थान", pickHindiOrFallback(job.location?.hi, job.location?.en || "")],
+    ["चयन प्रक्रिया", pickHindiOrFallback(job.selectionProcess?.hi, job.selectionProcess?.en || "")],
+    ["आवेदन खुलने की तिथि", job.applicationOpeningDate || ""],
+    ["आवेदन की अंतिम तिथि", job.lastDate || ""],
+    ["1st मेधा सूची जारी", job.firstMeritListDate || ""],
+    ["अंतिम मेधा सूची जारी", job.finalMeritListDate || ""],
+    ["शुल्क संरचना", feeStructureTextHi],
   ].filter((r) => r[1]);
 
   const rows = Math.max(rowsEn.length, rowsHi.length);
   const isActive = job.status === "Active";
   const titleEn = job.postTitle?.en || job.post?.en || "";
-  const titleHi = job.postTitle?.hi || job.post?.hi || "";
+  const titleHi = pickHindiOrFallback(
+    job.postTitle?.hi || job.post?.hi,
+    job.postTitle?.en || job.post?.en || "",
+  );
 
   return (
     <SharedLayout navigate={navigate} activePath="/jobs">
@@ -2923,7 +2939,7 @@ export default function JobDetail() {
             <div className="jobs-detail-title-row">
               Recruitment for the Post of {titleEn} Advt. No. {job.advtNo}{" "}
               /&nbsp;
-              {titleHi} à¤µà¤¿à¤œà¥à¤žà¤¾à¤ªà¤¨ à¤¸à¤‚à¤–à¥à¤¯à¤¾: {job.advtNo}
+              {titleHi} विज्ञापन संख्या: {job.advtNo}
             </div>
 
             {/* â”€â”€ Download row â”€â”€ */}
@@ -2971,7 +2987,7 @@ export default function JobDetail() {
                   ) : (
                     <>
                       <span style={{ fontWeight: 900 }}>
-                        Download Advertisement (English Version) Click Here âœ¤âœ¤
+                        Download Advertisement (English Version) Click Here ✤✤
                       </span>
                       <span className="new-badge">NEW</span>
                     </>
@@ -2979,9 +2995,9 @@ export default function JobDetail() {
                 </button>
               </div>
               <div className="jobs-detail-download-cell">
-                <div className="advt-label">à¤µà¤¿à¤œà¥à¤žà¤¾à¤ªà¤¨ à¤¸à¤‚à¥¦ {job.advtNo}</div>
+                <div className="advt-label">विज्ञापन सं.: {job.advtNo}</div>
                 {job.date && (
-                  <div className="advt-date">à¤¦à¤¿à¤¨à¤¾à¤‚à¤• -{job.date}</div>
+                  <div className="advt-date">दिनांक - {job.date}</div>
                 )}
                 <button
                   className="dl-link"
@@ -3016,11 +3032,11 @@ export default function JobDetail() {
                     </svg>
                   </span>
                   {downloading === "hi" ? (
-                    "PDF à¤¬à¤¨ à¤°à¤¹à¤¾ à¤¹à¥ˆ..."
+                    "PDF बन रहा है..."
                   ) : (
                     <>
                       <span style={{ fontWeight: 900 }}>
-                        à¤¡à¤¾à¤‰à¤¨à¤²à¥‹à¤¡ à¤µà¤¿à¤œà¥à¤žà¤¾à¤ªà¤¨ (à¤¹à¤¿à¤‚à¤¦à¥€ à¤¸à¤‚à¤¸à¥à¤•à¤°à¤£) à¤¯à¤¹à¤¾à¤ à¤•à¥à¤²à¤¿à¤• à¤•à¤°à¥‡à¤‚ âœ¤âœ¤
+                        डाउनलोड विज्ञापन (हिंदी संस्करण) यहाँ क्लिक करें ✤✤
                       </span>
                       <span className="new-badge">NEW</span>
                     </>
@@ -3033,7 +3049,7 @@ export default function JobDetail() {
             {Array.from({ length: rows }).map((_, i) => {
               const isFee =
                 rowsEn[i]?.[0] === "Fee Structure" ||
-                rowsHi[i]?.[0] === "à¤¶à¥à¤²à¥à¤• à¤¸à¤‚à¤°à¤šà¤¨à¤¾";
+                rowsHi[i]?.[0] === "शुल्क संरचना";
               return (
                 <div
                   key={i}
@@ -3088,7 +3104,7 @@ export default function JobDetail() {
               color: "#8B1a1a",
             }}
           >
-            âš ï¸ This vacancy is closed. / à¤¯à¤¹ à¤­à¤°à¥à¤¤à¥€ à¤¬à¤‚à¤¦ à¤¹à¥‹ à¤šà¥à¤•à¥€ à¤¹à¥ˆà¥¤
+            ⚠️ This vacancy is closed. / यह भर्ती बंद हो चुकी है।
           </div>
         ) : formStep === "review" ? (
           <InlineReview
@@ -3374,7 +3390,7 @@ export default function JobDetail() {
                     lineHeight: 1.2,
                   }}
                 >
-                  à¤œà¤¨ à¤¸à¥à¤µà¤¾à¤¸à¥à¤¥à¥à¤¯ à¤¸à¤¹à¤¾à¤¯à¤¤à¤¾ à¤…à¤­à¤¿à¤¯à¤¾à¤¨
+                  जन स्वास्थ्य सहायता अभियान
                 </div>
                 <div
                   style={{
@@ -4090,7 +4106,7 @@ export default function JobDetail() {
                   boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
                 }}
               >
-                âœ– Cancel
+                ✖ Cancel
               </button>
             </div>
           </div>

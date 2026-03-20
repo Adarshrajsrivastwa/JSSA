@@ -1,5 +1,20 @@
 import mongoose from "mongoose";
 
+const MOJIBAKE_PATTERN = /(à¤|à¥|â‚|âœ|ï¸|ðŸ|â|â€”|â€|Ã)/;
+
+function decodeMojibakeText(value) {
+  if (typeof value !== "string" || !MOJIBAKE_PATTERN.test(value)) return value;
+  try {
+    const bytes = Uint8Array.from(
+      Array.from(value, (ch) => ch.charCodeAt(0) & 0xff),
+    );
+    const decoded = new TextDecoder("utf-8").decode(bytes);
+    return decoded || value;
+  } catch {
+    return value;
+  }
+}
+
 const jobPostingSchema = new mongoose.Schema(
   {
     advtNo: {
@@ -196,6 +211,21 @@ const jobPostingSchema = new mongoose.Schema(
 // advtNo index removed - already has unique: true which creates an index
 jobPostingSchema.index({ status: 1 });
 jobPostingSchema.index({ "post.en": "text", "post.hi": "text", "location.en": "text" });
+
+jobPostingSchema.pre("save", function normalizeHindiMojibake(next) {
+  this.title = decodeMojibakeText(this.title);
+  this.post.hi = decodeMojibakeText(this.post?.hi);
+  this.income.hi = decodeMojibakeText(this.income?.hi);
+  this.education.hi = decodeMojibakeText(this.education?.hi);
+  this.location.hi = decodeMojibakeText(this.location?.hi);
+  this.ageLimit.hi = decodeMojibakeText(this.ageLimit?.hi);
+  this.selectionProcess.hi = decodeMojibakeText(this.selectionProcess?.hi);
+  this.fee.hi = decodeMojibakeText(this.fee?.hi);
+  this.locationArrHi = (this.locationArrHi || []).map((value) =>
+    decodeMojibakeText(value),
+  );
+  next();
+});
 
 const JobPosting = mongoose.model("JobPosting", jobPostingSchema);
 
