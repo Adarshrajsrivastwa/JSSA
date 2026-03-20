@@ -3069,7 +3069,7 @@ export default function JobDetail() {
     });
     const uniqueFees = [...new Set(allFees)];
     if (uniqueFees.length === 1 && allFees.length > 0)
-      return `â‚¹${uniqueFees[0]} (FOR ALL CATEGORIES)`;
+      return `\u20B9${uniqueFees[0]} (FOR ALL CATEGORIES)`;
     const parts = [];
     categories.forEach((cat) => {
       const mf = feeStructure[`male_${cat.key}`];
@@ -3106,7 +3106,7 @@ export default function JobDetail() {
     });
     const uniqueFees = [...new Set(allFees)];
     if (uniqueFees.length === 1 && allFees.length > 0)
-      return `â‚¹${uniqueFees[0]} (à¤¸à¤­à¥€ à¤¶à¥à¤°à¥‡à¤£à¤¿à¤¯à¥‹à¤‚ à¤•à¥‡ à¤²à¤¿à¤)`;
+      return `\u20B9${uniqueFees[0]} (à¤¸à¤­à¥€ à¤¶à¥à¤°à¥‡à¤£à¤¿à¤¯à¥‹à¤‚ à¤•à¥‡ à¤²à¤¿à¤)`;
     const parts = [];
     categories.forEach((cat) => {
       const mf = feeStructure[`male_${cat.key}`];
@@ -3122,19 +3122,18 @@ export default function JobDetail() {
   };
 
   const feeStructureText =
-    formatFeeStructure(job.feeStructure) || job.fee?.en || "";
+    job.fee?.en ||
+    (job.feeStructure ? JSON.stringify(job.feeStructure) : "");
   const feeStructureTextHi =
-    formatFeeStructureHi(job.feeStructure) || job.fee?.hi || "";
+    job.fee?.hi ||
+    (job.feeStructure ? JSON.stringify(job.feeStructure) : "");
 
   const rowsEn = [
     ["Post", job.post?.en || job.postTitle?.en || ""],
     ["Total Post", job.totalPost || ""],
     ["Monthly Income", job.income?.en || ""],
     ["Education Qualification", job.education?.en || ""],
-    [
-      "Age Limit",
-      `${job.ageLimit?.en || ""}${job.ageAsOn ? ` (As on ${job.ageAsOn})` : ""}`,
-    ],
+    ["Age Limit", job.ageLimit?.en || ""],
     ["Job Location", job.location?.en || ""],
     ["Selection Process", job.selectionProcess?.en || ""],
     ["Application Opening On", job.applicationOpeningDate || ""],
@@ -3145,21 +3144,18 @@ export default function JobDetail() {
   ].filter((r) => r[1]);
 
   const rowsHi = [
-    ["à¤ªà¤¦", job.post?.hi || job.postTitle?.hi || ""],
-    ["à¤•à¥à¤² à¤ªà¤¦", job.totalPost || ""],
-    ["à¤®à¤¾à¤¸à¤¿à¤• à¤†à¤¯", job.income?.hi || ""],
-    ["à¤¶à¥ˆà¤•à¥à¤·à¤£à¤¿à¤• à¤¯à¥‹à¤—à¥à¤¯à¤¤à¤¾", job.education?.hi || ""],
-    [
-      "à¤†à¤¯à¥ à¤¸à¥€à¤®à¤¾",
-      `${job.ageLimit?.hi || ""}${job.ageAsOn ? ` (${job.ageAsOn} à¤•à¥‹)` : ""}`,
-    ],
-    ["à¤¨à¥Œà¤•à¤°à¥€ à¤•à¤°à¤¨à¥‡ à¤•à¤¾ à¤¸à¥à¤¥à¤¾à¤¨", job.location?.hi || ""],
-    ["à¤šà¤¯à¤¨ à¤ªà¥à¤°à¤•à¥à¤°à¤¿à¤¯à¤¾", job.selectionProcess?.hi || ""],
-    ["à¤†à¤µà¥‡à¤¦à¤¨ à¤–à¥à¤²à¤¨à¥‡ à¤•à¥€ à¤¤à¤¿à¤¥à¤¿", job.applicationOpeningDate || ""],
-    ["à¤†à¤µà¥‡à¤¦à¤¨ à¤•à¥€ à¤…à¤‚à¤¤à¤¿à¤® à¤¤à¤¿à¤¥à¤¿", job.lastDate || ""],
-    ["1st à¤®à¥‡à¤§à¤¾ à¤¸à¥‚à¤šà¥€ à¤œà¤¾à¤°à¥€", job.firstMeritListDate || ""],
-    ["à¤…à¤‚à¤¤à¤¿à¤® à¤®à¥‡à¤§à¤¾ à¤¸à¥‚à¤šà¥€ à¤œà¤¾à¤°à¥€", job.finalMeritListDate || ""],
-    ["à¤†à¤µà¥‡à¤¦à¤¨ à¤¶à¥à¤²à¥à¤•", feeStructureTextHi],
+    ["\u092a\u0926", job.post?.hi || job.postTitle?.hi || ""],
+    ["\u0915\u0941\u0932 \u092a\u0926", job.totalPost || ""],
+    ["\u092e\u093e\u0938\u093f\u0915 \u0906\u092f", job.income?.hi || ""],
+    ["\u0936\u0948\u0915\u094d\u0937\u0923\u093f\u0915 \u092f\u094b\u0917\u094d\u092f\u0924\u093e", job.education?.hi || ""],
+    ["\u0906\u092f\u0941 \u0938\u0940\u092e\u093e", job.ageLimit?.hi || ""],
+    ["\u0928\u094c\u0915\u0930\u0940 \u0915\u0930\u0928\u0947 \u0915\u093e \u0938\u094d\u0925\u093e\u0928", job.location?.hi || ""],
+    ["\u091a\u092f\u0928 \u092a\u094d\u0930\u0915\u094d\u0930\u093f\u092f\u093e", job.selectionProcess?.hi || ""],
+    ["\u0906\u0935\u0947\u0926\u0928 \u0916\u0941\u0932\u0928\u0947 \u0915\u0940 \u0924\u093f\u0925\u093f", job.applicationOpeningDate || ""],
+    ["\u0906\u0935\u0947\u0926\u0928 \u0915\u0940 \u0905\u0902\u0924\u093f\u092e \u0924\u093f\u0925\u093f", job.lastDate || ""],
+    [`1st \u092e\u0947\u0927\u093e \u0938\u0942\u091a\u0940 \u091c\u093e\u0930\u0940`, job.firstMeritListDate || ""],
+    ["\u0905\u0902\u0924\u093f\u092e \u092e\u0947\u0927\u093e \u0938\u0942\u091a\u0940 \u091c\u093e\u0930\u0940", job.finalMeritListDate || ""],
+    ["\u0906\u0935\u0947\u0926\u0928 \u0936\u0941\u0932\u094d\u0915", feeStructureTextHi],
   ].filter((r) => r[1]);
 
   const rows = Math.max(rowsEn.length, rowsHi.length);
@@ -3364,9 +3360,13 @@ export default function JobDetail() {
                 </button>
               </div>
               <div className="jobs-detail-download-cell">
-                <div className="advt-label">à¤µà¤¿à¤œà¥à¤žà¤¾à¤ªà¤¨ à¤¸à¤‚à¥¦ {job.advtNo}</div>
+                <div className="advt-label">
+                  {"\u0935\u093f\u091c\u094d\u091e\u093e\u092a\u0928 \u0938\u0902. "} {job.advtNo}
+                </div>
                 {job.date && (
-                  <div className="advt-date">à¤¦à¤¿à¤¨à¤¾à¤‚à¤• -{job.date}</div>
+                  <div className="advt-date">
+                    {"\u0926\u093f\u0928\u093e\u0902\u0915"} -{job.date}
+                  </div>
                 )}
                 <button
                   className="dl-link"
@@ -3474,11 +3474,11 @@ export default function JobDetail() {
                     </svg>
                   </span>
                   {downloading === "hi" ? (
-                    "PDF à¤¬à¤¨ à¤°à¤¹à¤¾ à¤¹à¥ˆ..."
+                    "PDF \u092c\u0928 \u0930\u0939\u093e \u0939\u0948..."
                   ) : (
                     <>
                       <span style={{ fontWeight: 900 }}>
-                        à¤¡à¤¾à¤‰à¤¨à¤²à¥‹à¤¡ à¤µà¤¿à¤œà¥à¤žà¤¾à¤ªà¤¨ (à¤¹à¤¿à¤‚à¤¦à¥€ à¤¸à¤‚à¤¸à¥à¤•à¤°à¤£) à¤¯à¤¹à¤¾à¤ à¤•à¥à¤²à¤¿à¤• à¤•à¤°à¥‡à¤‚ âœ¤âœ¤
+                        {"\u0921\u093e\u0909\u0928\u0932\u094b\u0921 \u0935\u093f\u091c\u094d\u091e\u093e\u092a\u0928 (\u0939\u093f\u0902\u0926\u0940 \u0938\u0902\u0938\u094d\u0915\u0930\u0923) \u092f\u0939\u093e\u0901 \u0915\u094d\u0932\u093f\u0915 \u0915\u0930\u0947\u0902 \u2724\u2724"}
                       </span>
                       <span className="new-badge">NEW</span>
                     </>
@@ -3487,9 +3487,7 @@ export default function JobDetail() {
               </div>
             </div>
             {Array.from({ length: rows }).map((_, i) => {
-              const isFee =
-                rowsEn[i]?.[0] === "Application Fee" ||
-                rowsHi[i]?.[0] === "à¤†à¤µà¥‡à¤¦à¤¨ à¤¶à¥à¤²à¥à¤•";
+              const isFee = rowsEn[i]?.[0] === "Application Fee";
               return (
                 <div
                   key={i}
@@ -3541,7 +3539,7 @@ export default function JobDetail() {
               color: "#8B1a1a",
             }}
           >
-            âš ï¸ This vacancy is closed. / à¤¯à¤¹ à¤­à¤°à¥à¤¤à¥€ à¤¬à¤‚à¤¦ à¤¹à¥‹ à¤šà¥à¤•à¥€ à¤¹à¥ˆà¥¤
+            {"\u26A0\uFE0F This vacancy is closed. / \u092f\u0939 \u092d\u0930\u094d\u0924\u0940 \u092c\u0902\u0926 \u0939\u094b \u091a\u0941\u0915\u0940 \u0939\u0948\u0964"}
           </div>
         ) : formStep === "review" ? (
           <InlineReview
