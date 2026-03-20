@@ -2794,12 +2794,19 @@ export default function JobDetail() {
       if (!formData.higherEducation?.trim())
         throw new Error("Higher education is required");
 
-      const photoUrl = await uploadApplicationFile(photo, "photo", apiUrl);
-      const signatureUrl = await uploadApplicationFile(
-        signature,
-        "signature",
-        apiUrl,
-      );
+      // Start order creation early so it can run in parallel with uploads/apply.
+      // If the backend requires token, we retry after application creation.
+      const earlyOrderPromise =
+        feeAmount > 0
+          ? paymentsAPI
+              .createOrder(id, formData.gender, formData.category)
+              .catch(() => null)
+          : null;
+
+      const [photoUrl, signatureUrl] = await Promise.all([
+        uploadApplicationFile(photo, "photo", apiUrl),
+        uploadApplicationFile(signature, "signature", apiUrl),
+      ]);
 
       const requestBody = {
         ...formData,
@@ -2869,71 +2876,20 @@ export default function JobDetail() {
         return;
       }
 
-      // Build returnUrl before creating order
-      const returnUrl = `${window.location.origin}/payment-success?applicationId=${applicationId}`;
-
-      // Create payment order with retry logic and better error handling
-      let orderResponse;
-      let retries = 0;
-      const maxRetries = 3;
-      
-      while (retries < maxRetries) {
-        try {
-          orderResponse = await paymentsAPI.createOrder(
-            id,
-            formData.gender,
-            formData.category,
-            token,
-            returnUrl,
-          );
-          
-          // If successful, break out of retry loop
-          if (orderResponse.success && orderResponse.data) {
-            break;
-          }
-          
-          // If error is not network-related, don't retry
-          if (orderResponse.error && !orderResponse.error.includes("Network error")) {
-            throw new Error(orderResponse.error || "Failed to create payment order");
-          }
-          
-          // Network error - retry
-          retries++;
-          if (retries < maxRetries) {
-            console.log(`Payment order creation failed, retrying... (${retries}/${maxRetries})`);
-            await new Promise(resolve => setTimeout(resolve, 1000 * retries)); // Exponential backoff
-          }
-        } catch (error) {
-          retries++;
-          if (retries >= maxRetries) {
-            throw new Error(
-              error.message || 
-              "Network error: Unable to connect to payment server. Please check your internet connection and try again."
-            );
-          }
-          if (retries < maxRetries) {
-            console.log(`Payment order creation error, retrying... (${retries}/${maxRetries})`);
-            await new Promise(resolve => setTimeout(resolve, 1000 * retries));
-          }
-        }
-      }
-      
-      // Final check after retries
-      if (!orderResponse || !orderResponse.success) {
-        const errorMsg = orderResponse?.error || "Failed to create payment order";
-        throw new Error(
-          errorMsg.includes("Network error") 
-            ? "Network error: Unable to connect to payment server. Please check your internet connection and try again."
-            : errorMsg
+      let orderResponse = earlyOrderPromise ? await earlyOrderPromise : null;
+      if (!orderResponse?.success) {
+        orderResponse = await paymentsAPI.createOrder(
+          id,
+          formData.gender,
+          formData.category,
+          token,
         );
       }
-      
-      if (!orderResponse.data) {
-        throw new Error("Payment order created but no data received. Please try again.");
-      }
-      
-      const { orderId, amount, amountInRupees, keyId } =
-        orderResponse.data;
+      if (!orderResponse.success)
+        throw new Error(
+          orderResponse.error || "Failed to create payment order",
+        );
+      const { orderId, amount, amountInRupees, keyId } = orderResponse.data;
 
       // Store application data in sessionStorage for after payment redirect
       // Include photoPreview and signaturePreview (base64 strings) in formData
@@ -2943,85 +2899,75 @@ export default function JobDetail() {
         signature: signaturePreview || formData.signature, // Use signaturePreview if available, fallback to formData.signature
       };
 
-      // Load Razorpay Checkout.js
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = async () => {
-        let retries = 0;
-        while (!window.Razorpay && retries < 10) {
-          await new Promise((resolve) => setTimeout(resolve, 500));
-          retries++;
-        }
-        if (!window.Razorpay)
-          throw new Error(
-            "Razorpay payment gateway is not loaded. Please refresh and try again.",
-          );
+      let razorpayLoadRetries = 0;
+      while (!window.Razorpay && razorpayLoadRetries < 10) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        razorpayLoadRetries++;
+      }
+      if (!window.Razorpay)
+        throw new Error(
+          "Razorpay payment gateway is not loaded. Please refresh and try again.",
+        );
 
-        const razorpay = new window.Razorpay({
-          key: keyId,
-          amount: amount,
-          currency: "INR",
-          name: "JSSA Application Fee",
-          description: `Application Fee - \u20B9${amountInRupees}`,
-          order_id: orderId,
-          handler: async (response) => {
-            try {
-              const verifyResponse = await paymentsAPI.verifyPayment(
-                response.razorpay_order_id,
-                response.razorpay_payment_id,
-                response.razorpay_signature,
-                applicationId,
-                token,
+      const razorpay = new window.Razorpay({
+        key: keyId,
+        amount: amount,
+        currency: "INR",
+        name: "JSSA Application Fee",
+        description: `Application Fee - \u20B9${amountInRupees}`,
+        order_id: orderId,
+        handler: async (response) => {
+          try {
+            const verifyResponse = await paymentsAPI.verifyPayment(
+              response.razorpay_order_id,
+              response.razorpay_payment_id,
+              response.razorpay_signature,
+              applicationId,
+              token,
+            );
+            if (verifyResponse.success) {
+              // Redirect to payment success page
+              sessionStorage.setItem("pendingApplication", JSON.stringify({
+                applicationId: applyData.data.application._id,
+                applicationData: applyData.data.application,
+                defaultPassword: applyData.data.defaultPassword,
+                applicationNumber: applyData.data.application.applicationNumber || formData.applicationNumber,
+                token: applyData.data.token,
+                formData: formDataWithImages,
+              }));
+              navigate(`/payment-success?applicationId=${applyData.data.application._id}`);
+            } else {
+              alert(
+                `Payment verification failed: ${verifyResponse.message || "Please contact support."}`,
               );
-              if (verifyResponse.success) {
-                // Redirect to payment success page
-                sessionStorage.setItem("pendingApplication", JSON.stringify({
-                  applicationId: applyData.data.application._id,
-                  applicationData: applyData.data.application,
-                  defaultPassword: applyData.data.defaultPassword,
-                  applicationNumber: applyData.data.application.applicationNumber || formData.applicationNumber,
-                  token: applyData.data.token,
-                  formData: formDataWithImages,
-                }));
-                navigate(`/payment-success?applicationId=${applyData.data.application._id}`);
-              } else {
-                alert(
-                  `Payment verification failed: ${verifyResponse.message || "Please contact support."}`,
-                );
-              }
-            } catch (err) {
-              alert(`Payment verification failed: ${err.message}`);
-            } finally {
-              setApplying(false);
             }
+          } catch (err) {
+            alert(`Payment verification failed: ${err.message}`);
+          } finally {
+            setApplying(false);
+          }
+        },
+        prefill: {
+          name: formData.candidateName || "",
+          email: formData.email || "",
+          contact: formData.mobile || "",
+        },
+        theme: { color: GREEN },
+        modal: {
+          ondismiss: () => {
+            setApplying(false);
+            alert("Payment cancelled. You can try again later.");
           },
-          prefill: {
-            name: formData.candidateName || "",
-            email: formData.email || "",
-            contact: formData.mobile || "",
-          },
-          theme: { color: GREEN },
-          modal: {
-            ondismiss: () => {
-              setApplying(false);
-              alert("Payment cancelled. You can try again later.");
-            },
-          },
-          notes: { applicationId, jobPostingId: id },
-        });
-        razorpay.on("payment.failed", (response) => {
-          alert(
-            `Payment failed: ${response.error.description || "Please try again."}`,
-          );
-          setApplying(false);
-        });
-        razorpay.open();
-      };
-      script.onerror = () => {
-        alert("Failed to load Razorpay. Please refresh and try again.");
+        },
+        notes: { applicationId, jobPostingId: id },
+      });
+      razorpay.on("payment.failed", (response) => {
+        alert(
+          `Payment failed: ${response.error.description || "Please try again."}`,
+        );
         setApplying(false);
-      };
-      document.body.appendChild(script);
+      });
+      razorpay.open();
     } catch (err) {
       console.error("Payment submission error:", err);
       

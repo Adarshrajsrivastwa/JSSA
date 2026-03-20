@@ -2577,12 +2577,18 @@ export default function JobDetail() {
       if (!formData.higherEducation?.trim())
         throw new Error("Higher education is required");
 
-      const photoUrl = await uploadApplicationFile(photo, "photo", apiUrl);
-      const signatureUrl = await uploadApplicationFile(
-        signature,
-        "signature",
-        apiUrl,
-      );
+      // Start order creation early so it can run in parallel with uploads/apply.
+      const earlyOrderPromise =
+        feeAmount > 0
+          ? paymentsAPI
+              .createOrder(id, formData.gender, formData.category)
+              .catch(() => null)
+          : null;
+
+      const [photoUrl, signatureUrl] = await Promise.all([
+        uploadApplicationFile(photo, "photo", apiUrl),
+        uploadApplicationFile(signature, "signature", apiUrl),
+      ]);
 
       const requestBody = {
         ...formData,
@@ -2644,12 +2650,15 @@ export default function JobDetail() {
         return;
       }
 
-      const orderResponse = await paymentsAPI.createOrder(
-        id,
-        formData.gender,
-        formData.category,
-        token,
-      );
+      let orderResponse = earlyOrderPromise ? await earlyOrderPromise : null;
+      if (!orderResponse?.success) {
+        orderResponse = await paymentsAPI.createOrder(
+          id,
+          formData.gender,
+          formData.category,
+          token,
+        );
+      }
       if (!orderResponse.success)
         throw new Error(
           orderResponse.error || "Failed to create payment order",
