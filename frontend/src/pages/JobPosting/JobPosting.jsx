@@ -342,7 +342,11 @@ const JobPostingList = () => {
           education: normalizeBilingual(post.education),
           location: normalizeBilingual(post.location),
           locationArr: post.locationArr || [],
+          locationArrHi: post.locationArrHi || [],
           fee: normalizeBilingual(post.fee),
+          feeStructure: post.feeStructure || {},
+          advertisementFile: post.advertisementFile || "",
+          advertisementFileHi: post.advertisementFileHi || "",
           lastDate: post.lastDate,
           applicationOpeningDate: post.applicationOpeningDate,
           firstMeritListDate: post.firstMeritListDate,
@@ -351,6 +355,8 @@ const JobPostingList = () => {
           ageAsOn: post.ageAsOn,
           selectionProcess: normalizeBilingual(post.selectionProcess),
           status: post.status,
+          createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
         }));
         setPostings(transformed);
       }
