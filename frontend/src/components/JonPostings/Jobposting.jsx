@@ -1072,39 +1072,26 @@ const FormField = ({
   </div>
 );
 
-const FileBtn = ({ name, file, onChange }) => {
-  const fileLabel = (() => {
-    if (!file) return "No file chosen";
-    if (typeof file === "string") {
-      const cleaned = file.split("?")[0];
-      const parts = cleaned.split("/");
-      return parts[parts.length - 1] || "Uploaded file";
-    }
-    return file.name || "Selected file";
-  })();
-
-  return (
-    <label className="flex items-center gap-2 cursor-pointer">
-      <input
-        type="file"
-        name={name}
-        onChange={onChange}
-        accept=".pdf,.jpg,.jpeg,.png"
-        className="hidden"
-      />
-      <span className="flex items-center gap-1.5 bg-[#e8f5e2] text-[#3AB000] border border-[#3AB000] rounded px-3 py-1.5 text-xs font-semibold hover:bg-[#d4edcc] transition-colors">
-        <Upload className="w-3 h-3" />
-        Choose File
-      </span>
-      <span
-        className={`text-xs truncate max-w-[140px] ${file ? "text-[#3AB000]" : "text-gray-400"}`}
-        title={typeof file === "string" ? file : fileLabel}
-      >
-        {fileLabel}
-      </span>
-    </label>
-  );
-};
+const FileBtn = ({ name, file, onChange }) => (
+  <label className="flex items-center gap-2 cursor-pointer">
+    <input
+      type="file"
+      name={name}
+      onChange={onChange}
+      accept=".pdf,.jpg,.jpeg,.png"
+      className="hidden"
+    />
+    <span className="flex items-center gap-1.5 bg-[#e8f5e2] text-[#3AB000] border border-[#3AB000] rounded px-3 py-1.5 text-xs font-semibold hover:bg-[#d4edcc] transition-colors">
+      <Upload className="w-3 h-3" />
+      Choose File
+    </span>
+    <span
+      className={`text-xs truncate max-w-[140px] ${file ? "text-[#3AB000]" : "text-gray-400"}`}
+    >
+      {file ? file.name : "No file chosen"}
+    </span>
+  </label>
+);
 
 const CheckboxGrid = ({ items, selected, onToggle }) => (
   <div className="flex flex-wrap gap-x-5 gap-y-2 p-3 bg-[#f9fbe7] border border-[#c5e1a5] rounded">

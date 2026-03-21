@@ -1123,9 +1123,26 @@ const jobsCSS = `
 
   @media (max-width: 768px) {
     .jobs-list-wrap { padding: 16px 12px 28px; }
-    .jobs-list-heading { font-size: 14px; }
-    .jobs-vacancy-item { padding: 6px 10px; font-size: 9px; font-weight: 400; gap: 4px; flex-wrap: nowrap; white-space: nowrap; overflow: hidden; }
-    .jobs-vacancy-item span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .jobs-list-heading { font-size: 20px; }
+    .jobs-vacancy-item {
+      padding: 12px 10px;
+      font-size: 15px;
+      font-weight: 400;
+      gap: 8px;
+      flex-wrap: nowrap;
+      white-space: normal;
+      overflow: visible;
+      line-height: 1.6;
+    }
+    .jobs-vacancy-item span:last-child {
+      flex: 1;
+      min-width: 0;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
     .jobs-back-title { font-size: 10px; }
     .jobs-section-heading { font-size: 11px; }
     .jobs-submit-btn { font-size: 11px; padding: 8px 18px; }

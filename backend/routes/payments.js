@@ -1,6 +1,5 @@
 import express from "express";
 import { body, validationResult } from "express-validator";
-import { authenticate } from "../middleware/auth.js";
 import { getRazorpayInstance, getRazorpayKeyId, getRazorpayCredentials } from "../utils/razorpay.js";
 import JobPosting from "../models/JobPosting.js";
 import Application from "../models/Application.js";
@@ -58,11 +57,30 @@ router.get("/calculate-fee", async (req, res) => {
 /**
  * POST /api/payments/create-order
  * Create Razorpay order for application fee payment
- * Requires authentication
+ * Supports both authenticated dashboard users and public landing applicants
  */
 router.post(
   "/create-order",
-  authenticate,
+  // Optional authentication - attach user if token is present, but do not fail when missing.
+  async (req, res, next) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (authHeader) {
+        const { verifyToken, extractToken } = await import("../utils/jwt.js");
+        const token = extractToken(authHeader);
+        if (token) {
+          const decoded = verifyToken(token);
+          if (decoded) {
+            req.user = { id: decoded.id, role: decoded.role };
+          }
+        }
+      }
+      next();
+    } catch (err) {
+      // Continue as a public request if token is invalid/missing.
+      next();
+    }
+  },
   [
     body("jobPostingId").notEmpty().withMessage("Job posting ID is required"),
     body("gender").isIn(["male", "female", "other"]).withMessage("Valid gender is required"),
@@ -117,8 +135,10 @@ router.post(
 
       // Create order with shortened receipt (max 40 chars)
       const timestamp = Date.now().toString().slice(-10); // Last 10 digits
-      const userIdShort = req.user.id.toString().slice(-8); // Last 8 chars of user ID
-      const receipt = `app_${userIdShort}_${timestamp}`.substring(0, 40); // Ensure max 40 chars
+      const requesterIdShort = req.user?.id
+        ? req.user.id.toString().slice(-8)
+        : "public";
+      const receipt = `app_${requesterIdShort}_${timestamp}`.substring(0, 40); // Ensure max 40 chars
       
       const order = await razorpay.orders.create({
         amount: amountInPaise,
@@ -126,7 +146,7 @@ router.post(
         receipt: receipt,
         notes: {
           jobPostingId: jobPostingId,
-          userId: req.user.id,
+          userId: req.user?.id || "public",
           gender: gender,
           category: category,
         },
