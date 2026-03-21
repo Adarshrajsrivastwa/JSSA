@@ -1,5 +1,6 @@
 import express from "express";
 import { body, validationResult } from "express-validator";
+import { authenticate } from "../middleware/auth.js";
 import { getRazorpayInstance, getRazorpayKeyId, getRazorpayCredentials } from "../utils/razorpay.js";
 import JobPosting from "../models/JobPosting.js";
 import Application from "../models/Application.js";
