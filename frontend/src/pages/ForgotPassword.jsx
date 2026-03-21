@@ -2,98 +2,10 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Mail, ArrowLeft, CheckCircle, Lock } from "lucide-react";
 import { authAPI } from "../utils/api";
+import logo from "../assets/img0.png";
 
 const GREEN = "#3AB000";
 const DARK_GREEN = "#2d8a00";
-
-function Logo({ size = 80 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 120 120">
-      <circle
-        cx="60"
-        cy="60"
-        r="58"
-        fill="white"
-        stroke={GREEN}
-        strokeWidth="4"
-      />
-      <defs>
-        <path id="topArcL" d="M 16,60 a44,44 0 0,1 88,0" />
-        <path id="botArcL" d="M 16,60 a44,44 0 0,0 88,0" />
-      </defs>
-      <text fontSize="7" fill="#444" fontWeight="bold" letterSpacing="1.2">
-        <textPath href="#topArcL" startOffset="5%">
-          जन स्वास्थ्य सहायता अभियान
-        </textPath>
-      </text>
-      <text fontSize="6" fill="#444" fontWeight="600" letterSpacing="0.8">
-        <textPath href="#botArcL" startOffset="4%">
-          A Project Of Healthcare R&amp;D Board
-        </textPath>
-      </text>
-      <circle cx="38" cy="52" r="7" fill="#22c55e" />
-      <ellipse cx="38" cy="72" rx="9" ry="13" fill="#22c55e" />
-      <line
-        x1="29"
-        y1="65"
-        x2="20"
-        y2="58"
-        stroke="#22c55e"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-      <line
-        x1="47"
-        y1="65"
-        x2="56"
-        y2="58"
-        stroke="#22c55e"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-      <circle cx="60" cy="49" r="7.5" fill="#f97316" />
-      <ellipse cx="60" cy="70" rx="9" ry="14" fill="#f97316" />
-      <line
-        x1="51"
-        y1="62"
-        x2="42"
-        y2="55"
-        stroke="#f97316"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-      <line
-        x1="69"
-        y1="62"
-        x2="78"
-        y2="55"
-        stroke="#f97316"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-      <circle cx="82" cy="52" r="7" fill="#3b82f6" />
-      <ellipse cx="82" cy="72" rx="9" ry="13" fill="#3b82f6" />
-      <line
-        x1="73"
-        y1="65"
-        x2="64"
-        y2="58"
-        stroke="#3b82f6"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-      <line
-        x1="91"
-        y1="65"
-        x2="100"
-        y2="58"
-        stroke="#3b82f6"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -227,22 +139,11 @@ export default function ForgotPassword() {
         {/* Header */}
         <div className="p-6 sm:p-8 bg-gradient-to-br from-green-50 via-white to-emerald-50">
           <div className="mb-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="shrink-0">
-                <Logo size={60} />
-              </div>
-              <div>
-                <h1
-                  className="text-base sm:text-lg lg:text-xl font-extrabold text-green-700 leading-tight"
-                  style={{ fontFamily: "'Noto Sans Devanagari', serif" }}
-                >
-                  जन स्वास्थ्य सहायता अभियान
-                </h1>
-                <p className="text-xs font-semibold text-blue-700 mt-0.5">
-                  A Project Of Healthcare Research &amp; Development Board
-                </p>
-              </div>
-            </div>
+            <img
+              src={logo}
+              alt="Jan Swasthya Sahayata Abhiyan"
+              className="w-full max-w-lg object-contain mb-4"
+            />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               {step === 1 && "Forgot Password?"}
               {step === 2 && "Enter OTP"}
