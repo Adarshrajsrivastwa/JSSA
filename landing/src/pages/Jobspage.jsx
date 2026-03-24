@@ -1298,6 +1298,53 @@ export default function JobsPage() {
           <div style={{ marginBottom: 40 }}>
             <h2 className="jobs-list-heading">List Of Latest Vacancies</h2>
             <div
+              style={{
+                padding: "10px 0 14px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                gap: 8,
+                flexWrap: "nowrap",
+                whiteSpace: "nowrap",
+                maxWidth: "100%",
+                overflowX: "auto",
+              }}
+            >
+              <a
+                href="https://youtu.be/GVJ5RN5bl00"
+                style={{
+                  display: "inline-flex",
+                  color: "#0a58ca",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  flexShrink: 0,
+                  width: "fit-content",
+                }}
+              >
+                आवेदन पत्र कैसे भरें? / How to fill out the application form?
+              </a>
+              <a
+                href="https://youtu.be/GVJ5RN5bl00"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: 30,
+                  padding: "0 12px",
+                  borderRadius: 999,
+                  background: "#ff0000",
+                  color: "#fff",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  textDecoration: "none",
+                  lineHeight: 1,
+                  flexShrink: 0,
+                }}
+              >
+                YouTube
+              </a>
+            </div>
+            <div
               style={{ borderBottom: `1px solid ${GREEN}`, marginBottom: 4 }}
             />
             {latestJobs.length > 0 ? (
