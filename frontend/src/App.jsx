@@ -12,6 +12,10 @@ import ApplicationForm from "./pages/ApplicationForm/ApplicationForm";
 import ApplicationView from "./pages/ApplicationForm/ApplicationView";
 import JobPosting from "./pages/JobPosting/JobPosting";
 import JobPostingApplicants from "./pages/JobPosting/JobPostingApplicants.jsx";
+import QuestionBank from "./pages/QuestionBank/QuestionBank.jsx";
+import CreatePaper from "./pages/CreatePaper/CreatePaper.jsx";
+import TestResult from "./pages/TestResult/TestResult.jsx";
+import Exam from "./pages/ExamManagement/Exam.jsx";
 
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -81,6 +85,14 @@ function App() {
                 </RequireRole>
               }
             />
+            <Route
+              path="/exam-management"
+              element={
+                <RequireRole allow={["applicant"]}>
+                  <Exam />
+                </RequireRole>
+              }
+            />
 
             {/* Shared routes (both roles can open) */}
             <Route path="/job-postings" element={<JobPosting />} />
@@ -111,6 +123,30 @@ function App() {
               element={
                 <RequireRole allow={["admin"]}>
                   <Gallery />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/question-bank"
+              element={
+                <RequireRole allow={["admin"]}>
+                  <QuestionBank />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/create-paper"
+              element={
+                <RequireRole allow={["admin"]}>
+                  <CreatePaper />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/test-result"
+              element={
+                <RequireRole allow={["admin"]}>
+                  <TestResult />
                 </RequireRole>
               }
             />

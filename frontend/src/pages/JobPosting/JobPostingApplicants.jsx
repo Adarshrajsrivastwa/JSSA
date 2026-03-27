@@ -22,6 +22,8 @@ const JobPostingApplicants = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [paymentDrafts, setPaymentDrafts] = useState({});
+  const [updatingPaymentId, setUpdatingPaymentId] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,6 +55,12 @@ const JobPostingApplicants = () => {
             createdAt: app.createdAt,
           }));
           setApplicants(transformed);
+          setPaymentDrafts(
+            transformed.reduce((acc, app) => {
+              acc[app.id] = app.paymentStatus || "pending";
+              return acc;
+            }, {}),
+          );
         }
       } catch (err) {
         setError(err.message || "Failed to load data");
@@ -72,6 +80,31 @@ const JobPostingApplicants = () => {
       .toLowerCase()
       .includes(searchQuery.toLowerCase())
   );
+
+  const updatePaymentStatus = async (applicationId) => {
+    const nextStatus = paymentDrafts[applicationId] || "pending";
+    setUpdatingPaymentId(applicationId);
+    try {
+      const response = await applicationsAPI.updatePaymentStatus(
+        applicationId,
+        nextStatus,
+      );
+      if (!response?.success) {
+        alert(response?.error || "Failed to update payment status.");
+        return;
+      }
+
+      setApplicants((prev) =>
+        prev.map((app) =>
+          app.id === applicationId ? { ...app, paymentStatus: nextStatus } : app,
+        ),
+      );
+    } catch (err) {
+      alert(err.message || "Failed to update payment status.");
+    } finally {
+      setUpdatingPaymentId(null);
+    }
+  };
 
   const statusColors = {
     Active: "bg-green-50 text-green-700 border-green-200",
@@ -323,19 +356,34 @@ const JobPostingApplicants = () => {
                         {app.higherEducation}
                       </td>
                       <td className="px-4 py-4 text-center">
-                        {app.paymentStatus === "pending" || !app.paymentStatus ? (
-                          <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-200">
-                            Payment Pending
-                          </span>
-                        ) : app.paymentStatus === "paid" ? (
-                          <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
-                            Payment Done
-                          </span>
-                        ) : (
-                          <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-gray-50 text-gray-700 border border-gray-200">
-                            {app.paymentStatus}
-                        </span>
-                        )}
+                        <div className="flex items-center justify-center gap-2">
+                          <select
+                            value={paymentDrafts[app.id] || "pending"}
+                            onChange={(e) =>
+                              setPaymentDrafts((prev) => ({
+                                ...prev,
+                                [app.id]: e.target.value,
+                              }))
+                            }
+                            className="px-2 py-1 border border-gray-300 rounded text-xs bg-white"
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="paid">Paid</option>
+                            <option value="failed">Failed</option>
+                            <option value="refunded">Refunded</option>
+                          </select>
+                          <button
+                            onClick={() => updatePaymentStatus(app.id)}
+                            disabled={
+                              updatingPaymentId === app.id ||
+                              (paymentDrafts[app.id] || "pending") ===
+                                (app.paymentStatus || "pending")
+                            }
+                            className="px-2 py-1 rounded text-xs font-semibold bg-[#3AB000] text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
+                          >
+                            {updatingPaymentId === app.id ? "Saving..." : "Update"}
+                          </button>
+                        </div>
                       </td>
                       <td className="px-4 py-4 text-center text-gray-700 text-xs">
                         {app.createdAt
@@ -398,20 +446,33 @@ const JobPostingApplicants = () => {
                     </div>
                     <div className="text-sm text-gray-600">{app.fatherName}</div>
                   </div>
-                  <div>
-                    {app.paymentStatus === "pending" || !app.paymentStatus ? (
-                      <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-200">
-                        Payment Pending
-                      </span>
-                    ) : app.paymentStatus === "paid" ? (
-                      <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
-                        Payment Done
-                      </span>
-                    ) : (
-                      <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-gray-50 text-gray-700 border border-gray-200">
-                        {app.paymentStatus}
-                    </span>
-                    )}
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={paymentDrafts[app.id] || "pending"}
+                      onChange={(e) =>
+                        setPaymentDrafts((prev) => ({
+                          ...prev,
+                          [app.id]: e.target.value,
+                        }))
+                      }
+                      className="px-2 py-1 border border-gray-300 rounded text-xs bg-white"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="paid">Paid</option>
+                      <option value="failed">Failed</option>
+                      <option value="refunded">Refunded</option>
+                    </select>
+                    <button
+                      onClick={() => updatePaymentStatus(app.id)}
+                      disabled={
+                        updatingPaymentId === app.id ||
+                        (paymentDrafts[app.id] || "pending") ===
+                          (app.paymentStatus || "pending")
+                      }
+                      className="px-2 py-1 rounded text-xs font-semibold bg-[#3AB000] text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    >
+                      {updatingPaymentId === app.id ? "Saving..." : "Update"}
+                    </button>
                   </div>
                 </div>
 

@@ -606,6 +606,59 @@ router.put(
 );
 
 /**
+ * PATCH /api/applications/:id/payment-status
+ * Update payment status (admin only)
+ */
+router.patch(
+  "/:id/payment-status",
+  [
+    body("paymentStatus")
+      .isIn(["pending", "paid", "failed", "refunded"])
+      .withMessage("Invalid payment status"),
+  ],
+  async (req, res) => {
+    try {
+      if (req.user.role !== "admin") {
+        return res.status(403).json({
+          error: "Access denied",
+          message: "Only admins can update payment status",
+        });
+      }
+
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          error: "Validation failed",
+          errors: errors.array(),
+        });
+      }
+
+      const application = await Application.findById(req.params.id);
+      if (!application) {
+        return res.status(404).json({
+          error: "Application not found",
+        });
+      }
+
+      application.paymentStatus = req.body.paymentStatus;
+      await application.save();
+
+      res.json({
+        success: true,
+        message: "Payment status updated successfully",
+        data: { application },
+      });
+    } catch (error) {
+      console.error("Update payment status error:", error);
+      res.status(500).json({
+        error: "Failed to update payment status",
+        message: error.message,
+      });
+    }
+  },
+);
+
+/**
  * DELETE /api/applications/:id
  * Delete application
  */

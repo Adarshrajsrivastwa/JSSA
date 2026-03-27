@@ -13,6 +13,8 @@ import paymentsRoutes from "./routes/payments.js";
 import notificationsRoutes from "./routes/notifications.js";
 import noticesRoutes from "./routes/notices.js";
 import uploadRoutes from "./routes/upload.js";
+import questionBankRoutes from "./routes/questionBank.js";
+import createPaperRoutes from "./routes/createPaper.js";
 import { connectDB } from "./config/database.js";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -139,6 +141,8 @@ app.use("/api/payments", paymentsRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/notices", noticesRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/question-bank", questionBankRoutes);
+app.use("/api/create-paper", createPaperRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -123,6 +123,7 @@ const Sidebar = () => {
       { name: "Dashboard", icon: LayoutDashboard, path: dashboardPath },
       { name: "Job Postings", icon: Users, path: "/job-postings" },
       { name: "Application Form", icon: FileText, path: "/application-form" },
+      { name: "Exam Management ", icon: Bell, path: "/exam-management" },
     ];
 
     if (role === "admin") {
@@ -132,6 +133,9 @@ const Sidebar = () => {
         { name: "Notifications", icon: Bell, path: "/notifications-manage" },
         { name: "Notice", icon: Bell, path: "/notice" },
         { name: "Payment Settings", icon: CreditCard, path: "/settings" },
+        { name: "Question bank  ", icon: FileText, path: "/question-bank  " },
+        { name: "Create Paper  ", icon: FileText, path: "/create-paper  " },
+        { name: "Test Result  ", icon: Bell, path: "/test-result " },
         {
           name: "Settings",
           icon: Settings,

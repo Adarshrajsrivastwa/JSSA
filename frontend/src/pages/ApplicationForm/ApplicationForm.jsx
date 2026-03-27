@@ -20,6 +20,8 @@ const ApplicationForm = () => {
   const [selectedJobPostingId, setSelectedJobPostingId] = useState(null);
   const [selectedJobPosting, setSelectedJobPosting] = useState(null);
   const [jobPostingsLoading, setJobPostingsLoading] = useState(true);
+  const [paymentDrafts, setPaymentDrafts] = useState({});
+  const [updatingPaymentId, setUpdatingPaymentId] = useState(null);
 
   const extractJobTitle = (posting) => {
     if (!posting) return null;
@@ -133,6 +135,12 @@ const ApplicationForm = () => {
         });
 
         setApplications(transformed);
+        setPaymentDrafts(
+          transformed.reduce((acc, app) => {
+            acc[app.id] = normalizePaymentStatus(app.paymentStatus);
+            return acc;
+          }, {}),
+        );
       }
     } catch (err) {
       setError(err.message || "Failed to fetch applications");
@@ -253,6 +261,31 @@ const ApplicationForm = () => {
     setCurrentPage(1);
     setSearchQuery("");
     setPaymentStatusFilter("all");
+  };
+
+  const updatePaymentStatus = async (applicationId) => {
+    const nextStatus = paymentDrafts[applicationId] || "pending";
+    setUpdatingPaymentId(applicationId);
+    try {
+      const response = await applicationsAPI.updatePaymentStatus(
+        applicationId,
+        nextStatus,
+      );
+      if (!response?.success) {
+        alert(response?.error || "Failed to update payment status.");
+        return;
+      }
+
+      setApplications((prev) =>
+        prev.map((app) =>
+          app.id === applicationId ? { ...app, paymentStatus: nextStatus } : app,
+        ),
+      );
+    } catch (err) {
+      alert(err.message || "Failed to update payment status.");
+    } finally {
+      setUpdatingPaymentId(null);
+    }
   };
 
   // Show job postings list (only for admin)
@@ -443,7 +476,41 @@ const ApplicationForm = () => {
                         {getJobTitleForApplication(app)}
                       </td>
                       <td className="px-4 py-4 text-center text-gray-700">
-                        {formatPaymentStatus(app.paymentStatus)}
+                        {role === "admin" ? (
+                          <div
+                            className="flex items-center justify-center gap-2"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <select
+                              value={paymentDrafts[app.id] || "pending"}
+                              onChange={(e) =>
+                                setPaymentDrafts((prev) => ({
+                                  ...prev,
+                                  [app.id]: e.target.value,
+                                }))
+                              }
+                              className="px-2 py-1 border border-gray-300 rounded text-xs bg-white"
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="paid">Paid</option>
+                              <option value="failed">Failed</option>
+                              <option value="refunded">Refunded</option>
+                            </select>
+                            <button
+                              onClick={() => updatePaymentStatus(app.id)}
+                              disabled={
+                                updatingPaymentId === app.id ||
+                                (paymentDrafts[app.id] || "pending") ===
+                                  normalizePaymentStatus(app.paymentStatus)
+                              }
+                              className="px-2 py-1 rounded text-xs font-semibold bg-[#3AB000] text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
+                            >
+                              {updatingPaymentId === app.id ? "Saving..." : "Update"}
+                            </button>
+                          </div>
+                        ) : (
+                          formatPaymentStatus(app.paymentStatus)
+                        )}
                       </td>
                       <td className="px-4 py-4 text-center">
                         <button
@@ -538,6 +605,39 @@ const ApplicationForm = () => {
                     {formatPaymentStatus(app.paymentStatus)}
                   </div>
                 </div>
+
+                {role === "admin" && (
+                  <div className="mb-3" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={paymentDrafts[app.id] || "pending"}
+                        onChange={(e) =>
+                          setPaymentDrafts((prev) => ({
+                            ...prev,
+                            [app.id]: e.target.value,
+                          }))
+                        }
+                        className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-xs bg-white"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="paid">Paid</option>
+                        <option value="failed">Failed</option>
+                        <option value="refunded">Refunded</option>
+                      </select>
+                      <button
+                        onClick={() => updatePaymentStatus(app.id)}
+                        disabled={
+                          updatingPaymentId === app.id ||
+                          (paymentDrafts[app.id] || "pending") ===
+                            normalizePaymentStatus(app.paymentStatus)
+                        }
+                        className="px-3 py-1.5 rounded text-xs font-semibold bg-[#3AB000] text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
+                      >
+                        {updatingPaymentId === app.id ? "Saving..." : "Update"}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-2 text-sm text-gray-700 mb-2.5">
                   <div className="flex items-start">

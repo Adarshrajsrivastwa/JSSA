@@ -22,7 +22,7 @@ export default defineConfig({
     proxy: {
       "/api": {
         // In dev, point to local backend by default. Override with VITE_DEV_API_TARGET if needed.
-        target: process.env.VITE_DEV_API_TARGET || "http://localhost:3005",
+        target: process.env.VITE_DEV_API_TARGET || "http://localhost:3000",
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path,

@@ -1,13 +1,20 @@
-// Use environment variable - must be set in .env file
-const API_BASE_URL = 
-  import.meta.env.VITE_API_URL || 
-  import.meta.env.VITE_BACKEND_URL || 
-  "";
+// Prefer explicit env vars, but safely fall back to Vite proxy (/api).
+const RAW_API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  "/api";
 
-if (!API_BASE_URL) {
-  console.error("VITE_API_URL or VITE_BACKEND_URL must be set in .env file");
-  console.error("Example: VITE_API_URL=http://localhost:3000/api");
-}
+const API_BASE_URL = (() => {
+  const base = String(RAW_API_BASE_URL || "").trim().replace(/\/+$/, "");
+  if (!base) return "/api";
+
+  // If absolute URL is provided without /api suffix, append it to match backend routes.
+  if (/^https?:\/\//i.test(base) && !/\/api$/i.test(base)) {
+    return `${base}/api`;
+  }
+
+  return base;
+})();
 
 /**
  * Get auth token from localStorage
@@ -27,14 +34,6 @@ function getToken() {
  * Make API request with authentication
  */
 async function apiRequest(endpoint, options = {}) {
-  if (!API_BASE_URL) {
-    return {
-      success: false,
-      data: null,
-      error: "API base URL is not configured. Please set VITE_API_URL or VITE_BACKEND_URL in your .env file"
-    };
-  }
-  
   const token = getToken();
   const url = `${API_BASE_URL}${endpoint}`;
 
@@ -178,6 +177,13 @@ export const applicationsAPI = {
 
   checkApplication: async (jobPostingId) => {
     return apiRequest(`/applications/check/${jobPostingId}`, { method: "GET" });
+  },
+
+  updatePaymentStatus: async (id, paymentStatus) => {
+    return apiRequest(`/applications/${id}/payment-status`, {
+      method: "PATCH",
+      body: JSON.stringify({ paymentStatus }),
+    });
   },
 };
 
@@ -486,6 +492,86 @@ export const noticesAPI = {
 
   delete: async (id) => {
     return apiRequest(`/notices/${id}`, { method: "DELETE" });
+  },
+};
+
+/**
+ * Question Bank API
+ */
+export const questionBankAPI = {
+  getAll: async (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.status) queryParams.append("status", params.status);
+    if (params.search) queryParams.append("search", params.search);
+    if (params.subject) queryParams.append("subject", params.subject);
+    if (params.difficulty) queryParams.append("difficulty", params.difficulty);
+    if (params.page) queryParams.append("page", params.page);
+    if (params.limit) queryParams.append("limit", params.limit);
+
+    const queryString = queryParams.toString();
+    const url = `/question-bank${queryString ? `?${queryString}` : ""}`;
+    return apiRequest(url, { method: "GET" });
+  },
+
+  getById: async (id) => {
+    return apiRequest(`/question-bank/${id}`, { method: "GET" });
+  },
+
+  create: async (data) => {
+    return apiRequest("/question-bank", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  update: async (id, data) => {
+    return apiRequest(`/question-bank/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  delete: async (id) => {
+    return apiRequest(`/question-bank/${id}`, { method: "DELETE" });
+  },
+};
+
+/**
+ * Create Paper API
+ */
+export const createPaperAPI = {
+  getAll: async (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.status) queryParams.append("status", params.status);
+    if (params.search) queryParams.append("search", params.search);
+    if (params.page) queryParams.append("page", params.page);
+    if (params.limit) queryParams.append("limit", params.limit);
+
+    const queryString = queryParams.toString();
+    const url = `/create-paper${queryString ? `?${queryString}` : ""}`;
+    return apiRequest(url, { method: "GET" });
+  },
+
+  getById: async (id) => {
+    return apiRequest(`/create-paper/${id}`, { method: "GET" });
+  },
+
+  create: async (data) => {
+    return apiRequest("/create-paper", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  update: async (id, data) => {
+    return apiRequest(`/create-paper/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  delete: async (id) => {
+    return apiRequest(`/create-paper/${id}`, { method: "DELETE" });
   },
 };
 
