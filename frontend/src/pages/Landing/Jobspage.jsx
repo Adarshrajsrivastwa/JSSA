@@ -944,6 +944,23 @@ function VacancyItem({ job, onClick }) {
               NEW
             </span>
           )}
+          {!job.isNew && (
+            <span
+              style={{
+                display: "inline-block",
+                fontSize: 10,
+                fontWeight: 900,
+                padding: "1px 6px",
+                borderRadius: 3,
+                marginLeft: 6,
+                verticalAlign: "middle",
+                color: "#fff",
+                background: "#6b7280",
+              }}
+            >
+              INACTIVE / EXPIRED
+            </span>
+          )}
         </span>
       </div>
       <div style={{ borderBottom: "1px dashed #ccc", margin: "0 8px" }} />
@@ -953,9 +970,41 @@ function VacancyItem({ job, onClick }) {
 
 function convertJobToComponentFormat(posting) {
   const isActive = posting.status === "Active";
-  const lastDate = new Date(posting.lastDate);
+  
+  // Robust date parsing for lastDate
+  const parseFlexibleDate = (value) => {
+    if (!value) return null;
+    const raw = String(value).trim();
+    const nativeParsed = new Date(raw);
+    if (!Number.isNaN(nativeParsed.getTime())) return nativeParsed;
+    const dayFirstMatch = raw.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+    if (dayFirstMatch) {
+      const day = Number(dayFirstMatch[1]);
+      const month = Number(dayFirstMatch[2]);
+      const year = Number(dayFirstMatch[3]);
+      return new Date(year, month - 1, day);
+    }
+    const yearFirstMatch = raw.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})$/);
+    if (yearFirstMatch) {
+      const year = Number(yearFirstMatch[1]);
+      const month = Number(yearFirstMatch[2]);
+      const day = Number(yearFirstMatch[3]);
+      return new Date(year, month - 1, day);
+    }
+    return null;
+  };
+
+  const lastDateObj = parseFlexibleDate(posting.lastDate);
   const today = new Date();
-  const isClosed = lastDate < today;
+  today.setHours(0, 0, 0, 0);
+  
+  let isClosed = false;
+  if (lastDateObj) {
+    const compareDate = new Date(lastDateObj);
+    compareDate.setHours(23, 59, 59, 999);
+    isClosed = compareDate < new Date();
+  }
+
   const rowsEn = [
     ["Post", posting.post?.en || posting.postTitle?.en || ""],
     ["Total Post", posting.totalPost || ""],
@@ -1191,13 +1240,17 @@ export default function JobsPage() {
           );
           const active = allJobs.filter((j) => j.isNew);
           const inactive = allJobs.filter((j) => !j.isNew);
-          active.sort((a, b) => {
-            const ja = response.data.postings.find((p) => p._id === a.id);
-            const jb = response.data.postings.find((p) => p._id === b.id);
-            return new Date(jb.createdAt) - new Date(ja.createdAt);
-          });
-          setLatestJobs(active);
-          setOldJobs(inactive);
+          
+          const sortByDate = (list) => {
+            return list.sort((a, b) => {
+              const ja = response.data.postings.find((p) => p._id === a.id);
+              const jb = response.data.postings.find((p) => p._id === b.id);
+              return new Date(jb.createdAt) - new Date(ja.createdAt);
+            });
+          };
+
+          setLatestJobs(sortByDate(active));
+          setOldJobs(sortByDate(inactive));
         } else {
           setLatestJobs([]);
           setOldJobs([]);

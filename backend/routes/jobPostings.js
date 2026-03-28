@@ -62,7 +62,7 @@ const isVacancyOpenByLastDate = (lastDate) => {
  */
 router.get("/", async (req, res) => {
   try {
-    const { status, search, page = 1, limit = 10 } = req.query;
+    const { status, search, page = 1, limit } = req.query;
     const query = {};
 
     // Filter by status
@@ -79,13 +79,19 @@ router.get("/", async (req, res) => {
       ];
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const limitVal = limit !== undefined ? parseInt(limit) : 0; 
+    const pageVal = parseInt(page);
+    const skip = (pageVal - 1) * limitVal;
 
-    const postings = await JobPosting.find(query)
+    let mongoQuery = JobPosting.find(query)
       .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit))
       .populate("createdBy", "email phone role");
+
+    if (limitVal > 0) {
+      mongoQuery = mongoQuery.skip(skip).limit(limitVal);
+    }
+
+    const postings = await mongoQuery;
 
     const total = await JobPosting.countDocuments(query);
 
@@ -95,9 +101,9 @@ router.get("/", async (req, res) => {
         postings,
         pagination: {
           page: parseInt(page),
-          limit: parseInt(limit),
+          limit: limitVal,
           total,
-          pages: Math.ceil(total / parseInt(limit)),
+          pages: limitVal > 0 ? Math.ceil(total / limitVal) : 1,
         },
       },
     });

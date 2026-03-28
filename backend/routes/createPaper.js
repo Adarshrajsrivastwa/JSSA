@@ -32,6 +32,7 @@ const normalizePayload = (body) => ({
   isPublic: toBooleanOrDefault(body.isPublic, true),
   shuffleQuestions: toBooleanOrDefault(body.shuffleQuestions, false),
   showResult: toBooleanOrDefault(body.showResult, true),
+  assignedStudents: Array.isArray(body.assignedStudents) ? body.assignedStudents : [],
   startDate: body.startDate || "",
   endDate: body.endDate || "",
 });
@@ -61,6 +62,7 @@ router.get("/", async (req, res) => {
     const [tests, total] = await Promise.all([
       CreatePaper.find(query)
         .sort({ createdAt: -1 })
+        .allowDiskUse(true)
         .skip(skip)
         .limit(limitNum)
         .populate("createdBy", "email role"),

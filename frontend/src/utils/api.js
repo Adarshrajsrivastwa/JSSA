@@ -145,8 +145,11 @@ export const applicationsAPI = {
     if (params.status) queryParams.append("status", params.status);
     if (params.search) queryParams.append("search", params.search);
     if (params.page) queryParams.append("page", params.page);
-    if (params.limit) queryParams.append("limit", params.limit);
+    if (params.limit !== undefined) queryParams.append("limit", params.limit);
     if (params.jobPostingId) queryParams.append("jobPostingId", params.jobPostingId);
+    if (params.startDate) queryParams.append("startDate", params.startDate);
+    if (params.endDate) queryParams.append("endDate", params.endDate);
+    if (params.paymentStatus) queryParams.append("paymentStatus", params.paymentStatus);
     
     const queryString = queryParams.toString();
     const url = `/applications${queryString ? `?${queryString}` : ""}`;
@@ -196,7 +199,7 @@ export const jobPostingsAPI = {
     if (params.status) queryParams.append("status", params.status);
     if (params.search) queryParams.append("search", params.search);
     if (params.page) queryParams.append("page", params.page);
-    if (params.limit) queryParams.append("limit", params.limit);
+    if (params.limit !== undefined) queryParams.append("limit", params.limit);
 
     const queryString = queryParams.toString();
     const url = `/job-postings${queryString ? `?${queryString}` : ""}`;
@@ -242,7 +245,7 @@ export const studentsAPI = {
     if (params.status) queryParams.append("status", params.status);
     if (params.search) queryParams.append("search", params.search);
     if (params.page) queryParams.append("page", params.page);
-    if (params.limit) queryParams.append("limit", params.limit);
+    if (params.limit !== undefined) queryParams.append("limit", params.limit);
 
     const queryString = queryParams.toString();
     const url = `/students${queryString ? `?${queryString}` : ""}`;
@@ -506,7 +509,7 @@ export const questionBankAPI = {
     if (params.subject) queryParams.append("subject", params.subject);
     if (params.difficulty) queryParams.append("difficulty", params.difficulty);
     if (params.page) queryParams.append("page", params.page);
-    if (params.limit) queryParams.append("limit", params.limit);
+    if (params.limit !== undefined) queryParams.append("limit", params.limit);
 
     const queryString = queryParams.toString();
     const url = `/question-bank${queryString ? `?${queryString}` : ""}`;
@@ -545,7 +548,7 @@ export const createPaperAPI = {
     if (params.status) queryParams.append("status", params.status);
     if (params.search) queryParams.append("search", params.search);
     if (params.page) queryParams.append("page", params.page);
-    if (params.limit) queryParams.append("limit", params.limit);
+    if (params.limit !== undefined) queryParams.append("limit", params.limit);
 
     const queryString = queryParams.toString();
     const url = `/create-paper${queryString ? `?${queryString}` : ""}`;

@@ -351,8 +351,11 @@ const JobPostingList = () => {
           ageAsOn: post.ageAsOn,
           selectionProcess: normalizeBilingual(post.selectionProcess),
           status: post.status,
+          createdAt: post.createdAt,
         }));
-        setPostings(transformed);
+        // Sort by createdAt DESC (Latest first)
+        const sorted = transformed.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        setPostings(sorted);
       }
     } catch (err) {
       setError(err.message || "Failed to fetch job postings");

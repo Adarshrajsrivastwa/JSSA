@@ -46,6 +46,11 @@ const createPaperSchema = new mongoose.Schema(
     attempts: { type: Number, default: 0, min: 0 },
     avgScore: { type: Number, default: 0, min: 0, max: 100 },
     rewards: { type: [rewardSchema], default: [] },
+    assignedStudents: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: "Application",
+      default: [],
+    },
     createdDate: { type: Date, default: Date.now },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

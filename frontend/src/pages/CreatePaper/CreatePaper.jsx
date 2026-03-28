@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
-import { createPaperAPI, jobPostingsAPI, questionBankAPI } from "../../utils/api";
+import { createPaperAPI, jobPostingsAPI, questionBankAPI, applicationsAPI } from "../../utils/api";
 import {
   ClipboardList,
   Plus,
@@ -303,60 +303,6 @@ const MOCK_QUESTION_BANK = [
   },
 ];
 
-// ─── Pipeline Config ──────────────────────────────────────────────────────────
-// Default pipeline (5 stages). Users can trim to fewer stages per test.
-const ALL_PIPELINE_STAGES = [
-  {
-    key: "draft",
-    label: "Draft Created",
-    description: "Test is saved as draft",
-    color: "#6b7280",
-  },
-  {
-    key: "review",
-    label: "Under Review",
-    description: "Content is being reviewed",
-    color: "#f59e0b",
-  },
-  {
-    key: "approved",
-    label: "Approved",
-    description: "Test is approved to publish",
-    color: "#3b82f6",
-  },
-  {
-    key: "published",
-    label: "Published",
-    description: "Test is live for students",
-    color: "#3AB000",
-  },
-  {
-    key: "completed",
-    label: "Completed",
-    description: "Test window has closed",
-    color: "#8b5cf6",
-  },
-];
-
-const SUBJECTS = [
-  "Mathematics",
-  "Physics",
-  "Chemistry",
-  "Biology",
-  "English",
-  "Computer Science",
-  "History",
-  "Geography",
-];
-const DIFFICULTIES = ["Easy", "Medium", "Hard", "Mixed"];
-const TEST_TYPES = [
-  "Practice Test",
-  "Mock Exam",
-  "Chapter Test",
-  "Unit Test",
-  "Final Exam",
-  "Quiz",
-];
 const TEST_TITLE_OPTIONS = [
   "Unit Test - Term 1",
   "Unit Test - Term 2",
@@ -379,10 +325,6 @@ const DIFF_STYLES = {
 
 const EMPTY_FORM = {
   title: "",
-  subject: "",
-  class: "",
-  type: "",
-  difficulty: "",
   questionConfigs: [],
   duration: "",
   passingMarks: "",
@@ -400,8 +342,6 @@ const EMPTY_FORM = {
 const normalizeTest = (item) => ({
   id: item?._id || item?.id,
   title: String(item?.title || ""),
-  subject: String(item?.subject || ""),
-  class: String(item?.class || ""),
   type: String(item?.type || ""),
   difficulty: String(item?.difficulty || "Mixed"),
   questionConfigs: Array.isArray(item?.questionConfigs)
@@ -427,17 +367,16 @@ const normalizeTest = (item) => ({
   showResult: item?.showResult !== false,
   maxAttempts:
     item?.maxAttempts === 0 ? 0 : Number(item?.maxAttempts ?? 1),
+  assignedStudents: Array.isArray(item?.assignedStudents)
+    ? item.assignedStudents.map((s) => String(s?._id || s || ""))
+    : [],
   createdDate: item?.createdDate || item?.createdAt || new Date().toISOString(),
   rewards: Array.isArray(item?.rewards) ? item.rewards : [],
-  pipelineStageCount: Number(item?.pipelineStageCount || 5),
-  pipeline: item?.pipeline || { currentStage: 0, completedStages: [] },
 });
 
 const normalizeQuestion = (item) => ({
   id: item?._id || item?.id,
   question: String(item?.question || ""),
-  subject: String(item?.subject || ""),
-  class: String(item?.class || ""),
   topic: String(item?.topic || ""),
   marks: Number(item?.marks || 1),
   difficulty: String(item?.difficulty || ""),
@@ -447,130 +386,18 @@ const normalizeQuestion = (item) => ({
 const inputCls =
   "w-full px-3 py-2.5 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-[#3AB000] focus:border-[#3AB000] bg-white outline-none";
 
-// ─── Pipeline Badge on Card ───────────────────────────────────────────────────
-function PipelineBadge({ pipeline, stageCount = 5 }) {
-  const stages = ALL_PIPELINE_STAGES.slice(0, stageCount);
-  const current = pipeline?.currentStage ?? 0;
-  return (
-    <div className="flex items-center gap-1 flex-wrap">
-      {stages.map((stage, idx) => {
-        const done = (pipeline?.completedStages || []).includes(idx);
-        const active = idx === current;
-        return (
-          <React.Fragment key={stage.key}>
-            <div
-              className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold border transition-all ${
-                done
-                  ? "bg-[#e8f5e2] border-[#3AB000] text-[#2d8a00]"
-                  : active
-                    ? "border-current text-white"
-                    : "bg-gray-50 border-gray-200 text-gray-400"
-              }`}
-              style={
-                active
-                  ? { backgroundColor: stage.color, borderColor: stage.color }
-                  : {}
-              }
-              title={stage.description}
-            >
-              {done ? (
-                <Check size={9} />
-              ) : active ? (
-                <ArrowRight size={9} />
-              ) : null}
-              {stage.label}
-            </div>
-            {idx < stages.length - 1 && (
-              <ChevronRight size={11} className="text-gray-300 flex-shrink-0" />
-            )}
-          </React.Fragment>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─── Pipeline Stage Selector (in modal) ──────────────────────────────────────
-function PipelineStageSelector({ stageCount, onChange }) {
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">
-          Pipeline Stages
-        </label>
-        <div className="flex items-center gap-2">
-          {[2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              onClick={() => onChange(n)}
-              className={`w-8 h-8 rounded text-xs font-bold border transition-colors ${
-                stageCount === n
-                  ? "bg-[#3AB000] text-white border-[#3AB000]"
-                  : "bg-white text-gray-600 border-gray-300 hover:border-[#3AB000] hover:text-[#3AB000]"
-              }`}
-            >
-              {n}
-            </button>
-          ))}
-          <span className="text-xs text-gray-400 ml-1">stages</span>
-        </div>
-      </div>
-      <div className="flex items-center gap-1 flex-wrap bg-gray-50 border border-gray-200 rounded p-3">
-        {ALL_PIPELINE_STAGES.slice(0, stageCount).map((stage, idx) => (
-          <React.Fragment key={stage.key}>
-            <div
-              className="flex flex-col items-center gap-1 px-2 py-1.5 rounded border text-xs font-semibold"
-              style={{
-                backgroundColor: stage.color + "18",
-                borderColor: stage.color + "55",
-                color: stage.color,
-              }}
-            >
-              <div
-                className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
-                style={{ backgroundColor: stage.color }}
-              >
-                {idx + 1}
-              </div>
-              <span
-                className="text-center leading-tight"
-                style={{ fontSize: "10px" }}
-              >
-                {stage.label}
-              </span>
-            </div>
-            {idx < stageCount - 1 && (
-              <ChevronRight
-                size={14}
-                className="text-gray-300 flex-shrink-0 mb-3"
-              />
-            )}
-          </React.Fragment>
-        ))}
-      </div>
-      <p className="text-xs text-gray-400">
-        Pipeline defines how many approval steps this test goes through before
-        going live.
-      </p>
-    </div>
-  );
-}
-
 // ─── Detail Modal ─────────────────────────────────────────────────────────────
 function DetailsModal({ test, onClose }) {
   const stageCount = test.pipelineStageCount || 5;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded w-full max-w-2xl max-h-[88vh] overflow-hidden flex flex-col shadow-2xl border border-gray-200">
+      <div className="bg-white rounded w-full max-w-2xl max-h-[88vh] overflow-hidden flex flex-col shadow-2xl border border-gray-200 overflow-x-hidden">
         <div
           style={{ backgroundColor: "#3AB000" }}
           className="text-white px-6 py-4 flex items-start justify-between shrink-0"
         >
-          <div>
-            <h3 className="text-lg font-bold">{test.title}</h3>
-            <p className="text-green-100 text-xs mt-0.5">
-              {test.subject} · {test.class} · {test.type}
-            </p>
+          <div className="max-w-[90%]">
+            <h3 className="text-lg font-bold break-words">{test.title}</h3>
           </div>
           <button
             onClick={onClose}
@@ -580,13 +407,6 @@ function DetailsModal({ test, onClose }) {
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
-          {/* Pipeline */}
-          <div className="bg-white rounded border border-gray-200 px-4 py-3 shadow-sm mb-4">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
-              Pipeline Progress
-            </p>
-            <PipelineBadge pipeline={test.pipeline} stageCount={stageCount} />
-          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {[
               ["Description", test.description || "—"],
@@ -594,7 +414,6 @@ function DetailsModal({ test, onClose }) {
               ["Total Marks", test.totalMarks],
               ["Passing Marks", test.passingMarks],
               ["Duration", `${test.duration} min`],
-              ["Difficulty", test.difficulty],
               ["Visibility", test.isPublic ? "Public" : "Private"],
               ["Shuffle Questions", test.shuffleQuestions ? "Yes" : "No"],
               ["Show Result", test.showResult ? "Immediately" : "After review"],
@@ -611,6 +430,16 @@ function DetailsModal({ test, onClose }) {
                   year: "numeric",
                 }),
               ],
+              [
+                "Ends",
+                test.endDate
+                  ? new Date(test.endDate).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : "No end date",
+              ],
             ].map(([label, value]) => (
               <div
                 key={label}
@@ -619,11 +448,19 @@ function DetailsModal({ test, onClose }) {
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
                   {label}
                 </p>
-                <p className="text-sm font-semibold text-gray-900 mt-0.5">
+                <p className="text-sm font-semibold text-gray-900 mt-0.5 break-words">
                   {value}
                 </p>
               </div>
             ))}
+            <div className="bg-white rounded border border-gray-200 px-4 py-3 shadow-sm md:col-span-2">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                Assigned Students
+              </p>
+              <p className="text-sm font-semibold text-gray-900 mt-0.5">
+                {test.assignedStudents?.length || 0} students assigned
+              </p>
+            </div>
           </div>
         </div>
         <div className="border-t border-gray-200 px-6 py-4 bg-white flex justify-end shrink-0">
@@ -647,16 +484,13 @@ function DetailsModal({ test, onClose }) {
 }
 
 // ─── Create / Edit Modal ───────────────────────────────────────────────────────
-function TestModal({ editingTest, questionBank, titleOptions, onClose, onSave }) {
+function TestModal({ editingTest, questionBank, titleOptions, postings, onClose, onSave }) {
   const [formData, setFormData] = useState(
     editingTest
       ? {
           title: editingTest.title,
-          subject: editingTest.subject,
-          class: editingTest.class,
-          type: editingTest.type,
-          difficulty: editingTest.difficulty,
           questionConfigs: editingTest.questionConfigs || [],
+          assignedStudents: editingTest.assignedStudents || [],
           duration: editingTest.duration.toString(),
           passingMarks: editingTest.passingMarks.toString(),
           description: editingTest.description,
@@ -667,15 +501,96 @@ function TestModal({ editingTest, questionBank, titleOptions, onClose, onSave })
           shuffleQuestions: editingTest.shuffleQuestions,
           showResult: editingTest.showResult,
           maxAttempts: editingTest.maxAttempts.toString(),
-          pipelineStageCount: editingTest.pipelineStageCount || 5,
         }
-      : EMPTY_FORM,
+      : { ...EMPTY_FORM, assignedStudents: [] },
   );
   const [activeTab, setActiveTab] = useState("details");
   const [showQuestionPicker, setShowQuestionPicker] = useState(false);
   const [questionSearch, setQuestionSearch] = useState("");
-  const [qFilterSubject, setQFilterSubject] = useState("all");
   const [qFilterDifficulty, setQFilterDifficulty] = useState("all");
+  const [applicants, setApplicants] = useState([]);
+  const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
+  const [studentStartDate, setStudentStartDate] = useState("");
+  const [studentEndDate, setStudentEndDate] = useState("");
+  const [localStudentSearch, setLocalStudentSearch] = useState("");
+  const [isTitleDropdownOpen, setIsTitleDropdownOpen] = useState(false);
+  const [titleSearch, setTitleSearch] = useState("");
+  const titleDropdownRef = useRef(null);
+
+  // Click outside listener for title dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        titleDropdownRef.current &&
+        !titleDropdownRef.current.contains(event.target)
+      ) {
+        setIsTitleDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Filtered titles for custom dropdown
+  const filteredTitles = useMemo(() => {
+    const q = titleSearch.toLowerCase().trim();
+    return (Array.isArray(titleOptions) ? titleOptions : []).filter((opt) =>
+      opt.toLowerCase().includes(q),
+    );
+  }, [titleOptions, titleSearch]);
+
+  // Filtered applicants based on local search
+  const filteredApplicants = useMemo(() => {
+    if (!localStudentSearch) return applicants;
+    const q = localStudentSearch.toLowerCase();
+    return applicants.filter((a) =>
+      [a.candidateName, a.fatherName, a.mobile, a.district, a.category]
+        .join(" ")
+        .toLowerCase()
+        .includes(q),
+    );
+  }, [applicants, localStudentSearch]);
+
+  // Fetch applicants when title or dates change
+  useEffect(() => {
+    const fetchApplicants = async () => {
+      // Find jobPostingId for the selected title
+      const posting = postings.find(
+        (p) =>
+          String(p?.title || p?.post?.en || p?.advtNo || "").trim() ===
+          formData.title?.trim(),
+      );
+
+      const params = { limit: 0, paymentStatus: "paid" };
+      if (posting?._id) params.jobPostingId = posting._id;
+      if (studentStartDate) params.startDate = studentStartDate;
+      if (studentEndDate) params.endDate = studentEndDate;
+
+      setIsLoadingApplicants(true);
+      const res = await applicationsAPI.getAll(params);
+      if (res?.success) {
+        setApplicants(res.data?.applications || []);
+      } else {
+        setApplicants([]);
+      }
+      setIsLoadingApplicants(false);
+    };
+
+    fetchApplicants();
+  }, [formData.title, postings, studentStartDate, studentEndDate]);
+
+  const toggleStudent = (studentId) => {
+    setFormData((prev) => {
+      const selected = prev.assignedStudents || [];
+      const exists = selected.includes(studentId);
+      return {
+        ...prev,
+        assignedStudents: exists
+          ? selected.filter((id) => id !== studentId)
+          : [...selected, studentId],
+      };
+    });
+  };
 
   const selectedCount = (formData.questionConfigs || []).length;
   const totalMarks = (formData.questionConfigs || []).reduce(
@@ -683,11 +598,7 @@ function TestModal({ editingTest, questionBank, titleOptions, onClose, onSave })
     0,
   );
 
-  // Unique subjects/difficulties from question bank
-  const qbSubjects = useMemo(
-    () => [...new Set(questionBank.map((q) => q.subject))],
-    [questionBank],
-  );
+  // Unique difficulties from question bank
   const qbDifficulties = useMemo(
     () => [...new Set(questionBank.map((q) => q.difficulty).filter(Boolean))],
     [questionBank],
@@ -698,18 +609,16 @@ function TestModal({ editingTest, questionBank, titleOptions, onClose, onSave })
     return questionBank.filter((item) => {
       const matchSearch =
         !q ||
-        [item.question, item.subject, item.class, item.topic].some((f) =>
+        [item.question, item.topic].some((f) =>
           String(f || "")
             .toLowerCase()
             .includes(q),
         );
-      const matchSubject =
-        qFilterSubject === "all" || item.subject === qFilterSubject;
       const matchDiff =
         qFilterDifficulty === "all" || item.difficulty === qFilterDifficulty;
-      return matchSearch && matchSubject && matchDiff;
+      return matchSearch && matchDiff;
     });
-  }, [questionBank, questionSearch, qFilterSubject, qFilterDifficulty]);
+  }, [questionBank, questionSearch, qFilterDifficulty]);
 
   const handleInput = (e) => {
     const { name, value, type, checked } = e.target;
@@ -757,9 +666,6 @@ function TestModal({ editingTest, questionBank, titleOptions, onClose, onSave })
   const handleSubmit = () => {
     if (
       !formData.title ||
-      !formData.subject ||
-      !formData.class ||
-      !formData.type ||
       !formData.duration
     ) {
       alert("Please fill in all required fields.");
@@ -792,8 +698,8 @@ function TestModal({ editingTest, questionBank, titleOptions, onClose, onSave })
           <div className="flex">
             {[
               { key: "details", label: "Test Details" },
+              { key: "applicants", label: "Select Students" },
               { key: "settings", label: "Settings" },
-              { key: "pipeline", label: "Pipeline" },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -815,83 +721,76 @@ function TestModal({ editingTest, questionBank, titleOptions, onClose, onSave })
           {/* ── Details Tab ── */}
           {activeTab === "details" && (
             <>
-              {/* Test Title — Dropdown */}
-              <div>
+              {/* Test Title — Custom Searchable Dropdown */}
+              <div className="relative" ref={titleDropdownRef}>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
                   Test Title <span className="text-red-500">*</span>
                 </label>
-                <select
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInput}
-                  className={inputCls}
+                <div
+                  className={`${inputCls} flex items-center justify-between cursor-pointer relative ${isTitleDropdownOpen ? "ring-2 ring-[#3AB000] border-[#3AB000]" : ""}`}
+                  onClick={() => setIsTitleDropdownOpen(!isTitleDropdownOpen)}
                 >
-                  <option value="">Select test title</option>
-                  {(Array.isArray(titleOptions) ? titleOptions : []).map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
+                  <span className={`truncate flex-1 ${!formData.title ? "text-gray-400" : "text-gray-900 font-medium"}`}>
+                    {formData.title || "Select test title"}
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    className={`text-gray-400 transition-transform ${isTitleDropdownOpen ? "rotate-180" : ""}`}
+                  />
+                </div>
+
+                {isTitleDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 z-[100] mt-1 bg-white border border-gray-200 rounded shadow-xl flex flex-col max-h-[300px] overflow-hidden">
+                    <div className="p-2 border-b border-gray-100 bg-gray-50 shrink-0">
+                      <div className="relative">
+                        <Search
+                          size={14}
+                          className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+                        />
+                        <input
+                          type="text"
+                          autoFocus
+                          value={titleSearch}
+                          onChange={(e) => setTitleSearch(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          placeholder="Search title..."
+                          className="w-full pl-8 pr-3 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-[#3AB000] focus:border-[#3AB000] outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="overflow-y-auto flex-1 py-1">
+                      {filteredTitles.length === 0 ? (
+                        <div className="px-4 py-3 text-xs text-gray-400 text-center italic">
+                          No titles found.
+                        </div>
+                      ) : (
+                        filteredTitles.map((opt) => (
+                          <div
+                            key={opt}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFormData((p) => ({ ...p, title: opt }));
+                              setIsTitleDropdownOpen(false);
+                              setTitleSearch("");
+                            }}
+                            className={`px-4 py-2.5 text-xs cursor-pointer hover:bg-[#e8f5e2] transition-colors border-b border-gray-50 last:border-0 ${
+                              formData.title === opt
+                                ? "bg-[#e8f5e2] text-[#3AB000] font-bold"
+                                : "text-gray-700"
+                            }`}
+                          >
+                            <p className="leading-normal break-words">
+                              {opt}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
-                    Subject <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleInput}
-                    placeholder="e.g. Biology"
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
-                    Class <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="class"
-                    value={formData.class}
-                    onChange={handleInput}
-                    placeholder="e.g. Class 10"
-                    className={inputCls}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
-                    Test Type <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="type"
-                    value={formData.type}
-                    onChange={handleInput}
-                    placeholder="e.g. Mock Exam"
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
-                    Difficulty
-                  </label>
-                  <input
-                    type="text"
-                    name="difficulty"
-                    value={formData.difficulty}
-                    onChange={handleInput}
-                    placeholder="Easy / Medium / Hard"
-                    className={inputCls}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-4 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
                     Questions
@@ -926,6 +825,18 @@ function TestModal({ editingTest, questionBank, titleOptions, onClose, onSave })
                     className="w-full px-3 py-2.5 border border-gray-200 rounded text-sm bg-gray-100 font-semibold text-[#3AB000]"
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
+                    Assigned Students
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("applicants")}
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded text-sm bg-gray-100 font-bold text-[#3AB000] text-left"
+                  >
+                    {formData.assignedStudents?.length || 0} selected
+                  </button>
+                </div>
               </div>
 
               {/* Question selector */}
@@ -938,7 +849,6 @@ function TestModal({ editingTest, questionBank, titleOptions, onClose, onSave })
                     onClick={() => {
                       setShowQuestionPicker(true);
                       setQuestionSearch("");
-                      setQFilterSubject("all");
                       setQFilterDifficulty("all");
                     }}
                     className="inline-flex items-center gap-1 rounded border border-[#3AB000] bg-[#e8f5e2] px-3 py-1 text-xs font-bold text-[#3AB000] hover:bg-[#d0edbc] transition-colors"
@@ -1029,6 +939,147 @@ function TestModal({ editingTest, questionBank, titleOptions, onClose, onSave })
             </>
           )}
 
+          {/* ── Applicants Tab ── */}
+          {activeTab === "applicants" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-bold text-gray-800">
+                    Selected: {formData.assignedStudents?.length || 0} / Total: {applicants.length}
+                  </h4>
+                  <p className="text-xs text-gray-500 truncate max-w-md">
+                    Showing paid applicants who applied for "{formData.title || "Selected Title"}"
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() =>
+                      setFormData((p) => ({
+                        ...p,
+                        assignedStudents: filteredApplicants.map((a) => a._id),
+                      }))
+                    }
+                    className="px-2 py-1 bg-[#e8f5e2] text-[#3AB000] rounded text-[10px] font-bold hover:bg-[#d5eac8] transition-colors"
+                  >
+                    Select Filtered ({filteredApplicants.length})
+                  </button>
+                  <button
+                    onClick={() =>
+                      setFormData((p) => ({ ...p, assignedStudents: [] }))
+                    }
+                    className="px-2 py-1 bg-red-50 text-red-500 rounded text-[10px] font-bold hover:bg-red-100 transition-colors"
+                  >
+                    Clear Selection
+                  </button>
+                </div>
+              </div>
+
+              {/* Search & Date Filters Row */}
+              <div className="bg-white p-3 rounded border border-gray-200 space-y-3 shadow-sm">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">
+                    Search Student
+                  </label>
+                  <div className="relative">
+                    <Search
+                      size={12}
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      type="text"
+                      value={localStudentSearch}
+                      onChange={(e) => setLocalStudentSearch(e.target.value)}
+                      placeholder="Search by Name, Mobile, Father Name, District..."
+                      className="w-full pl-8 pr-3 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-[#3AB000] focus:border-[#3AB000] outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">
+                      Applied From
+                    </label>
+                    <input
+                      type="date"
+                      value={studentStartDate}
+                      onChange={(e) => setStudentStartDate(e.target.value)}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-[#3AB000] focus:border-[#3AB000] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">
+                      Applied To
+                    </label>
+                    <input
+                      type="date"
+                      value={studentEndDate}
+                      onChange={(e) => setStudentEndDate(e.target.value)}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-[#3AB000] focus:border-[#3AB000] outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {isLoadingApplicants ? (
+                <div className="py-10 text-center text-sm text-gray-400">
+                  Loading applicants...
+                </div>
+              ) : filteredApplicants.length === 0 ? (
+                <div className="py-10 text-center text-sm text-gray-400 bg-white border border-dashed border-gray-300 rounded">
+                  {formData.title
+                    ? "No applicants found matching your filters."
+                    : "Please select a Test Title first."}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-2 max-h-[350px] overflow-y-auto pr-2">
+                  {filteredApplicants.map((app) => {
+                    const isSelected = formData.assignedStudents?.includes(app._id);
+                    return (
+                      <div
+                        key={app._id}
+                        onClick={() => toggleStudent(app._id)}
+                        className={`flex items-center gap-3 p-3 rounded border transition-all cursor-pointer ${
+                          isSelected
+                            ? "border-[#3AB000] bg-[#e8f5e2]"
+                            : "border-gray-200 bg-white hover:border-gray-300"
+                        }`}
+                      >
+                        <div
+                          className={`w-4 h-4 rounded-sm border flex items-center justify-center transition-colors ${
+                            isSelected
+                              ? "bg-[#3AB000] border-[#3AB000]"
+                              : "bg-white border-gray-300"
+                          }`}
+                        >
+                          {isSelected && <Check size={12} className="text-white" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-bold text-gray-900 truncate">
+                              {app.candidateName}
+                            </p>
+                            <span className="text-[10px] font-semibold text-gray-400">
+                              {app.category}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-600 truncate">
+                            Father: {app.fatherName}
+                          </p>
+                          <p className="text-[10px] text-gray-500 truncate mt-0.5">
+                            Mobile: {app.mobile} | District: {app.district}
+                          </p>
+                          <p className="text-[10px] text-gray-400 mt-1 italic">
+                            Applied: {new Date(app.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ── Settings Tab ── */}
           {activeTab === "settings" && (
             <>
@@ -1115,56 +1166,6 @@ function TestModal({ editingTest, questionBank, titleOptions, onClose, onSave })
               </div>
             </>
           )}
-
-          {/* ── Pipeline Tab ── */}
-          {activeTab === "pipeline" && (
-            <>
-              <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                <p className="text-sm text-blue-700 font-semibold flex items-center gap-2">
-                  <AlertCircle size={15} /> Configure how many stages this test
-                  goes through before going live.
-                </p>
-                <p className="text-xs text-blue-500 mt-1">
-                  You can use a short 2–3 stage flow for quick tests or the full
-                  5-stage approval pipeline for formal exams.
-                </p>
-              </div>
-              <PipelineStageSelector
-                stageCount={formData.pipelineStageCount}
-                onChange={(n) =>
-                  setFormData((p) => ({ ...p, pipelineStageCount: n }))
-                }
-              />
-              <div className="bg-white border border-gray-200 rounded p-4 space-y-2">
-                <p className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-3">
-                  Stage Descriptions
-                </p>
-                {ALL_PIPELINE_STAGES.slice(0, formData.pipelineStageCount).map(
-                  (stage, idx) => (
-                    <div
-                      key={stage.key}
-                      className="flex items-center gap-3 p-2 rounded border border-gray-100 bg-gray-50"
-                    >
-                      <div
-                        className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
-                        style={{ backgroundColor: stage.color }}
-                      >
-                        {idx + 1}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">
-                          {stage.label}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {stage.description}
-                        </p>
-                      </div>
-                    </div>
-                  ),
-                )}
-              </div>
-            </>
-          )}
         </div>
 
         {/* Footer */}
@@ -1224,26 +1225,13 @@ function TestModal({ editingTest, questionBank, titleOptions, onClose, onSave })
                   type="text"
                   value={questionSearch}
                   onChange={(e) => setQuestionSearch(e.target.value)}
-                  placeholder="Search question, subject, class..."
+                  placeholder="Search question, topic..."
                   className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-[#3AB000] focus:border-[#3AB000] outline-none"
                 />
               </div>
               {/* Filters row */}
               <div className="flex items-center gap-2 flex-wrap">
                 <Filter size={13} className="text-gray-400 flex-shrink-0" />
-                {/* Subject filter */}
-                <select
-                  value={qFilterSubject}
-                  onChange={(e) => setQFilterSubject(e.target.value)}
-                  className="px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-[#3AB000] focus:border-[#3AB000] bg-white outline-none"
-                >
-                  <option value="all">All Subjects</option>
-                  {qbSubjects.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
                 {/* Difficulty filter */}
                 <select
                   value={qFilterDifficulty}
@@ -1330,8 +1318,7 @@ function TestModal({ editingTest, questionBank, titleOptions, onClose, onSave })
                             )}
                           </div>
                           <p className="text-xs text-gray-500">
-                            #{q.id} · {q.subject} · {q.class} · Default:{" "}
-                            {q.marks} marks
+                            #{q.id} · Default: {q.marks} marks
                           </p>
                           {Array.isArray(q.options) && q.options.length > 0 && (
                             <div className="mt-1.5 flex flex-wrap gap-1">
@@ -1415,11 +1402,10 @@ export default function TestManagement() {
   const [tests, setTests] = useState([]);
   const [questionBank, setQuestionBank] = useState([]);
   const [titleOptions, setTitleOptions] = useState([]);
+  const [postings, setPostings] = useState([]); // Store full postings
   const [isLoadingTests, setIsLoadingTests] = useState(false);
   const [testsError, setTestsError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterSubject, setFilterSubject] = useState("all");
-  const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [detailsTest, setDetailsTest] = useState(null);
@@ -1429,7 +1415,7 @@ export default function TestManagement() {
   const loadTests = async () => {
     setIsLoadingTests(true);
     setTestsError("");
-    const response = await createPaperAPI.getAll({ page: 1, limit: 500 });
+    const response = await createPaperAPI.getAll({ page: 1, limit: 0 });
     if (!response?.success) {
       setTestsError(response?.error || "Failed to load tests.");
       setIsLoadingTests(false);
@@ -1447,7 +1433,7 @@ export default function TestManagement() {
 
   useEffect(() => {
     const loadSavedQuestions = async () => {
-      const response = await questionBankAPI.getAll({ page: 1, limit: 500 });
+      const response = await questionBankAPI.getAll({ page: 1, limit: 0 });
       if (!response?.success) {
         setQuestionBank([]);
         return;
@@ -1462,15 +1448,16 @@ export default function TestManagement() {
 
   useEffect(() => {
     const loadFormTitles = async () => {
-      const response = await jobPostingsAPI.getAll({ page: 1, limit: 500 });
+      const response = await jobPostingsAPI.getAll({ page: 1, limit: 0 });
       if (!response?.success) {
         setTitleOptions([]);
         return;
       }
-      const postings = Array.isArray(response?.data?.postings)
+      const postingsData = Array.isArray(response?.data?.postings)
         ? response.data.postings
         : [];
-      const titles = postings
+      setPostings(postingsData);
+      const titles = postingsData
         .map((item) =>
           String(item?.title || item?.post?.en || item?.advtNo || "").trim(),
         )
@@ -1489,27 +1476,30 @@ export default function TestManagement() {
   }, [tests]);
 
   const filtered = useMemo(() => {
-    return tests.filter((t) => {
-      const q = searchQuery.toLowerCase();
-      const matchSearch =
-        t.title.toLowerCase().includes(q) ||
-        t.subject.toLowerCase().includes(q) ||
-        (Array.isArray(t.tags) ? t.tags : []).some((tg) =>
-          tg.toLowerCase().includes(q),
-        );
-      const matchSubject =
-        filterSubject === "all" || t.subject === filterSubject;
-      const matchType = filterType === "all" || t.type === filterType;
-      const matchStatus = filterStatus === "all" || t.status === filterStatus;
-      return matchSearch && matchSubject && matchType && matchStatus;
-    });
-  }, [tests, searchQuery, filterSubject, filterType, filterStatus]);
+    return tests
+      .filter((t) => {
+        const q = searchQuery.toLowerCase();
+        const matchSearch =
+          t.title.toLowerCase().includes(q) ||
+          (Array.isArray(t.tags) ? t.tags : []).some((tg) =>
+            tg.toLowerCase().includes(q),
+          );
+        const matchStatus = filterStatus === "all" || t.status === filterStatus;
+        return matchSearch && matchStatus;
+      })
+      .sort((a, b) => {
+        const aExpired = a.endDate && new Date(a.endDate) < new Date();
+        const bExpired = b.endDate && new Date(b.endDate) < new Date();
+        const aActive = a.status === "published" && !aExpired;
+        const bActive = b.status === "published" && !bExpired;
 
-  const isFiltered =
-    searchQuery ||
-    filterSubject !== "all" ||
-    filterType !== "all" ||
-    filterStatus !== "all";
+        if (aActive && !bActive) return -1;
+        if (!aActive && bActive) return 1;
+        return new Date(b.createdDate) - new Date(a.createdDate);
+      });
+  }, [tests, searchQuery, filterStatus]);
+
+  const isFiltered = searchQuery || filterStatus !== "all";
 
   const handleSave = async (formData) => {
     const parsed = {
@@ -1537,7 +1527,9 @@ export default function TestManagement() {
         (s, c) => s + Number(c.marks || 0),
         0,
       ),
-      pipelineStageCount: formData.pipelineStageCount || 5,
+      assignedStudents: Array.isArray(formData.assignedStudents)
+        ? formData.assignedStudents
+        : [],
     };
 
     const response = editingTest
@@ -1785,32 +1777,10 @@ export default function TestManagement() {
 
         {/* Filters row */}
         <div className="flex flex-wrap items-center gap-3 mb-4">
-          <select
-            value={filterSubject}
-            onChange={(e) => setFilterSubject(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-[#3AB000] focus:border-[#3AB000] bg-white outline-none"
-          >
-            <option value="all">All Subjects</option>
-            {SUBJECTS.map((s) => (
-              <option key={s}>{s}</option>
-            ))}
-          </select>
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-[#3AB000] focus:border-[#3AB000] bg-white outline-none"
-          >
-            <option value="all">All Types</option>
-            {TEST_TYPES.map((t) => (
-              <option key={t}>{t}</option>
-            ))}
-          </select>
           {isFiltered && (
             <button
               onClick={() => {
                 setSearchQuery("");
-                setFilterSubject("all");
-                setFilterType("all");
                 setFilterStatus("all");
               }}
               className="text-xs font-semibold flex items-center gap-1 px-2 py-1 rounded border border-gray-300 hover:bg-gray-50 transition-colors"
@@ -1866,10 +1836,8 @@ export default function TestManagement() {
             </div>
           ) : (
             filtered.map((test) => {
-              const stageCount = test.pipelineStageCount || 5;
-              const currentStage = test.pipeline?.currentStage ?? 0;
-              const currentStageMeta = ALL_PIPELINE_STAGES[currentStage];
-              const canAdvance = currentStage < stageCount - 1;
+              const isExpired =
+                test.endDate && new Date(test.endDate) < new Date();
               return (
                 <div
                   key={test.id}
@@ -1877,7 +1845,9 @@ export default function TestManagement() {
                 >
                   {/* Card Header */}
                   <div
-                    style={{ backgroundColor: "#3AB000" }}
+                    style={{
+                      backgroundColor: isExpired ? "#6b7280" : "#3AB000",
+                    }}
                     className="px-6 py-4 flex items-center justify-between"
                   >
                     <div className="flex items-center gap-3">
@@ -1886,25 +1856,17 @@ export default function TestManagement() {
                         size={20}
                       />
                       <div>
-                        <h3 className="text-white font-bold text-sm leading-tight">
+                        <h3 className="text-white font-bold text-sm leading-tight break-words line-clamp-2">
                           {test.title}
                         </h3>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-green-100 text-xs">
-                            {test.subject}
-                          </span>
-                          <span className="text-green-300 text-xs">·</span>
-                          <span className="text-green-100 text-xs">
-                            {test.class}
-                          </span>
-                          <span className="text-green-300 text-xs">·</span>
-                          <span className="text-green-100 text-xs">
-                            {test.type}
-                          </span>
-                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      {isExpired && (
+                        <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-wider">
+                          Inactive
+                        </span>
+                      )}
                       <button
                         onClick={() => toggleStatus(test.id)}
                         className={`px-3 py-1 rounded text-xs font-semibold transition ${test.status === "published" ? "bg-[#e8f5e2] text-[#2d8a00]" : "bg-gray-100 text-gray-600"}`}
@@ -1913,11 +1875,6 @@ export default function TestManagement() {
                           ? "● Published"
                           : "○ Draft"}
                       </button>
-                      <span
-                        className={`px-3 py-1 rounded text-xs font-semibold ${DIFF_STYLES[test.difficulty] || "bg-gray-100 text-gray-600"}`}
-                      >
-                        {test.difficulty}
-                      </span>
                     </div>
                   </div>
 
@@ -1972,38 +1929,6 @@ export default function TestManagement() {
                       })}
                     </div>
 
-                    {/* Pipeline */}
-                    <div className="bg-gray-50 border border-gray-200 rounded p-3 mb-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-bold text-gray-600 uppercase tracking-wide">
-                          Pipeline
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="px-2 py-0.5 rounded text-xs font-bold text-white"
-                            style={{
-                              backgroundColor:
-                                currentStageMeta?.color || "#6b7280",
-                            }}
-                          >
-                            {currentStageMeta?.label}
-                          </span>
-                          {canAdvance && (
-                            <button
-                              onClick={() => advancePipeline(test.id)}
-                              className="flex items-center gap-1 px-2 py-0.5 rounded border border-gray-300 text-xs font-semibold text-gray-600 hover:bg-white hover:border-[#3AB000] hover:text-[#3AB000] transition-colors"
-                            >
-                              <ArrowRight size={11} /> Advance
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      <PipelineBadge
-                        pipeline={test.pipeline}
-                        stageCount={stageCount}
-                      />
-                    </div>
-
                     {/* Avg score bar */}
                     {test.status === "published" && test.attempts > 0 && (
                       <div className="bg-[#e8f5e2] border border-[#c5e8a0] rounded p-3 mb-3">
@@ -2045,6 +1970,19 @@ export default function TestManagement() {
                           { day: "numeric", month: "short", year: "numeric" },
                         )}
                       </span>
+                      {test.endDate && (
+                        <span
+                          className={`flex items-center gap-1 ${isExpired ? "text-red-500 font-bold" : "text-gray-500"}`}
+                        >
+                          <Clock size={11} />
+                          Ends:{" "}
+                          {new Date(test.endDate).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                      )}
                       {test.isPublic ? (
                         <span className="flex items-center gap-1 text-[#3AB000]">
                           <Globe size={11} />
@@ -2150,6 +2088,7 @@ export default function TestManagement() {
           editingTest={editingTest}
           questionBank={questionBank}
           titleOptions={titleOptions}
+          postings={postings}
           onClose={() => {
             setShowModal(false);
             setEditingTest(null);

@@ -168,6 +168,7 @@ const applicationSchema = new mongoose.Schema(
 // Index for searching
 applicationSchema.index({ candidateName: "text", mobile: "text", district: "text" });
 applicationSchema.index({ status: 1 });
+applicationSchema.index({ createdAt: -1 });
 applicationSchema.index({ createdBy: 1 });
 applicationSchema.index({ jobPostingId: 1 });
 

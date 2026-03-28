@@ -298,7 +298,7 @@ router.use(authenticate);
  */
 router.get("/", async (req, res) => {
   try {
-    const { status, search, page = 1, limit = 10, jobPostingId } = req.query;
+    const { status, search, page = 1, limit, jobPostingId, startDate, endDate, paymentStatus } = req.query;
     const query = {};
 
     // Filter by status
@@ -306,9 +306,27 @@ router.get("/", async (req, res) => {
       query.status = status;
     }
 
+    // Filter by payment status
+    if (paymentStatus && paymentStatus !== "all") {
+      query.paymentStatus = paymentStatus;
+    }
+
     // Filter by job posting ID
     if (jobPostingId) {
       query.jobPostingId = jobPostingId;
+    }
+
+    // Date range filter
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = end;
+      }
     }
 
     // Search filter
@@ -325,14 +343,21 @@ router.get("/", async (req, res) => {
       query.createdBy = req.user.id;
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const limitVal = limit !== undefined ? parseInt(limit) : 0; 
+    const pageVal = parseInt(page);
+    const skip = (pageVal - 1) * limitVal;
 
-    const applications = await Application.find(query)
+    let mongoQuery = Application.find(query)
       .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit))
+      .allowDiskUse(true)
       .populate("createdBy", "email phone role")
       .populate("jobPostingId", "advtNo post title");
+
+    if (limitVal > 0) {
+      mongoQuery = mongoQuery.skip(skip).limit(limitVal);
+    }
+
+    const applications = await mongoQuery;
 
     const applicationObjects = applications.map((application) => application.toObject());
     const requestedPosting = jobPostingId
@@ -396,9 +421,9 @@ router.get("/", async (req, res) => {
         applications: applicationsWithJobTitle,
         pagination: {
           page: parseInt(page),
-          limit: parseInt(limit),
+          limit: limitVal,
           total,
-          pages: Math.ceil(total / parseInt(limit)),
+          pages: limitVal > 0 ? Math.ceil(total / limitVal) : 1,
         },
       },
     });

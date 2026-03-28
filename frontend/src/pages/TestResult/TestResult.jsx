@@ -363,9 +363,6 @@ function DetailModal({ record, allHistory, onClose }) {
             </div>
             <div>
               <h2 className="text-xl font-bold">{record.testTitle}</h2>
-              <p className="text-green-100 text-sm mt-0.5">
-                {record.subject} · {record.cls} · {record.type || "Test"}
-              </p>
             </div>
           </div>
           <button
@@ -451,17 +448,6 @@ function DetailModal({ record, allHistory, onClose }) {
                     icon={BookOpen}
                     label="Test Name"
                     value={record.testTitle}
-                  />
-                  <InfoRow
-                    icon={FileText}
-                    label="Subject"
-                    value={record.subject}
-                  />
-                  <InfoRow icon={User} label="Class" value={record.cls} />
-                  <InfoRow
-                    icon={ClipboardList}
-                    label="Test Type"
-                    value={record.type}
                   />
                 </div>
                 <div className="bg-white rounded border border-gray-200 p-6 space-y-4 shadow-sm">
@@ -772,9 +758,6 @@ export default function TestHistory() {
       [
         "Student",
         "Test",
-        "Subject",
-        "Class",
-        "Type",
         "Score",
         "Total",
         "%",
@@ -786,9 +769,6 @@ export default function TestHistory() {
       ...filtered.map((h) => [
         h.student,
         h.testTitle,
-        h.subject,
-        h.cls,
-        h.type,
         h.score,
         h.totalMarks,
         h.pct,
@@ -1005,7 +985,6 @@ export default function TestHistory() {
                             <p className="font-semibold text-sm text-gray-800">
                               {h.student}
                             </p>
-                            <p className="text-xs text-gray-500">{h.cls}</p>
                           </div>
                         </div>
                       </td>
@@ -1014,9 +993,6 @@ export default function TestHistory() {
                       <td className="px-4 py-4 text-center">
                         <p className="font-semibold text-sm text-gray-800 truncate max-w-[180px] mx-auto">
                           {h.testTitle}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {h.subject} · {h.type}
                         </p>
                       </td>
 
@@ -1153,12 +1129,6 @@ export default function TestHistory() {
                       Test:
                     </span>
                     <span className="flex-1">{h.testTitle}</span>
-                  </div>
-                  <div className="flex items-start">
-                    <span className="font-medium w-20 flex-shrink-0">
-                      Subject:
-                    </span>
-                    <span className="flex-1">{h.subject}</span>
                   </div>
                   <div className="flex items-start">
                     <span className="font-medium w-20 flex-shrink-0">

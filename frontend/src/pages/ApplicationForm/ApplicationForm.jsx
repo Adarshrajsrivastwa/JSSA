@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
-import { Eye, ArrowLeft, Briefcase, Users } from "lucide-react";
+import { Eye, ArrowLeft, Briefcase, Users, Loader2 } from "lucide-react";
+import logo from "../../assets/img0.png";
 import { useNavigate } from "react-router-dom";
 import { applicationsAPI, jobPostingsAPI } from "../../utils/api";
 import { useAuth } from "../../auth/AuthProvider";
@@ -55,7 +56,7 @@ const ApplicationForm = () => {
   const fetchJobPostings = async () => {
     setJobPostingsLoading(true);
     try {
-      const response = await jobPostingsAPI.getAll({ limit: 1000 });
+      const response = await jobPostingsAPI.getAll({ limit: 0 });
       if (response.success && response.data) {
         const postings = response.data.postings.map((post) => ({
           id: post._id,
@@ -64,6 +65,8 @@ const ApplicationForm = () => {
           postHi: typeof post.post === 'object' ? post.post.hi : post.post,
           location: typeof post.location === 'object' ? post.location.en : post.location,
           status: post.status,
+          lastDate: post.lastDate,
+          createdAt: post.createdAt,
         }));
 
         if (role === "admin") {
@@ -87,9 +90,26 @@ const ApplicationForm = () => {
               }
             }),
           );
-          setJobPostings(postingsWithCounts);
+          // Ensure sorting: Active/Latest first, Inactive/Old bottom
+          const sorted = postingsWithCounts.sort((a, b) => {
+            const aOpen = isVacancyOpen(a.lastDate) && a.status !== "Inactive";
+            const bOpen = isVacancyOpen(b.lastDate) && b.status !== "Inactive";
+            
+            if (aOpen && !bOpen) return -1;
+            if (!aOpen && bOpen) return 1;
+            return new Date(b.createdAt) - new Date(a.createdAt);
+          });
+          setJobPostings(sorted);
         } else {
-          setJobPostings(postings);
+          const sorted = postings.sort((a, b) => {
+            const aOpen = isVacancyOpen(a.lastDate) && a.status !== "Inactive";
+            const bOpen = isVacancyOpen(b.lastDate) && b.status !== "Inactive";
+            
+            if (aOpen && !bOpen) return -1;
+            if (!aOpen && bOpen) return 1;
+            return new Date(b.createdAt) - new Date(a.createdAt);
+          });
+          setJobPostings(sorted);
         }
       }
     } catch (err) {
@@ -105,7 +125,7 @@ const ApplicationForm = () => {
     setLoading(true);
     setError(null);
     try {
-      const params = { limit: 1000 };
+      const params = { limit: 0 };
       if (jobPostingId) {
         params.jobPostingId = jobPostingId;
       }
@@ -126,11 +146,14 @@ const ApplicationForm = () => {
             id: app._id,
             photo: app.photo,
             candidateName: app.candidateName,
+            mobile: app.mobile,
+            email: app.email,
             status: app.status,
             paymentStatus: app.paymentStatus || null,
             applicationNumber: app.applicationNumber,
             jobTitle: app.jobTitle || postingTitle || null,
             jobPostingId: postingId,
+            createdAt: app.createdAt,
           };
         });
 
@@ -187,7 +210,7 @@ const ApplicationForm = () => {
 
   // Filter + Search
   const filteredApplications = applications.filter((app) => {
-    const matchesSearch = [app.applicationNumber, getJobTitleForApplication(app), app.paymentStatus]
+    const matchesSearch = [app.applicationNumber, app.mobile, app.email, app.paymentStatus]
       .join(" ")
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
@@ -210,7 +233,7 @@ const ApplicationForm = () => {
     <tbody>
       {Array.from({ length: itemsPerPage }).map((_, idx) => (
         <tr key={idx} className="animate-pulse border-b border-gray-100">
-          {Array.from({ length: 6 }).map((__, j) => (
+          {Array.from({ length: 8 }).map((__, j) => (
             <td key={j} className="px-4 py-4 text-center">
               <div
                 className={`bg-gray-200 rounded mx-auto ${j === 1 ? "h-9 w-9 rounded-full" : "h-4 w-4/5"}`}
@@ -226,7 +249,7 @@ const ApplicationForm = () => {
   const EmptyState = () => (
     <tbody>
       <tr>
-        <td colSpan="6" className="text-center py-12 text-gray-400 text-sm">
+        <td colSpan="8" className="text-center py-12 text-gray-400 text-sm">
           {error ? (
             <div className="flex flex-col items-center gap-2">
               <p className="text-red-500">Error: {error}</p>
@@ -243,6 +266,23 @@ const ApplicationForm = () => {
         </td>
       </tr>
     </tbody>
+  );
+
+  const FullPageLoader = () => (
+    <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-4">
+      <div className="relative">
+        <div className="w-24 h-24 rounded-full border-4 border-[#3AB000]/20 border-t-[#3AB000] animate-spin"></div>
+        <img 
+          src={logo} 
+          alt="Logo" 
+          className="absolute inset-0 w-16 h-16 m-auto object-contain animate-pulse"
+        />
+      </div>
+      <div className="flex items-center gap-2 text-[#3AB000] font-bold text-lg animate-bounce">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        Loading Applications...
+      </div>
+    </div>
   );
 
   // Handle job posting selection
@@ -288,6 +328,33 @@ const ApplicationForm = () => {
     }
   };
 
+  // Check if vacancy is open based on last date
+  const isVacancyOpen = (lastDate) => {
+    if (!lastDate) return true;
+    try {
+      // Common formats: DD-MM-YYYY, YYYY-MM-DD
+      const parts = lastDate.split(/[-/.]/);
+      let date;
+      if (parts.length === 3) {
+        if (parts[0].length === 4) {
+          // YYYY-MM-DD
+          date = new Date(parts[0], parts[1] - 1, parts[2]);
+        } else {
+          // DD-MM-YYYY
+          date = new Date(parts[2], parts[1] - 1, parts[0]);
+        }
+      } else {
+        date = new Date(lastDate);
+      }
+
+      if (isNaN(date.getTime())) return true;
+      date.setHours(23, 59, 59, 999);
+      return date >= new Date();
+    } catch {
+      return true;
+    }
+  };
+
   // Show job postings list (only for admin)
   if (role === "admin" && !selectedJobPostingId) {
     return (
@@ -312,36 +379,59 @@ const ApplicationForm = () => {
               No job postings found.
             </div>
           ) : (
-            <div className="space-y-3">
-              {jobPostings.map((job) => (
-                <div
-                  key={job.id}
-                  onClick={() => handleJobPostingClick(job.id)}
-                  className="bg-white rounded border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer hover:border-[#3AB000]"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Briefcase className="w-5 h-5 text-[#3AB000]" />
-                        <div>
-                          <h3 className="text-lg font-bold text-gray-900">{job.post}</h3>
+            <div className="space-y-3 pb-8">
+              {jobPostings.map((job) => {
+                const isOpen = isVacancyOpen(job.lastDate);
+                const isInactive = job.status === "Inactive" || !isOpen;
+                
+                return (
+                  <div
+                    key={job.id}
+                    onClick={() => handleJobPostingClick(job.id)}
+                    className={`bg-white rounded border overflow-hidden p-4 hover:shadow-md transition-all cursor-pointer border-l-4 ${
+                      isInactive 
+                        ? "border-l-gray-400 border-gray-200 opacity-80" 
+                        : "border-l-[#3AB000] border-gray-200 hover:border-[#3AB000]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Briefcase className={`w-5 h-5 ${isInactive ? "text-gray-400" : "text-[#3AB000]"}`} />
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <h3 className={`text-lg font-bold ${isInactive ? "text-gray-600" : "text-gray-900"}`}>
+                              {job.post}
+                            </h3>
+                            {isInactive && (
+                              <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-[10px] font-bold uppercase tracking-wider border border-gray-200">
+                                Inactive / Expired
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 ml-8">
                           <p className="text-sm text-gray-600">Advt. No: {job.advtNo}</p>
+                          {job.lastDate && (
+                            <p className={`text-xs ${isInactive ? "text-red-400" : "text-gray-500"}`}>
+                              Last Date: {job.lastDate}
+                            </p>
+                          )}
                         </div>
+                        <p className="text-sm text-gray-600 ml-8 mt-1 italic">{job.location}</p>
                       </div>
-                      <p className="text-sm text-gray-600 ml-8">{job.location}</p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <div className="flex items-center gap-2 text-[#3AB000]">
-                          <Users className="w-5 h-5" />
-                          <span className="text-lg font-bold">{job.applicationCount || 0}</span>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <div className={`flex items-center gap-2 ${isInactive ? "text-gray-400" : "text-[#3AB000]"}`}>
+                            <Users className="w-5 h-5" />
+                            <span className="text-lg font-bold">{job.applicationCount || 0}</span>
+                          </div>
+                          <p className="text-xs text-gray-500">Applications</p>
                         </div>
-                        <p className="text-xs text-gray-500">Applications</p>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -351,6 +441,7 @@ const ApplicationForm = () => {
 
   return (
     <DashboardLayout>
+      {loading && <FullPageLoader />}
       <div className="p-0 ml-0 md:ml-6 px-2 md:px-0">
         {/* ── Top Bar ── */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
@@ -378,7 +469,7 @@ const ApplicationForm = () => {
             <div className="flex items-center border border-gray-300 rounded overflow-hidden h-10 flex-1 w-full sm:max-w-[500px]">
               <input
                 type="text"
-                placeholder="Search by Application Number, Job Title, Payment Status..."
+                placeholder="Search by App No, Mobile, Email, Payment Status..."
                 className="flex-1 px-3 sm:px-4 text-xs sm:text-sm text-gray-700 focus:outline-none h-full bg-white"
                 value={searchQuery}
                 onChange={(e) => {
@@ -427,10 +518,19 @@ const ApplicationForm = () => {
                     Application No.
                   </th>
                   <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
-                    Job Title
+                    Candidate Name
+                  </th>
+                  <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
+                    Mobile
+                  </th>
+                  <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
+                    Email
                   </th>
                   <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
                     Payment Status
+                  </th>
+                  <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
+                    Date
                   </th>
                   <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
                     Action
@@ -438,9 +538,7 @@ const ApplicationForm = () => {
                 </tr>
               </thead>
 
-              {loading ? (
-                <TableSkeleton />
-              ) : filteredApplications.length === 0 ? (
+              {filteredApplications.length === 0 ? (
                 <EmptyState />
               ) : (
                 <tbody>
@@ -472,8 +570,14 @@ const ApplicationForm = () => {
                       <td className="px-4 py-4 text-center text-gray-700 font-medium">
                         {app.applicationNumber || "N/A"}
                       </td>
+                      <td className="px-4 py-4 text-center text-gray-700 font-bold">
+                        {app.candidateName}
+                      </td>
                       <td className="px-4 py-4 text-center text-gray-700">
-                        {getJobTitleForApplication(app)}
+                        {app.mobile || "N/A"}
+                      </td>
+                      <td className="px-4 py-4 text-center text-gray-700">
+                        {app.email || "N/A"}
                       </td>
                       <td className="px-4 py-4 text-center text-gray-700">
                         {role === "admin" ? (
@@ -512,10 +616,12 @@ const ApplicationForm = () => {
                           formatPaymentStatus(app.paymentStatus)
                         )}
                       </td>
+                      <td className="px-4 py-4 text-center text-gray-700 whitespace-nowrap">
+                        {app.createdAt ? new Date(app.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "N/A"}
+                      </td>
                       <td className="px-4 py-4 text-center">
                         <button
                           onClick={(e) => {
-                            e.stopPropagation();
                             navigate(`/applications/view/${app.id}`);
                           }}
                           className="text-[#3AB000] hover:text-[#2d8a00] transition-colors"
@@ -534,17 +640,7 @@ const ApplicationForm = () => {
 
         {/* ── Mobile Card View ── */}
         <div className="md:hidden space-y-3">
-          {loading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, idx) => (
-                <div key={idx} className="bg-white rounded border border-gray-200 p-4 animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                </div>
-              ))}
-            </div>
-          ) : filteredApplications.length === 0 ? (
+          {filteredApplications.length === 0 && !loading ? (
             <div className="bg-white rounded border border-gray-200 p-8 text-center text-gray-400 text-sm">
               {error ? (
                 <div className="flex flex-col items-center gap-2">
@@ -584,15 +680,21 @@ const ApplicationForm = () => {
                       </div>
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[11px] text-gray-500 mb-1">S.N: {indexOfFirst + idx + 1}</div>
-                    <div className="text-xs font-semibold text-gray-800 mb-1">
-                      App No: {app.applicationNumber || "N/A"}
-                    </div>
-                    <div className="text-[11px] text-gray-500 truncate">
-                      {getJobTitleForApplication(app)}
-                    </div>
-                  </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] text-gray-500 mb-1">S.N: {indexOfFirst + idx + 1}</div>
+            <div className="text-sm font-bold text-gray-900 mb-1 truncate">
+              {app.candidateName}
+            </div>
+            <div className="text-xs font-semibold text-gray-800 mb-1">
+              App No: {app.applicationNumber || "N/A"}
+            </div>
+            <div className="text-[11px] text-gray-500 truncate">
+              Mobile: {app.mobile || "N/A"}
+            </div>
+            <div className="text-[10px] text-gray-400 mt-1 italic">
+              Applied: {app.createdAt ? new Date(app.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "N/A"}
+            </div>
+          </div>
                   <div
                     className={`text-[11px] px-2 py-1 rounded-full border font-semibold ${
                       normalizePaymentStatus(app.paymentStatus) === "paid"
@@ -641,8 +743,8 @@ const ApplicationForm = () => {
 
                 <div className="space-y-2 text-sm text-gray-700 mb-2.5">
                   <div className="flex items-start">
-                    <span className="font-medium w-28 flex-shrink-0">Job Title:</span>
-                    <span className="flex-1">{getJobTitleForApplication(app)}</span>
+                    <span className="font-medium w-28 flex-shrink-0">Email:</span>
+                    <span className="flex-1 truncate">{app.email || "N/A"}</span>
                   </div>
                 </div>
 

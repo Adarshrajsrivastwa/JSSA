@@ -38,7 +38,7 @@ const JobPostingApplicants = () => {
 
         // Fetch all applications for this job posting
         const applicationsResponse = await applicationsAPI.getAll({ 
-          limit: 1000,
+          limit: 0,
           jobPostingId: id 
         });
         if (applicationsResponse.success && applicationsResponse.data) {

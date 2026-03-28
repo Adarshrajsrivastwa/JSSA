@@ -418,9 +418,6 @@ export default function ExamManagement() {
                             Active
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {exam.subject} · {exam.class} · {exam.type}
-                        </p>
                         <div className="mt-3 text-sm text-gray-700 space-y-1">
                           <p>
                             Questions:{" "}
@@ -480,9 +477,6 @@ export default function ExamManagement() {
                             Upcoming
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {exam.subject} · {exam.class} · {exam.type}
-                        </p>
                         <p className="text-xs text-gray-500 mt-2">
                           Start: {exam.startDate || "-"} | End:{" "}
                           {exam.endDate || "-"}
@@ -523,9 +517,6 @@ export default function ExamManagement() {
                             Ended
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {exam.subject} · {exam.class} · {exam.type}
-                        </p>
                         <p className="text-xs text-gray-500 mt-2">
                           Start: {exam.startDate || "-"} | End:{" "}
                           {exam.endDate || "-"}

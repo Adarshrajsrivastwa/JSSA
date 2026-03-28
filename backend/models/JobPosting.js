@@ -210,6 +210,7 @@ const jobPostingSchema = new mongoose.Schema(
 // Indexes
 // advtNo index removed - already has unique: true which creates an index
 jobPostingSchema.index({ status: 1 });
+jobPostingSchema.index({ createdAt: -1 });
 jobPostingSchema.index({ "post.en": "text", "post.hi": "text", "location.en": "text" });
 
 jobPostingSchema.pre("save", function normalizeHindiMojibake(next) {
