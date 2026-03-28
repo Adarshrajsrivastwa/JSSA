@@ -17,12 +17,23 @@ const ApplicationForm = () => {
   const itemsPerPage = 7;
 
   const [applications, setApplications] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [jobPostings, setJobPostings] = useState([]);
   const [selectedJobPostingId, setSelectedJobPostingId] = useState(null);
   const [selectedJobPosting, setSelectedJobPosting] = useState(null);
   const [jobPostingsLoading, setJobPostingsLoading] = useState(true);
   const [paymentDrafts, setPaymentDrafts] = useState({});
   const [updatingPaymentId, setUpdatingPaymentId] = useState(null);
+
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   const extractJobTitle = (posting) => {
     if (!posting) return null;
@@ -56,10 +67,13 @@ const ApplicationForm = () => {
   const fetchJobPostings = async () => {
     setJobPostingsLoading(true);
     try {
-      const response = await jobPostingsAPI.getAll({ limit: 0 });
+      const response = await jobPostingsAPI.getAll({ 
+        limit: 0, 
+        includeCounts: role === "admin" ? "true" : "false" 
+      });
       if (response.success && response.data) {
         const postings = response.data.postings.map((post) => ({
-          id: post._id,
+          id: post._id || post.id,
           advtNo: post.advtNo || "N/A",
           post: typeof post.post === "object" ? post.post.en : post.post,
           postHi: typeof post.post === 'object' ? post.post.hi : post.post,
@@ -67,50 +81,19 @@ const ApplicationForm = () => {
           status: post.status,
           lastDate: post.lastDate,
           createdAt: post.createdAt,
+          applicationCount: post.applicationCount || 0,
         }));
 
-        if (role === "admin") {
-          // Fetch application counts for each job
-          const postingsWithCounts = await Promise.all(
-            postings.map(async (job) => {
-              try {
-                const appsResponse = await applicationsAPI.getAll({
-                  jobPostingId: job.id,
-                  limit: 1,
-                });
-                return {
-                  ...job,
-                  applicationCount:
-                    appsResponse.success && appsResponse.data
-                      ? appsResponse.data.pagination?.total || 0
-                      : 0,
-                };
-              } catch {
-                return { ...job, applicationCount: 0 };
-              }
-            }),
-          );
-          // Ensure sorting: Active/Latest first, Inactive/Old bottom
-          const sorted = postingsWithCounts.sort((a, b) => {
-            const aOpen = isVacancyOpen(a.lastDate) && a.status !== "Inactive";
-            const bOpen = isVacancyOpen(b.lastDate) && b.status !== "Inactive";
-            
-            if (aOpen && !bOpen) return -1;
-            if (!aOpen && bOpen) return 1;
-            return new Date(b.createdAt) - new Date(a.createdAt);
-          });
-          setJobPostings(sorted);
-        } else {
-          const sorted = postings.sort((a, b) => {
-            const aOpen = isVacancyOpen(a.lastDate) && a.status !== "Inactive";
-            const bOpen = isVacancyOpen(b.lastDate) && b.status !== "Inactive";
-            
-            if (aOpen && !bOpen) return -1;
-            if (!aOpen && bOpen) return 1;
-            return new Date(b.createdAt) - new Date(a.createdAt);
-          });
-          setJobPostings(sorted);
-        }
+        // Ensure sorting: Active/Latest first, Inactive/Old bottom
+        const sorted = postings.sort((a, b) => {
+          const aOpen = isVacancyOpen(a.lastDate) && a.status !== "Inactive";
+          const bOpen = isVacancyOpen(b.lastDate) && b.status !== "Inactive";
+          
+          if (aOpen && !bOpen) return -1;
+          if (!aOpen && bOpen) return 1;
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+        setJobPostings(sorted);
       }
     } catch (err) {
       console.error("Fetch job postings error:", err);
@@ -121,13 +104,20 @@ const ApplicationForm = () => {
 
   // Fetch applications from API - backend automatically filters by role
   // Applicants will only see their own applications, admins see all
-  const fetchApplications = async (jobPostingId = null) => {
+  const fetchApplications = async (jobId = null) => {
     setLoading(true);
     setError(null);
     try {
-      const params = { limit: 0 };
-      if (jobPostingId) {
-        params.jobPostingId = jobPostingId;
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+        search: debouncedSearchQuery,
+        paymentStatus: paymentStatusFilter,
+      };
+      
+      const effectiveJobId = jobId || selectedJobPostingId;
+      if (effectiveJobId) {
+        params.jobPostingId = effectiveJobId;
       }
       
       const response = await applicationsAPI.getAll(params);
@@ -158,6 +148,9 @@ const ApplicationForm = () => {
         });
 
         setApplications(transformed);
+        setTotalPages(response.data.pagination?.pages || 1);
+        setTotalItems(response.data.pagination?.total || 0);
+        
         setPaymentDrafts(
           transformed.reduce((acc, app) => {
             acc[app.id] = normalizePaymentStatus(app.paymentStatus);
@@ -175,9 +168,6 @@ const ApplicationForm = () => {
 
   useEffect(() => {
     fetchJobPostings();
-    if (role !== "admin") {
-      fetchApplications();
-    }
   }, [role]);
 
   const getJobTitleForApplication = (app) => {
@@ -191,42 +181,23 @@ const ApplicationForm = () => {
 
   useEffect(() => {
     if (selectedJobPostingId) {
-      fetchApplications(selectedJobPostingId);
       // Fetch job posting details
       jobPostingsAPI.getById(selectedJobPostingId).then((response) => {
         if (response.success && response.data) {
           setSelectedJobPosting(response.data.posting);
         }
       });
-    } else if (role !== "admin") {
-      fetchApplications();
     }
-  }, [selectedJobPostingId, role]);
+    fetchApplications();
+  }, [selectedJobPostingId, role, currentPage, debouncedSearchQuery, paymentStatusFilter]);
 
   const statusColors = {
     Active: "text-[#3AB000] font-semibold",
     Inactive: "text-gray-500 font-semibold",
   };
 
-  // Filter + Search
-  const filteredApplications = applications.filter((app) => {
-    const matchesSearch = [app.applicationNumber, app.mobile, app.email, app.paymentStatus]
-      .join(" ")
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-
-    const appPaymentStatus = normalizePaymentStatus(app.paymentStatus);
-    const matchesPayment =
-      paymentStatusFilter === "all" || appPaymentStatus === paymentStatusFilter;
-
-    return matchesSearch && matchesPayment;
-  });
-
   // Pagination
-  const indexOfLast = currentPage * itemsPerPage;
-  const indexOfFirst = indexOfLast - itemsPerPage;
-  const currentRows = filteredApplications.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(filteredApplications.length / itemsPerPage);
+  const indexOfFirst = (currentPage - 1) * itemsPerPage;
 
   // Skeleton Loader
   const TableSkeleton = () => (
@@ -538,11 +509,11 @@ const ApplicationForm = () => {
                 </tr>
               </thead>
 
-              {filteredApplications.length === 0 ? (
+              {applications.length === 0 ? (
                 <EmptyState />
               ) : (
                 <tbody>
-                  {currentRows.map((app, idx) => (
+                  {applications.map((app, idx) => (
                     <tr
                       key={app.id}
                       onClick={() => navigate(`/applications/view/${app.id}`)}
@@ -640,7 +611,7 @@ const ApplicationForm = () => {
 
         {/* ── Mobile Card View ── */}
         <div className="md:hidden space-y-3">
-          {filteredApplications.length === 0 && !loading ? (
+          {applications.length === 0 && !loading ? (
             <div className="bg-white rounded border border-gray-200 p-8 text-center text-gray-400 text-sm">
               {error ? (
                 <div className="flex flex-col items-center gap-2">
@@ -657,7 +628,7 @@ const ApplicationForm = () => {
               )}
             </div>
           ) : (
-            currentRows.map((app, idx) => (
+            applications.map((app, idx) => (
               <div
                 key={app.id}
                 onClick={() => navigate(`/applications/view/${app.id}`)}
@@ -766,7 +737,7 @@ const ApplicationForm = () => {
         </div>
 
         {/* ── Pagination ── */}
-        {!loading && filteredApplications.length > 0 && (
+        {!loading && applications.length > 0 && (
           <div className="flex flex-col sm:flex-row justify-between sm:justify-end items-center gap-3 sm:gap-4 mt-6">
             <div className="text-xs sm:text-sm text-gray-600 sm:hidden">
               Page {currentPage} of {totalPages}

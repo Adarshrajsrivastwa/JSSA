@@ -39,6 +39,7 @@ const createPaperSchema = new mongoose.Schema(
     isPublic: { type: Boolean, default: true },
     shuffleQuestions: { type: Boolean, default: false },
     showResult: { type: Boolean, default: true },
+    resultDate: { type: String, default: "" }, // New field for scheduled result
     maxAttempts: { type: Number, default: 1, min: 0 },
     totalQuestions: { type: Number, default: 0, min: 0 },
     totalMarks: { type: Number, default: 0, min: 0 },
@@ -63,6 +64,7 @@ const createPaperSchema = new mongoose.Schema(
 
 createPaperSchema.index({ createdAt: -1 });
 createPaperSchema.index({ status: 1, createdAt: -1 });
+createPaperSchema.index({ assignedStudents: 1 });
 
 const CreatePaper = mongoose.model("CreatePaper", createPaperSchema);
 

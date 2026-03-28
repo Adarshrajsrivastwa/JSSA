@@ -1,7 +1,12 @@
 import express from "express";
 import { body, validationResult } from "express-validator";
 import CreatePaper from "../models/CreatePaper.js";
+import Application from "../models/Application.js";
+import Student from "../models/Student.js";
+import Attempt from "../models/Attempt.js";
+import QuestionBank from "../models/QuestionBank.js";
 import { authenticate } from "../middleware/auth.js";
+import { sendTestAssignmentEmail } from "../utils/email.js";
 
 const router = express.Router();
 
@@ -32,6 +37,7 @@ const normalizePayload = (body) => ({
   isPublic: toBooleanOrDefault(body.isPublic, true),
   shuffleQuestions: toBooleanOrDefault(body.shuffleQuestions, false),
   showResult: toBooleanOrDefault(body.showResult, true),
+  resultDate: body.resultDate || "",
   assignedStudents: Array.isArray(body.assignedStudents) ? body.assignedStudents : [],
   startDate: body.startDate || "",
   endDate: body.endDate || "",
@@ -85,6 +91,97 @@ router.get("/", async (req, res) => {
     console.error("Get create paper list error:", error);
     res.status(500).json({
       error: "Failed to fetch tests",
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/create-paper/assigned
+ * Get exams assigned to the current student
+ */
+router.get("/assigned", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "applicant") {
+      return res.json({ success: true, data: { tests: [] } });
+    }
+
+    // Parallel lookup for applications and student record
+    const [applications, student] = await Promise.all([
+      Application.find({ createdBy: req.user.id }).select("_id").lean(),
+      Student.findOne({ userId: req.user.id }).select("_id").lean()
+    ]);
+
+    const applicationIds = applications.map(app => app._id);
+    const studentId = student ? student._id : null;
+
+    // Find tests assigned to any of these IDs
+    const tests = await CreatePaper.find({
+      $or: [
+        { assignedStudents: { $in: applicationIds } },
+        { assignedStudents: req.user.id },
+        ...(studentId ? [{ assignedStudents: studentId }] : [])
+      ]
+    })
+    .populate({
+      path: "questionConfigs.questionId",
+      select: "question options _id" // Only fetch necessary fields
+    })
+    .lean();
+
+    // Fetch existing attempts for this user to calculate attemptsUsed
+    const userAttempts = await Attempt.find({ userId: req.user.id }).select("testId").lean();
+    const attemptCounts = userAttempts.reduce((acc, curr) => {
+      const id = curr.testId.toString();
+      acc[id] = (acc[id] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Process tests to add windowStatus and canStart based on current date
+    const now = new Date();
+    const processedTests = tests.map(test => {
+      let windowStatus = "active";
+      const attemptsUsed = attemptCounts[test._id.toString()] || 0;
+      let canStart = attemptsUsed < (test.maxAttempts || 1);
+
+      const startDate = test.startDate ? new Date(test.startDate) : null;
+      const endDate = test.endDate ? new Date(test.endDate) : null;
+
+      if (startDate && now < startDate) {
+        windowStatus = "upcoming";
+        canStart = false;
+      } else if (endDate && now > endDate) {
+        windowStatus = "ended";
+        canStart = false;
+      }
+
+      return {
+        ...test,
+        id: test._id.toString(), // Ensure frontend has 'id' field
+        windowStatus,
+        canStart,
+        attemptsUsed,
+        maxAttempts: test.maxAttempts || 1,
+        shuffleQuestions: test.shuffleQuestions,
+        // Map questions for frontend
+        questions: (test.questionConfigs || []).map(q => ({
+          id: q.questionId?._id,
+          question: q.questionId?.question,
+          options: q.questionId?.options,
+          marks: q.marks,
+          isCompulsory: q.isCompulsory
+        }))
+      };
+    });
+
+    res.json({
+      success: true,
+      data: { tests: processedTests }
+    });
+  } catch (error) {
+    console.error("Get assigned exams error:", error);
+    res.status(500).json({
+      error: "Failed to fetch assigned exams",
       message: error.message,
     });
   }
@@ -160,6 +257,30 @@ router.post("/", createValidation, async (req, res) => {
 
     await test.populate("createdBy", "email role");
 
+    // Send emails to assigned students asynchronously
+    if (test.assignedStudents && test.assignedStudents.length > 0) {
+      (async () => {
+        try {
+          const students = await Application.find({ _id: { $in: test.assignedStudents } });
+          for (const student of students) {
+            if (student.email) {
+              await sendTestAssignmentEmail(student.email, student.candidateName, {
+                title: test.title,
+                subject: test.subject,
+                duration: test.duration,
+                totalQuestions: test.totalQuestions,
+                passingMarks: test.passingMarks,
+                startDate: test.startDate,
+                endDate: test.endDate,
+              });
+            }
+          }
+        } catch (emailErr) {
+          console.error("Async creation assignment email error:", emailErr);
+        }
+      })();
+    }
+
     res.status(201).json({
       success: true,
       message: "Test created successfully",
@@ -191,9 +312,40 @@ router.put("/:id", async (req, res) => {
     if (!test) return res.status(404).json({ error: "Test not found" });
 
     const payload = normalizePayload(req.body);
+    
+    // Check for newly assigned students to send emails
+    const oldAssignedIds = (test.assignedStudents || []).map(id => id.toString());
+    const newAssignedIds = (payload.assignedStudents || []).map(id => id.toString());
+    
+    const newlyAssigned = newAssignedIds.filter(id => !oldAssignedIds.includes(id));
+
     Object.assign(test, payload);
     await test.save();
     await test.populate("createdBy", "email role");
+
+    // Send emails to newly assigned students asynchronously
+    if (newlyAssigned.length > 0) {
+      (async () => {
+        try {
+          const students = await Application.find({ _id: { $in: newlyAssigned } });
+          for (const student of students) {
+            if (student.email) {
+              await sendTestAssignmentEmail(student.email, student.candidateName, {
+                title: test.title,
+                subject: test.subject,
+                duration: test.duration,
+                totalQuestions: test.totalQuestions,
+                passingMarks: test.passingMarks,
+                startDate: test.startDate,
+                endDate: test.endDate,
+              });
+            }
+          }
+        } catch (emailErr) {
+          console.error("Async assignment email error:", emailErr);
+        }
+      })();
+    }
 
     res.json({
       success: true,
@@ -235,6 +387,96 @@ router.delete("/:id", async (req, res) => {
     console.error("Delete paper error:", error);
     res.status(500).json({
       error: "Failed to delete test",
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/create-paper/:id/submit
+ * Submit an exam attempt (applicant only)
+ */
+router.post("/:id/submit", authenticate, async (req, res) => {
+  try {
+    const test = await CreatePaper.findById(req.params.id).populate("questionConfigs.questionId");
+    if (!test) return res.status(404).json({ error: "Test not found" });
+
+    // Check attempts limit
+    const attemptsCount = await Attempt.countDocuments({
+      testId: test._id,
+      userId: req.user.id,
+    });
+
+    if (attemptsCount >= (test.maxAttempts || 1)) {
+      return res.status(400).json({
+        error: "Max attempts reached",
+        message: "You have already reached the maximum attempts for this test.",
+      });
+    }
+
+    const { answers, answeredCount, autoSubmitted } = req.body;
+
+    // Calculate score
+    let score = 0;
+    const testQuestions = test.questionConfigs || [];
+    
+    testQuestions.forEach(config => {
+      const qId = config.questionId?._id?.toString();
+      const studentAnswerIndex = answers[qId];
+      
+      if (studentAnswerIndex !== undefined) {
+        const correctOption = config.questionId?.correctAnswer; // Usually "A", "B", "C", "D" or the text
+        const options = config.questionId?.options || [];
+        
+        // Match by index (0=A, 1=B, etc.) or by text
+        const selectedOptionText = options[studentAnswerIndex];
+        
+        if (selectedOptionText === correctOption || 
+            String.fromCharCode(65 + studentAnswerIndex) === correctOption) {
+          score += config.marks || 1;
+        }
+      }
+    });
+
+    const attempt = await Attempt.create({
+      testId: test._id,
+      userId: req.user.id,
+      answers,
+      answeredCount,
+      autoSubmitted,
+      score,
+      totalQuestions: test.totalQuestions || 0,
+      endTime: new Date(),
+    });
+
+    // Determine if result should be shown instantly
+    const showInstant = test.showResult;
+    const resultDate = test.resultDate;
+    const now = new Date();
+    
+    let resultMessage = "";
+    if (showInstant) {
+      resultMessage = `You scored ${score} marks.`;
+    } else if (resultDate) {
+      resultMessage = `Your result will be declared on ${resultDate}.`;
+    } else {
+      resultMessage = "Your attempt has been saved. Results will be announced later.";
+    }
+
+    res.json({
+      success: true,
+      message: "Attempt submitted successfully",
+      data: { 
+        attemptId: attempt._id,
+        score: showInstant ? score : null,
+        showInstant,
+        resultMessage
+      },
+    });
+  } catch (error) {
+    console.error("Submit attempt error:", error);
+    res.status(500).json({
+      error: "Failed to submit attempt",
       message: error.message,
     });
   }

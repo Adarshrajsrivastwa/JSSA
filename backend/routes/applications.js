@@ -313,7 +313,16 @@ router.get("/", async (req, res) => {
 
     // Filter by job posting ID
     if (jobPostingId) {
-      query.jobPostingId = jobPostingId;
+      const targetPosting = await JobPosting.findById(jobPostingId).select("title post").lean();
+      if (targetPosting) {
+        const targetTitle = getJobTitleFromPosting(targetPosting);
+        query.$or = [
+          { jobPostingId: jobPostingId },
+          ...(targetTitle ? [{ jobTitle: targetTitle }] : [])
+        ];
+      } else {
+        query.jobPostingId = jobPostingId;
+      }
     }
 
     // Date range filter
@@ -331,10 +340,12 @@ router.get("/", async (req, res) => {
 
     // Search filter
     if (search) {
+      // Escape special regex characters to prevent "Regular expression is invalid" errors
+      const escapedSearch = String(search).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       query.$or = [
-        { candidateName: { $regex: search, $options: "i" } },
-        { mobile: { $regex: search, $options: "i" } },
-        { district: { $regex: search, $options: "i" } },
+        { candidateName: { $regex: escapedSearch, $options: "i" } },
+        { mobile: { $regex: escapedSearch, $options: "i" } },
+        { district: { $regex: escapedSearch, $options: "i" } },
       ];
     }
 
@@ -343,15 +354,26 @@ router.get("/", async (req, res) => {
       query.createdBy = req.user.id;
     }
 
-    const limitVal = limit !== undefined ? parseInt(limit) : 0; 
+    const limitVal = limit !== undefined ? parseInt(limit) : 10; // Default limit 10
     const pageVal = parseInt(page);
     const skip = (pageVal - 1) * limitVal;
 
+    // Optimized query for selection list (minimal fields)
+    const isSelectionList = req.query.minimal === "true";
+    
     let mongoQuery = Application.find(query)
       .sort({ createdAt: -1 })
       .allowDiskUse(true)
-      .populate("createdBy", "email phone role")
-      .populate("jobPostingId", "advtNo post title");
+      .lean(); // Faster query execution as it returns plain JS objects
+
+    if (isSelectionList) {
+      // Only select fields needed for student selection modal
+      mongoQuery = mongoQuery.select("candidateName fatherName mobile district category createdAt paymentStatus jobPostingId jobTitle");
+    } else {
+      mongoQuery = mongoQuery
+        .populate("createdBy", "email phone role")
+        .populate("jobPostingId", "advtNo post title");
+    }
 
     if (limitVal > 0) {
       mongoQuery = mongoQuery.skip(skip).limit(limitVal);
@@ -359,72 +381,18 @@ router.get("/", async (req, res) => {
 
     const applications = await mongoQuery;
 
-    const applicationObjects = applications.map((application) => application.toObject());
-    const requestedPosting = jobPostingId
-      ? await JobPosting.findById(jobPostingId).select("post title").lean()
-      : null;
-    const requestedFallbackTitle = getJobTitleFromPosting(requestedPosting);
-    const activePostings = await JobPosting.find({ status: "Active" })
-      .select("post title")
-      .sort({ createdAt: -1 })
-      .lean();
-    const globalFallbackTitle =
-      requestedFallbackTitle ||
-      (activePostings.length > 0 ? getJobTitleFromPosting(activePostings[0]) : null);
-    const unresolvedJobPostingIds = applicationObjects
-      .map((application) => {
-        const title = getJobTitleFromPosting(application.jobPostingId) || application.jobTitle || null;
-        if (title) return null;
-        if (application.jobPostingId && typeof application.jobPostingId === "object") {
-          return application.jobPostingId._id?.toString() || null;
-        }
-        if (application.jobPostingId) return application.jobPostingId.toString();
-        return null;
-      })
-      .filter(Boolean);
-
-    const uniqueUnresolvedIds = [...new Set(unresolvedJobPostingIds)];
-    let fallbackTitleMap = new Map();
-    if (uniqueUnresolvedIds.length > 0) {
-      const fallbackPostings = await JobPosting.find({
-        _id: { $in: uniqueUnresolvedIds },
-      }).select("_id post title");
-      fallbackTitleMap = new Map(
-        fallbackPostings.map((posting) => [posting._id.toString(), getJobTitleFromPosting(posting.toObject())]),
-      );
-    }
-
-    const applicationsWithJobTitle = applicationObjects.map((applicationObj) => {
-      const primaryTitle = getJobTitleFromPosting(applicationObj.jobPostingId) || applicationObj.jobTitle || null;
-      if (primaryTitle) {
-        return { ...applicationObj, jobTitle: primaryTitle };
-      }
-
-      const postingId =
-        applicationObj.jobPostingId && typeof applicationObj.jobPostingId === "object"
-          ? applicationObj.jobPostingId._id?.toString()
-          : applicationObj.jobPostingId?.toString();
-
-      return {
-        ...applicationObj,
-        jobTitle: postingId
-          ? fallbackTitleMap.get(postingId) || globalFallbackTitle || null
-          : globalFallbackTitle || null,
-      };
-    });
-
     const total = await Application.countDocuments(query);
-
+    
     res.json({
       success: true,
       data: {
-        applications: applicationsWithJobTitle,
+        applications,
         pagination: {
-          page: parseInt(page),
-          limit: limitVal,
           total,
-          pages: limitVal > 0 ? Math.ceil(total / limitVal) : 1,
-        },
+          page: pageVal,
+          limit: limitVal,
+          pages: limitVal > 0 ? Math.ceil(total / limitVal) : 1
+        }
       },
     });
   } catch (error) {

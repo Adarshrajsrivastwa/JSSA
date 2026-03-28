@@ -200,7 +200,8 @@ export const jobPostingsAPI = {
     if (params.search) queryParams.append("search", params.search);
     if (params.page) queryParams.append("page", params.page);
     if (params.limit !== undefined) queryParams.append("limit", params.limit);
-
+    if (params.includeCounts) queryParams.append("includeCounts", params.includeCounts);
+    
     const queryString = queryParams.toString();
     const url = `/job-postings${queryString ? `?${queryString}` : ""}`;
     return apiRequest(url, { method: "GET" });
@@ -575,6 +576,17 @@ export const createPaperAPI = {
 
   delete: async (id) => {
     return apiRequest(`/create-paper/${id}`, { method: "DELETE" });
+  },
+
+  getAssigned: async () => {
+    return apiRequest("/create-paper/assigned", { method: "GET" });
+  },
+
+  submitAttempt: async (id, data) => {
+    return apiRequest(`/create-paper/${id}/submit`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   },
 };
 

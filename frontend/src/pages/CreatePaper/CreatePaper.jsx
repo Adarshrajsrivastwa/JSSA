@@ -26,6 +26,7 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
+  AlertTriangle,
   Check,
   ArrowRight,
 } from "lucide-react";
@@ -335,6 +336,7 @@ const EMPTY_FORM = {
   isPublic: true,
   shuffleQuestions: false,
   showResult: true,
+  resultDate: "",
   maxAttempts: "1",
   pipelineStageCount: 5,
 };
@@ -365,6 +367,7 @@ const normalizeTest = (item) => ({
   isPublic: item?.isPublic !== false,
   shuffleQuestions: Boolean(item?.shuffleQuestions),
   showResult: item?.showResult !== false,
+  resultDate: item?.resultDate || "",
   maxAttempts:
     item?.maxAttempts === 0 ? 0 : Number(item?.maxAttempts ?? 1),
   assignedStudents: Array.isArray(item?.assignedStudents)
@@ -416,7 +419,8 @@ function DetailsModal({ test, onClose }) {
               ["Duration", `${test.duration} min`],
               ["Visibility", test.isPublic ? "Public" : "Private"],
               ["Shuffle Questions", test.shuffleQuestions ? "Yes" : "No"],
-              ["Show Result", test.showResult ? "Immediately" : "After review"],
+              ["Show Result", test.showResult ? "Immediately" : "Scheduled"],
+              ...(test.showResult === false && test.resultDate ? [["Result Date", test.resultDate]] : []),
               [
                 "Max Attempts",
                 test.maxAttempts === 0 ? "Unlimited" : test.maxAttempts,
@@ -500,9 +504,10 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
           isPublic: editingTest.isPublic,
           shuffleQuestions: editingTest.shuffleQuestions,
           showResult: editingTest.showResult,
+          resultDate: editingTest.resultDate || "",
           maxAttempts: editingTest.maxAttempts.toString(),
         }
-      : { ...EMPTY_FORM, assignedStudents: [] },
+      : { ...EMPTY_FORM, assignedStudents: [], resultDate: "" },
   );
   const [activeTab, setActiveTab] = useState("details");
   const [showQuestionPicker, setShowQuestionPicker] = useState(false);
@@ -510,9 +515,11 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
   const [qFilterDifficulty, setQFilterDifficulty] = useState("all");
   const [applicants, setApplicants] = useState([]);
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
+  const [applicantError, setApplicantError] = useState("");
   const [studentStartDate, setStudentStartDate] = useState("");
   const [studentEndDate, setStudentEndDate] = useState("");
   const [localStudentSearch, setLocalStudentSearch] = useState("");
+  const [debouncedStudentSearch, setDebouncedStudentSearch] = useState("");
   const [isTitleDropdownOpen, setIsTitleDropdownOpen] = useState(false);
   const [titleSearch, setTitleSearch] = useState("");
   const titleDropdownRef = useRef(null);
@@ -539,45 +546,78 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
     );
   }, [titleOptions, titleSearch]);
 
-  // Filtered applicants based on local search
-  const filteredApplicants = useMemo(() => {
-    if (!localStudentSearch) return applicants;
-    const q = localStudentSearch.toLowerCase();
-    return applicants.filter((a) =>
-      [a.candidateName, a.fatherName, a.mobile, a.district, a.category]
-        .join(" ")
-        .toLowerCase()
-        .includes(q),
-    );
-  }, [applicants, localStudentSearch]);
+  // Debounce student search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedStudentSearch(localStudentSearch);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [localStudentSearch]);
 
-  // Fetch applicants when title or dates change
+  const filteredApplicants = applicants; // Filtering is now done on server-side for search
+
+  // Fetch applicants when title, dates or debounced search change
   useEffect(() => {
     const fetchApplicants = async () => {
-      // Find jobPostingId for the selected title
-      const posting = postings.find(
-        (p) =>
-          String(p?.title || p?.post?.en || p?.advtNo || "").trim() ===
-          formData.title?.trim(),
-      );
+      if (!formData.title) {
+        setApplicants([]);
+        return;
+      }
 
-      const params = { limit: 0, paymentStatus: "paid" };
-      if (posting?._id) params.jobPostingId = posting._id;
+      // Find jobPostingId for the selected title
+      const posting = postings.find((p) => {
+        const title = String(p?.title || "").trim();
+        const postEn = String(p?.post?.en || "").trim();
+        const postHi = String(p?.post?.hi || "").trim();
+        const advtNo = String(p?.advtNo || "").trim();
+        const currentTitle = formData.title.trim();
+
+        return (
+          title === currentTitle ||
+          postEn === currentTitle ||
+          postHi === currentTitle ||
+          advtNo === currentTitle
+        );
+      });
+
+      const params = { 
+        limit: 0, // Load ALL paid applicants for the selected title
+        paymentStatus: "paid",
+        minimal: "true", // Use minimal fields for maximum speed
+        search: debouncedStudentSearch // Server-side search
+      };
+
+      if (posting?._id) {
+        params.jobPostingId = posting._id;
+      } else {
+        // Fallback: search by title string directly if no ID match
+        params.search = params.search ? `${params.search} ${formData.title}` : formData.title;
+      }
+
       if (studentStartDate) params.startDate = studentStartDate;
       if (studentEndDate) params.endDate = studentEndDate;
 
       setIsLoadingApplicants(true);
-      const res = await applicationsAPI.getAll(params);
-      if (res?.success) {
-        setApplicants(res.data?.applications || []);
-      } else {
+      setApplicantError("");
+      try {
+        const res = await applicationsAPI.getAll(params);
+        if (res?.success) {
+          setApplicants(res.data?.applications || []);
+        } else {
+          setApplicants([]);
+          setApplicantError(res.error || "No applicants found matching your filters.");
+        }
+      } catch (err) {
+        console.error("Error fetching applicants:", err);
+        setApplicantError("Failed to fetch applicants. Database connection timed out.");
         setApplicants([]);
+      } finally {
+        setIsLoadingApplicants(false);
       }
-      setIsLoadingApplicants(false);
     };
 
     fetchApplicants();
-  }, [formData.title, postings, studentStartDate, studentEndDate]);
+  }, [formData.title, postings, studentStartDate, studentEndDate, debouncedStudentSearch]);
 
   const toggleStudent = (studentId) => {
     setFormData((prev) => {
@@ -1022,7 +1062,25 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
 
               {isLoadingApplicants ? (
                 <div className="py-10 text-center text-sm text-gray-400">
-                  Loading applicants...
+                  <div className="animate-spin inline-block w-6 h-6 border-4 border-t-[#3AB000] border-gray-200 rounded-full mb-3"></div>
+                  <p>Loading applicants...</p>
+                </div>
+              ) : applicantError ? (
+                <div className="py-10 text-center text-sm text-red-500 bg-red-50 border border-dashed border-red-200 rounded p-6">
+                  <AlertTriangle className="w-8 h-8 mx-auto mb-3 opacity-50" />
+                  <p className="font-bold mb-1">Database Connection Error</p>
+                  <p className="text-xs text-red-400 max-w-xs mx-auto mb-4">
+                    {applicantError}
+                  </p>
+                  <button
+                    onClick={() => {
+                      // Trigger a re-fetch by updating title slightly or just calling the effect again
+                      setFormData(prev => ({ ...prev }));
+                    }}
+                    className="px-4 py-2 bg-red-100 text-red-700 rounded text-xs font-bold hover:bg-red-200 transition-colors"
+                  >
+                    Retry Connection
+                  </button>
                 </div>
               ) : filteredApplicants.length === 0 ? (
                 <div className="py-10 text-center text-sm text-gray-400 bg-white border border-dashed border-gray-300 rounded">
@@ -1164,6 +1222,24 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
                   </div>
                 ))}
               </div>
+
+              {!formData.showResult && (
+                <div className="p-3 bg-amber-50 rounded border border-amber-200 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <label className="block text-xs font-bold text-amber-800 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                    <Calendar size={14} /> Result Declaration Date
+                  </label>
+                  <input
+                    type="date"
+                    name="resultDate"
+                    value={formData.resultDate}
+                    onChange={handleInput}
+                    className="w-full px-3 py-2 border border-amber-300 rounded text-sm focus:ring-2 focus:ring-[#3AB000] focus:border-[#3AB000] outline-none bg-white"
+                  />
+                  <p className="text-[10px] text-amber-600 mt-1.5 italic">
+                    Students will see a message with this date after submitting the test.
+                  </p>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -1628,44 +1704,6 @@ export default function TestManagement() {
     );
   };
 
-  const handleExport = () => {
-    const rows = [
-      [
-        "Title",
-        "Subject",
-        "Class",
-        "Type",
-        "Difficulty",
-        "Questions",
-        "Marks",
-        "Duration",
-        "Status",
-        "Attempts",
-        "Avg Score",
-      ],
-      ...filtered.map((t) => [
-        t.title,
-        t.subject,
-        t.class,
-        t.type,
-        t.difficulty,
-        t.totalQuestions,
-        t.totalMarks,
-        t.duration,
-        t.status,
-        t.attempts,
-        t.avgScore,
-      ]),
-    ]
-      .map((r) => r.join(","))
-      .join("\n");
-    const a = Object.assign(document.createElement("a"), {
-      href: URL.createObjectURL(new Blob([rows], { type: "text/csv" })),
-      download: `tests-${new Date().toISOString().split("T")[0]}.csv`,
-    });
-    a.click();
-  };
-
   return (
     <DashboardLayout>
       <div className="min-h-screen bg-white ml-0 p-0 md:ml-6 px-2 md:px-0">
@@ -1750,12 +1788,6 @@ export default function TestManagement() {
             </div>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <button
-              onClick={handleExport}
-              className="bg-black hover:bg-[#3AB000] text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-sm transition-colors flex items-center gap-2 flex-1 sm:flex-none justify-center"
-            >
-              <Download size={15} /> Export CSV
-            </button>
             <button
               onClick={() => {
                 setEditingTest(null);

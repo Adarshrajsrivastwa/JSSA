@@ -1569,3 +1569,111 @@ export async function generateAndSaveApplicationPDF(applicationData, jobPosting)
     return { success: false, error: error.message };
   }
 }
+
+/**
+ * Send test assignment notification email
+ */
+export async function sendTestAssignmentEmail(studentEmail, studentName, testDetails) {
+  try {
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.warn("Email not configured. Skipping test assignment email.");
+      return { success: false, message: "Email not configured" };
+    }
+
+    if (!studentEmail) {
+      console.warn("Student email not provided. Skipping test assignment email.");
+      return { success: false, message: "Student email not provided" };
+    }
+
+    const transporter = createTransporter();
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f5f5f5; }
+    .container { background-color: #ffffff; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .header { background: linear-gradient(135deg, #3AB000 0%, #2d8a00 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 30px; }
+    .section { margin-bottom: 25px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .section-title { background-color: #3AB000; color: white; padding: 12px 20px; font-weight: 700; font-size: 16px; margin: 0; }
+    .section-content { padding: 20px; background-color: #fafafa; }
+    .detail-row { display: flex; padding: 10px 0; border-bottom: 1px solid #e8e8e8; }
+    .detail-label { font-weight: 600; color: #555; width: 200px; flex-shrink: 0; }
+    .detail-value { color: #333; flex: 1; }
+    .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0; color: #666; font-size: 14px; }
+    .btn { display: inline-block; background-color: #3AB000; color: white; padding: 10px 25px; text-decoration: none; border-radius: 5px; font-weight: 600; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📚 New Test Assigned!</h1>
+      <p style="margin: 10px 0 0 0; font-size: 16px;">जन स्वास्थ्य सहायता अभियान (JSSA)</p>
+    </div>
+
+    <p>Dear <strong>${studentName}</strong>,</p>
+    <p>You have been assigned a new test. Please check the details below:</p>
+
+    <div class="section">
+      <div class="section-title">Test Details / टेस्ट विवरण</div>
+      <div class="section-content">
+        <div class="detail-row">
+          <div class="detail-label">Test Title:</div>
+          <div class="detail-value"><strong>${testDetails.title}</strong></div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Duration:</div>
+          <div class="detail-value">${testDetails.duration} Minutes</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Total Questions:</div>
+          <div class="detail-value">${testDetails.totalQuestions}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Passing Marks:</div>
+          <div class="detail-value">${testDetails.passingMarks}</div>
+        </div>
+        ${testDetails.startDate ? `
+        <div class="detail-row">
+          <div class="detail-label">Start Date:</div>
+          <div class="detail-value">${testDetails.startDate}</div>
+        </div>` : ""}
+        ${testDetails.endDate ? `
+        <div class="detail-row">
+          <div class="detail-label">End Date:</div>
+          <div class="detail-value">${testDetails.endDate}</div>
+        </div>` : ""}
+      </div>
+    </div>
+
+    <div style="text-align: center;">
+      <p>Please login to your dashboard to attempt the test.</p>
+      <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/login" class="btn">Login to Dashboard</a>
+    </div>
+
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} JSS Abhiyan. All rights reserved.</p>
+      <p>This is an automated message, please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    const mailOptions = {
+      from: `"JSSA Exam Portal" <${process.env.SMTP_USER}>`,
+      to: studentEmail,
+      subject: `New Test Assigned: ${testDetails.title}`,
+      html: htmlContent,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Test assignment email sent:", info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error("Send test assignment email error:", error);
+    return { success: false, error: error.message };
+  }
+}

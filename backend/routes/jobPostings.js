@@ -93,12 +93,26 @@ router.get("/", async (req, res) => {
 
     const postings = await mongoQuery;
 
+    // Optional: Include application counts for each posting (for admin view)
+    let postingsWithCounts = postings;
+    if (req.query.includeCounts === "true") {
+      postingsWithCounts = await Promise.all(
+        postings.map(async (post) => {
+          const count = await Application.countDocuments({ jobPostingId: post._id });
+          return {
+            ...post.toObject(),
+            applicationCount: count,
+          };
+        }),
+      );
+    }
+
     const total = await JobPosting.countDocuments(query);
 
     res.json({
       success: true,
       data: {
-        postings,
+        postings: postingsWithCounts,
         pagination: {
           page: parseInt(page),
           limit: limitVal,
