@@ -26,7 +26,6 @@ const questionConfigSchema = new mongoose.Schema(
 const createPaperSchema = new mongoose.Schema(
   {
     title: { type: String, required: [true, "Title is required"], trim: true },
-    subject: { type: String, default: "", trim: true },
     class: { type: String, default: "", trim: true },
     type: { type: String, default: "", trim: true },
     difficulty: { type: String, default: "Mixed", trim: true },

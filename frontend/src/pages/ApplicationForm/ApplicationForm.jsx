@@ -102,15 +102,20 @@ const ApplicationForm = () => {
     }
   };
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   // Fetch applications from API - backend automatically filters by role
   // Applicants will only see their own applications, admins see all
   const fetchApplications = async (jobId = null) => {
-    setLoading(true);
+    // Only use full page loader on initial fetch or when changing jobs
+    const isInitialLoad = !applications.length || jobId !== null;
+    if (isInitialLoad) setLoading(true);
+    else setIsRefreshing(true); // Small spinner for search/pagination
     setError(null);
     try {
       const params = {
         page: currentPage,
-        limit: itemsPerPage,
+        limit: debouncedSearchQuery ? 100 : itemsPerPage, // Show more results when searching
         search: debouncedSearchQuery,
         paymentStatus: paymentStatusFilter,
       };
@@ -122,8 +127,9 @@ const ApplicationForm = () => {
       
       const response = await applicationsAPI.getAll(params);
       if (response.success && response.data) {
-        // Transform API data to match frontend format
+        // ... transform data ...
         const transformed = response.data.applications.map((app) => {
+          // ... same as before ...
           const posting =
             app.jobPostingId && typeof app.jobPostingId === "object"
               ? app.jobPostingId
@@ -163,6 +169,7 @@ const ApplicationForm = () => {
       console.error("Fetch applications error:", err);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -450,7 +457,8 @@ const ApplicationForm = () => {
                   setCurrentPage(1);
                 }}
               />
-              <button className="bg-[#3AB000] hover:bg-[#2d8a00] text-white text-xs sm:text-sm px-4 sm:px-6 h-full font-medium transition-colors whitespace-nowrap">
+              <button className="bg-[#3AB000] hover:bg-[#2d8a00] text-white text-xs sm:text-sm px-4 sm:px-6 h-full font-medium transition-colors whitespace-nowrap flex items-center gap-2">
+                {isRefreshing && <Loader2 className="w-3 h-3 animate-spin" />}
                 Search
               </button>
             </div>
@@ -514,7 +522,7 @@ const ApplicationForm = () => {
               {applications.length === 0 ? (
                 <EmptyState />
               ) : (
-                <tbody>
+                <tbody className={isRefreshing ? "opacity-50 pointer-events-none" : ""}>
                   {applications.map((app, idx) => (
                     <tr
                       key={app.id}

@@ -90,7 +90,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 // import DashboardLayout from "../components/DashboardLayout";
 // import { User, Edit, GraduationCap } from "lucide-react";
 
-// const StudentManagement = () => {
+// const My Exam = () => {
 //   const students = [
 //     {
 //       id: "STU2025123",

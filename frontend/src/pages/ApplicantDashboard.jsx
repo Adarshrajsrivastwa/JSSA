@@ -258,7 +258,7 @@ export default function ApplicantDashboard() {
                   Assigned Tests
                 </h2>
                 <button
-                  onClick={() => navigate("/exam-management")}
+                  onClick={() => navigate("/my-exam")}
                   className="text-[#3AB000] text-sm font-semibold hover:underline"
                 >
                   Go to Exam Portal →
@@ -275,7 +275,7 @@ export default function ApplicantDashboard() {
                           ? "bg-green-50 border-green-200"
                           : "bg-blue-50 border-blue-200"
                       }`}
-                      onClick={() => navigate("/exam-management")}
+                      onClick={() => navigate("/my-exam")}
                     >
                       <div className="flex items-center justify-between mb-3">
                         <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${

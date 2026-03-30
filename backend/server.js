@@ -15,6 +15,7 @@ import noticesRoutes from "./routes/notices.js";
 import uploadRoutes from "./routes/upload.js";
 import questionBankRoutes from "./routes/questionBank.js";
 import createPaperRoutes from "./routes/createPaper.js";
+import testResultRoutes from "./routes/testResult.js";
 import { connectDB } from "./config/database.js";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -143,6 +144,7 @@ app.use("/api/notices", noticesRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/question-bank", questionBankRoutes);
 app.use("/api/create-paper", createPaperRoutes);
+app.use("/api/test-result", testResultRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -50,7 +50,7 @@ const Sidebar = () => {
       ],
     },
     {
-      name: "Exam Management",
+      name: "MY EXAM",
       icon: FileQuestion,
       path: "/exam-management",
     },

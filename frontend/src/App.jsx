@@ -15,7 +15,7 @@ import JobPostingApplicants from "./pages/JobPosting/JobPostingApplicants.jsx";
 import QuestionBank from "./pages/QuestionBank/QuestionBank.jsx";
 import CreatePaper from "./pages/CreatePaper/CreatePaper.jsx";
 import TestResult from "./pages/TestResult/TestResult.jsx";
-import Exam from "./pages/ExamManagement/Exam.jsx";
+import Exam from "./pages/MyExam/MyExam.jsx";
 
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -86,7 +86,7 @@ function App() {
               }
             />
             <Route
-              path="/exam-management"
+              path="/my-exam"
               element={
                 <RequireRole allow={["applicant"]}>
                   <Exam />

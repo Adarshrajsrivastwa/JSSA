@@ -29,6 +29,9 @@ import {
   AlertTriangle,
   Check,
   ArrowRight,
+  Monitor,
+  HelpCircle,
+  Settings,
 } from "lucide-react";
 
 // ─── Static Mock Data ─────────────────────────────────────────────────────────
@@ -36,7 +39,6 @@ const MOCK_TESTS = [
   {
     id: 1,
     title: "Algebra Basics - Unit Test",
-    subject: "Mathematics",
     class: "Class 10A",
     type: "Unit Test",
     difficulty: "Medium",
@@ -63,7 +65,6 @@ const MOCK_TESTS = [
   {
     id: 2,
     title: "Human Body Systems",
-    subject: "Biology",
     class: "Class 9B",
     type: "Mid Term",
     difficulty: "Hard",
@@ -87,220 +88,17 @@ const MOCK_TESTS = [
     pipeline: { currentStage: 4, completedStages: [0, 1, 2, 3] },
     questionConfigs: [],
   },
-  {
-    id: 3,
-    title: "Newton's Laws of Motion",
-    subject: "Physics",
-    class: "Class 11C",
-    type: "Weekly Test",
-    difficulty: "Easy",
-    totalQuestions: 20,
-    totalMarks: 50,
-    passingMarks: 20,
-    duration: 45,
-    status: "draft",
-    attempts: 0,
-    avgScore: 0,
-    description:
-      "Weekly assessment covering Newton's three laws and applications.",
-    tags: ["physics", "newton", "weekly"],
-    startDate: "",
-    endDate: "",
-    isPublic: false,
-    shuffleQuestions: true,
-    showResult: true,
-    maxAttempts: 3,
-    createdDate: "2024-03-10T14:00:00Z",
-    pipeline: { currentStage: 0, completedStages: [] },
-    questionConfigs: [],
-  },
-  {
-    id: 4,
-    title: "Periodic Table & Elements",
-    subject: "Chemistry",
-    class: "Class 11A",
-    type: "Quiz",
-    difficulty: "Easy",
-    totalQuestions: 15,
-    totalMarks: 30,
-    passingMarks: 12,
-    duration: 20,
-    status: "published",
-    attempts: 210,
-    avgScore: 82,
-    description:
-      "Quick quiz on periodic table groups, periods and element properties.",
-    tags: ["chemistry", "periodic-table", "quiz"],
-    startDate: "2024-03-08",
-    endDate: "2024-03-22",
-    isPublic: true,
-    shuffleQuestions: true,
-    showResult: true,
-    maxAttempts: 0,
-    createdDate: "2024-03-07T11:00:00Z",
-    pipeline: { currentStage: 3, completedStages: [0, 1, 2] },
-    questionConfigs: [],
-  },
-  {
-    id: 5,
-    title: "World War II – Causes & Effects",
-    subject: "History",
-    class: "Class 10B",
-    type: "Unit Test",
-    difficulty: "Mixed",
-    totalQuestions: 30,
-    totalMarks: 100,
-    passingMarks: 40,
-    duration: 60,
-    status: "draft",
-    attempts: 0,
-    avgScore: 0,
-    description:
-      "In-depth test on the origins, major events and aftermath of World War II.",
-    tags: ["history", "wwii", "unit-test"],
-    startDate: "",
-    endDate: "",
-    isPublic: false,
-    shuffleQuestions: false,
-    showResult: false,
-    maxAttempts: 1,
-    createdDate: "2024-03-12T08:00:00Z",
-    pipeline: { currentStage: 1, completedStages: [0] },
-    questionConfigs: [],
-  },
-  {
-    id: 6,
-    title: "Computer Networks Basics",
-    subject: "Computer Science",
-    class: "Class 12A",
-    type: "Chapter Test",
-    difficulty: "Medium",
-    totalQuestions: 22,
-    totalMarks: 55,
-    passingMarks: 22,
-    duration: 50,
-    status: "published",
-    attempts: 67,
-    avgScore: 70,
-    description: "Covers OSI model, TCP/IP, network topologies and protocols.",
-    tags: ["cs", "networks", "chapter-test"],
-    startDate: "2024-03-15",
-    endDate: "2024-04-15",
-    isPublic: true,
-    shuffleQuestions: true,
-    showResult: true,
-    maxAttempts: 2,
-    createdDate: "2024-03-14T10:30:00Z",
-    pipeline: { currentStage: 2, completedStages: [0, 1] },
-    questionConfigs: [],
-  },
 ];
 
 const MOCK_QUESTION_BANK = [
   {
     id: 1,
     question: "What is the value of x in 2x + 5 = 11?",
-    subject: "Mathematics",
     class: "Class 10",
     topic: "Algebra",
     marks: 4,
     difficulty: "Easy",
     options: ["x=2", "x=3", "x=4", "x=5"],
-  },
-  {
-    id: 2,
-    question: "Which organelle is called the powerhouse of the cell?",
-    subject: "Biology",
-    class: "Class 9",
-    topic: "Cell Biology",
-    marks: 2,
-    difficulty: "Easy",
-    options: ["Nucleus", "Mitochondria", "Ribosome", "Golgi"],
-  },
-  {
-    id: 3,
-    question: "State Newton's First Law of Motion.",
-    subject: "Physics",
-    class: "Class 11",
-    topic: "Mechanics",
-    marks: 5,
-    difficulty: "Medium",
-    options: [],
-  },
-  {
-    id: 4,
-    question: "What is the atomic number of Carbon?",
-    subject: "Chemistry",
-    class: "Class 11",
-    topic: "Periodic Table",
-    marks: 2,
-    difficulty: "Easy",
-    options: ["6", "8", "12", "14"],
-  },
-  {
-    id: 5,
-    question: "When did World War II begin?",
-    subject: "History",
-    class: "Class 10",
-    topic: "Modern History",
-    marks: 2,
-    difficulty: "Easy",
-    options: ["1939", "1941", "1942", "1945"],
-  },
-  {
-    id: 6,
-    question: "What does CPU stand for?",
-    subject: "Computer Science",
-    class: "Class 12",
-    topic: "Hardware",
-    marks: 1,
-    difficulty: "Easy",
-    options: [
-      "Central Processing Unit",
-      "Computer Power Unit",
-      "Core Processing Unit",
-      "Central Power Unit",
-    ],
-  },
-  {
-    id: 7,
-    question: "Solve: 3x² - 12 = 0",
-    subject: "Mathematics",
-    class: "Class 10",
-    topic: "Quadratics",
-    marks: 4,
-    difficulty: "Hard",
-    options: ["x=±2", "x=±3", "x=4", "x=±4"],
-  },
-  {
-    id: 8,
-    question: "What is the function of the respiratory system?",
-    subject: "Biology",
-    class: "Class 9",
-    topic: "Body Systems",
-    marks: 3,
-    difficulty: "Medium",
-    options: [],
-  },
-  {
-    id: 9,
-    question: "Explain the concept of inertia with an example.",
-    subject: "Physics",
-    class: "Class 11",
-    topic: "Mechanics",
-    marks: 6,
-    difficulty: "Hard",
-    options: [],
-  },
-  {
-    id: 10,
-    question: "What is Ohm's Law?",
-    subject: "Physics",
-    class: "Class 11",
-    topic: "Electricity",
-    marks: 3,
-    difficulty: "Medium",
-    options: ["V=IR", "V=I/R", "V=I+R", "V=I²R"],
   },
 ];
 
@@ -349,12 +147,16 @@ const normalizeTest = (item) => ({
   questionConfigs: Array.isArray(item?.questionConfigs)
     ? item.questionConfigs.map((cfg) => ({
         questionId: String(cfg?.questionId?._id || cfg?.questionId || ""),
+        questionText: cfg?.questionId?.question || "",
+        options: cfg?.questionId?.options || [],
         marks: Number(cfg?.marks || 0),
         isCompulsory: Boolean(cfg?.isCompulsory),
       }))
     : [],
   totalQuestions: Number(item?.totalQuestions || 0),
-  totalMarks: Number(item?.totalMarks || 0),
+  totalMarks: Number(item?.totalMarks || (Array.isArray(item?.questionConfigs) 
+    ? item.questionConfigs.reduce((s, c) => s + Number(c.marks || 0), 0) 
+    : 0)),
   passingMarks: Number(item?.passingMarks || 0),
   duration: Number(item?.duration || 0),
   status: item?.status === "published" ? "published" : "draft",
@@ -371,7 +173,7 @@ const normalizeTest = (item) => ({
   maxAttempts:
     item?.maxAttempts === 0 ? 0 : Number(item?.maxAttempts ?? 1),
   assignedStudents: Array.isArray(item?.assignedStudents)
-    ? item.assignedStudents.map((s) => String(s?._id || s || ""))
+    ? item.assignedStudents.map((s) => (typeof s === 'object' ? s : { _id: String(s) }))
     : [],
   createdDate: item?.createdDate || item?.createdAt || new Date().toISOString(),
   rewards: Array.isArray(item?.rewards) ? item.rewards : [],
@@ -392,94 +194,294 @@ const inputCls =
 // ─── Detail Modal ─────────────────────────────────────────────────────────────
 function DetailsModal({ test, onClose }) {
   const stageCount = test.pipelineStageCount || 5;
+  const assigned = Array.isArray(test.assignedStudents) ? test.assignedStudents : [];
+  const questions = Array.isArray(test.questionConfigs) ? test.questionConfigs : [];
+  const [activeTab, setActiveTab] = useState("students");
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded w-full max-w-2xl max-h-[88vh] overflow-hidden flex flex-col shadow-2xl border border-gray-200 overflow-x-hidden">
-        <div
-          style={{ backgroundColor: "#3AB000" }}
-          className="text-white px-6 py-4 flex items-start justify-between shrink-0"
-        >
-          <div className="max-w-[90%]">
-            <h3 className="text-lg font-bold break-words">{test.title}</h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors"
-          >
-            <X size={18} />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {[
-              ["Description", test.description || "—"],
-              ["Questions", test.totalQuestions],
-              ["Total Marks", test.totalMarks],
-              ["Passing Marks", test.passingMarks],
-              ["Duration", `${test.duration} min`],
-              ["Visibility", test.isPublic ? "Public" : "Private"],
-              ["Shuffle Questions", test.shuffleQuestions ? "Yes" : "No"],
-              ["Show Result", test.showResult ? "Immediately" : "Scheduled"],
-              ...(test.showResult === false && test.resultDate ? [["Result Date", test.resultDate]] : []),
-              [
-                "Max Attempts",
-                test.maxAttempts === 0 ? "Unlimited" : test.maxAttempts,
-              ],
-              ["Status", test.status === "published" ? "Published" : "Draft"],
-              [
-                "Created",
-                new Date(test.createdDate).toLocaleDateString("en-IN", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                }),
-              ],
-              [
-                "Ends",
-                test.endDate
-                  ? new Date(test.endDate).toLocaleDateString("en-IN", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })
-                  : "No end date",
-              ],
-            ].map(([label, value]) => (
-              <div
-                key={label}
-                className="bg-white rounded border border-gray-200 px-4 py-3 shadow-sm"
-              >
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                  {label}
-                </p>
-                <p className="text-sm font-semibold text-gray-900 mt-0.5 break-words">
-                  {value}
-                </p>
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col shadow-2xl border border-gray-200">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-[#3AB000] to-[#2d8a00] text-white px-8 py-6 shrink-0 relative">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <h3 className="text-2xl font-black tracking-tight leading-tight">{test.title}</h3>
+              <div className="flex items-center gap-4 text-green-50 text-xs font-bold uppercase tracking-widest opacity-90">
+                <span className="flex items-center gap-1"><Monitor size={14} /> Test ID: {test.id?.slice(-6)}</span>
+                <span className="flex items-center gap-1"><Calendar size={14} /> Created: {new Date(test.createdDate).toLocaleDateString()}</span>
               </div>
-            ))}
-            <div className="bg-white rounded border border-gray-200 px-4 py-3 shadow-sm md:col-span-2">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                Assigned Students
-              </p>
-              <p className="text-sm font-semibold text-gray-900 mt-0.5">
-                {test.assignedStudents?.length || 0} students assigned
-              </p>
             </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-full transition-all group"
+            >
+              <X size={24} className="group-hover:rotate-90 transition-transform duration-300" />
+            </button>
           </div>
         </div>
-        <div className="border-t border-gray-200 px-6 py-4 bg-white flex justify-end shrink-0">
+
+        {/* Tabs Navigation */}
+        <div className="bg-white border-b border-gray-100 px-8 shrink-0 flex gap-8">
+          {[
+            { id: "students", label: "Assigned Students", icon: Users, count: assigned.length },
+            { id: "questions", label: "Question Bank", icon: HelpCircle, count: questions.length },
+            { id: "config", label: "Configuration", icon: Settings, count: null },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`py-4 flex items-center gap-2 border-b-2 font-bold text-sm transition-all relative ${
+                  isActive 
+                    ? "border-[#3AB000] text-[#3AB000]" 
+                    : "border-transparent text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                <Icon size={18} />
+                {tab.label}
+                {tab.count !== null && (
+                  <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] ${isActive ? "bg-[#3AB000] text-white" : "bg-gray-100 text-gray-500"}`}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto bg-gray-50/50 p-8">
+          {activeTab === "students" && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Assigned</p>
+                  <p className="text-3xl font-black text-gray-900">{assigned.length === 1 ? assigned[0].candidateName : assigned.length}</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Districts Covered</p>
+                  <p className="text-3xl font-black text-gray-900">{[...new Set(assigned.map(s => s.district))].filter(Boolean).length}</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Contact Rate</p>
+                  <p className="text-3xl font-black text-gray-900">{Math.round((assigned.filter(s => s.mobile).length / (assigned.length || 1)) * 100)}%</p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                {assigned.length === 0 ? (
+                  <div className="py-20 text-center space-y-4">
+                    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto">
+                      <Users size={40} className="text-gray-300" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-gray-900">No students assigned</p>
+                      <p className="text-sm text-gray-500">Assign students from the edit menu to see them here.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50/50 border-b border-gray-100">
+                        <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Candidate Details</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Contact & Location</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Education & Category</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Key Identifiers</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {assigned.map((s, i) => (
+                        <tr key={s._id || i} className="hover:bg-[#f0fce8]/30 transition-colors group">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-4">
+                              <img src={s.photo || '/placeholder.png'} alt={s.candidateName} className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"/>
+                              <div>
+                                <p className="text-sm font-bold text-gray-900 group-hover:text-[#3AB000] transition-colors">{s.candidateName || "Unknown"}</p>
+                                <p className="text-[10px] text-gray-400 font-medium italic mt-0.5">S/O: {s.fatherName || "N/A"}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-col gap-1">
+                              <p className="text-xs font-bold text-gray-700 flex items-center gap-1.5"><Monitor size={12} className="text-gray-400" /> {s.mobile || "N/A"}</p>
+                              <p className="text-[10px] text-gray-400 font-medium truncate">{s.email || "N/A"}</p>
+                              <p className="text-[10px] text-gray-400 font-medium mt-1">{s.address}, {s.district}</p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-col gap-1.5">
+                              <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-black border border-blue-100">
+                                {s.higherEducation || "N/A"}
+                              </span>
+                              <span className="inline-flex items-center px-3 py-1 rounded-full bg-purple-50 text-purple-600 text-[10px] font-black border border-purple-100">
+                                {s.category || "GENERAL"}
+                              </span>
+                            </div>
+                          </td>
+                           <td className="px-6 py-4">
+                            <div className="flex flex-col gap-1 text-[10px] font-mono text-gray-500">
+                              <p>Aadhar: {s.aadhar || "N/A"}</p>
+                              <p>PAN: {s.pan || "N/A"}</p>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "questions" && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Marks</p>
+                  <p className="text-3xl font-black text-[#3AB000]">{test.totalMarks}</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Pass Marks</p>
+                  <p className="text-3xl font-black text-amber-600">{test.passingMarks}</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Difficulty</p>
+                  <p className="text-xl font-black text-gray-900 uppercase">{test.difficulty || "Mixed"}</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Avg per Q</p>
+                  <p className="text-3xl font-black text-gray-900">{Math.round((test.totalMarks / (questions.length || 1)) * 10) / 10}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {questions.length === 0 ? (
+                  <div className="bg-white rounded-xl border-2 border-dashed border-gray-200 p-20 text-center">
+                    <HelpCircle size={48} className="mx-auto text-gray-200 mb-4" />
+                    <p className="text-gray-500 font-bold">No questions have been added to this paper.</p>
+                  </div>
+                ) : (
+                  questions.map((q, idx) => (
+                    <div key={idx} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:border-[#3AB000] transition-all">
+                      <div className="p-6">
+                        <div className="flex items-start justify-between gap-8">
+                          <div className="flex-1 space-y-4">
+                            <div className="flex items-start gap-4">
+                              <span className="w-8 h-8 rounded-lg bg-[#f0fce8] text-[#3AB000] flex items-center justify-center font-black text-sm shrink-0 border border-[#c5edaa]">
+                                {idx + 1}
+                              </span>
+                              <p className="text-base font-bold text-gray-800 leading-relaxed pt-1">
+                                {q.questionText || "Question content is missing or not populated."}
+                              </p>
+                            </div>
+                            
+                            {Array.isArray(q.options) && q.options.length > 0 && (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ml-12">
+                                {q.options.map((opt, i) => (
+                                  <div key={i} className="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-lg border border-gray-100 text-sm text-gray-600">
+                                    <span className="w-6 h-6 flex items-center justify-center rounded-md bg-white text-[#3AB000] text-[10px] font-black border border-gray-200 shadow-sm shrink-0 uppercase">
+                                      {String.fromCharCode(65 + i)}
+                                    </span>
+                                    <span className="font-medium">{opt}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="shrink-0 flex flex-col items-end gap-2">
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                              q.isCompulsory 
+                                ? "bg-amber-50 text-amber-600 border-amber-100" 
+                                : "bg-gray-50 text-gray-400 border-gray-100"
+                            }`}>
+                              {q.isCompulsory ? "Compulsory" : "Optional"}
+                            </span>
+                            <span className="px-3 py-1 rounded-full bg-[#f0fce8] text-[#3AB000] text-[10px] font-black uppercase tracking-widest border border-[#c5edaa]">
+                              {q.marks} Points
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "config" && (
+            <div className="max-w-3xl mx-auto space-y-8">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm divide-y divide-gray-50 overflow-hidden">
+                <div className="p-8">
+                  <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6">General Information</h4>
+                  <div className="grid grid-cols-1 gap-6">
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Description</p>
+                      <p className="text-sm font-bold text-gray-800 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100 italic">
+                        "{test.description || "No description provided for this test."}"
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-8 grid grid-cols-2 gap-8">
+                  <div>
+                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Availability</h4>
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Start Date</p>
+                        <p className="text-sm font-bold text-gray-800">{test.startDate ? new Date(test.startDate).toLocaleString() : "Immediately"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">End Date</p>
+                        <p className="text-sm font-bold text-gray-800">{test.endDate ? new Date(test.endDate).toLocaleString() : "Never Expires"}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Exam Logic</h4>
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Duration</p>
+                        <p className="text-sm font-bold text-gray-800">{test.duration} Minutes</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Attempts Limit</p>
+                        <p className="text-sm font-bold text-gray-800">{test.maxAttempts === 0 ? "Unlimited" : `${test.maxAttempts} Attempts`}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-8">
+                  <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Settings & Status</h4>
+                  <div className="flex flex-wrap gap-3">
+                    {[
+                      { label: "Visibility", val: test.isPublic ? "Public" : "Private", color: test.isPublic ? "bg-green-50 text-green-600 border-green-100" : "bg-blue-50 text-blue-600 border-blue-100" },
+                      { label: "Shuffling", val: test.shuffleQuestions ? "Enabled" : "Disabled", color: test.shuffleQuestions ? "bg-purple-50 text-purple-600 border-purple-100" : "bg-gray-50 text-gray-400 border-gray-100" },
+                      { label: "Results", val: test.showResult ? "Instant" : "Scheduled", color: "bg-amber-50 text-amber-600 border-amber-100" },
+                      { label: "Status", val: test.status, color: test.status === "published" ? "bg-[#3AB000] text-white" : "bg-gray-900 text-white" },
+                    ].map((badge, i) => (
+                      <div key={i} className={`px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest shadow-sm ${badge.color}`}>
+                        {badge.label}: {badge.val}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-gray-100 px-8 py-6 bg-white shrink-0 flex justify-end">
           <button
             onClick={onClose}
-            className="px-5 py-2 text-white rounded text-xs font-bold flex items-center gap-2 transition-colors"
-            style={{ backgroundColor: "#3AB000" }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = "#2d8a00")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = "#3AB000")
-            }
+            className="px-10 py-3 bg-gray-900 text-white rounded-xl text-sm font-black uppercase tracking-widest hover:bg-black transition-all active:scale-95 shadow-lg shadow-gray-200"
           >
-            <X size={14} /> Close
+            Close Panel
           </button>
         </div>
       </div>
@@ -513,7 +515,6 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
   const [showQuestionPicker, setShowQuestionPicker] = useState(false);
   const [questionSearch, setQuestionSearch] = useState("");
   const [qFilterDifficulty, setQFilterDifficulty] = useState("all");
-  const [qFilterSubject, setQFilterSubject] = useState("all");
   const [applicants, setApplicants] = useState([]);
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
   const [applicantError, setApplicantError] = useState("");
@@ -600,7 +601,6 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
       const params = { 
         limit: 0, // Load ALL paid applicants for the selected title
         paymentStatus: "paid",
-        minimal: "true", // Use minimal fields for maximum speed
         search: debouncedStudentSearch // Server-side search
       };
 
@@ -661,12 +661,6 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
     [questionBank],
   );
 
-  // Unique subjects from question bank
-  const qbSubjects = useMemo(
-    () => [...new Set(questionBank.map((q) => q.subject).filter(Boolean))],
-    [questionBank],
-  );
-
   const filteredQB = useMemo(() => {
     const q = questionSearch.trim().toLowerCase();
     return questionBank.filter((item) => {
@@ -679,11 +673,9 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
         );
       const matchDiff =
         qFilterDifficulty === "all" || item.difficulty === qFilterDifficulty;
-      const matchSub =
-        qFilterSubject === "all" || item.subject === qFilterSubject;
-      return matchSearch && matchDiff && matchSub;
+      return matchSearch && matchDiff;
     });
-  }, [questionBank, questionSearch, qFilterDifficulty, qFilterSubject]);
+  }, [questionBank, questionSearch, qFilterDifficulty]);
 
   const handleInput = (e) => {
     const { name, value, type, checked } = e.target;
@@ -1040,12 +1032,12 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
                     onClick={() =>
                       setFormData((p) => ({
                         ...p,
-                        assignedStudents: filteredApplicants.map((a) => a._id),
+                        assignedStudents: applicants.map((a) => a._id),
                       }))
                     }
                     className="px-2 py-1 bg-[#e8f5e2] text-[#3AB000] rounded text-[10px] font-bold hover:bg-[#d5eac8] transition-colors"
                   >
-                    Select Filtered ({filteredApplicants.length})
+                    Select All ({applicants.length})
                   </button>
                   <button
                     onClick={() =>
@@ -1105,7 +1097,7 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
               </div>
 
               {isLoadingApplicants ? (
-                <div className="py-10 text-center text-sm text-gray-400">
+                <div className="py-10 text-center text-sm text-gray-400 flex flex-col items-center justify-center">
                   <div className="animate-spin inline-block w-6 h-6 border-4 border-t-[#3AB000] border-gray-200 rounded-full mb-3"></div>
                   <p>Loading applicants...</p>
                 </div>
@@ -1118,7 +1110,6 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
                   </p>
                   <button
                     onClick={() => {
-                      // Trigger a re-fetch by updating title slightly or just calling the effect again
                       setFormData(prev => ({ ...prev }));
                     }}
                     className="px-4 py-2 bg-red-100 text-red-700 rounded text-xs font-bold hover:bg-red-200 transition-colors"
@@ -1126,7 +1117,7 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
                     Retry Connection
                   </button>
                 </div>
-              ) : filteredApplicants.length === 0 ? (
+              ) : applicants.length === 0 ? (
                 <div className="py-10 text-center text-sm text-gray-400 bg-white border border-dashed border-gray-300 rounded">
                   {formData.title
                     ? "No applicants found matching your filters."
@@ -1134,7 +1125,7 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-2 max-h-[350px] overflow-y-auto pr-2">
-                  {filteredApplicants.map((app) => {
+                  {applicants.map((app) => {
                     const isSelected = formData.assignedStudents?.includes(app._id);
                     return (
                       <div
@@ -1352,19 +1343,6 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
               {/* Filters row */}
               <div className="flex items-center gap-2 flex-wrap">
                 <Filter size={13} className="text-gray-400 flex-shrink-0" />
-                {/* Subject filter */}
-                <select
-                  value={qFilterSubject}
-                  onChange={(e) => setQFilterSubject(e.target.value)}
-                  className="px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-[#3AB000] focus:border-[#3AB000] bg-white outline-none"
-                >
-                  <option value="all">All Subjects</option>
-                  {qbSubjects.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
                 {/* Difficulty filter */}
                 <select
                   value={qFilterDifficulty}
@@ -1549,7 +1527,7 @@ const isVacancyOpen = (lastDate) => {
   }
 };
 
-// ─── Modal Component ───────────────────────────────────────────────────────────
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function TestManagement() {
   const [tests, setTests] = useState([]);
   const [questionBank, setQuestionBank] = useState([]);
@@ -1760,444 +1738,124 @@ export default function TestManagement() {
     );
   };
 
-  // Advance pipeline stage
-  const advancePipeline = async (id) => {
-    const currentTest = tests.find((t) => String(t.id) === String(id));
-    if (!currentTest) return;
-    const stageCount = currentTest.pipelineStageCount || 5;
-    const current = currentTest.pipeline?.currentStage ?? 0;
-    if (current >= stageCount - 1) return;
-
-    const next = current + 1;
-    const nextPipeline = {
-      currentStage: next,
-      completedStages: [...(currentTest.pipeline?.completedStages || []), current],
-    };
-
-    const response = await createPaperAPI.update(id, { pipeline: nextPipeline });
-    if (!response?.success) {
-      alert(response?.error || "Failed to update pipeline.");
-      return;
-    }
-
-    setTests((p) =>
-      p.map((t) =>
-        String(t.id) === String(id) ? { ...t, pipeline: nextPipeline } : t,
-      ),
-    );
-  };
-
   return (
     <DashboardLayout>
       <div className="min-h-screen bg-white ml-0 p-0 md:ml-6 px-2 md:px-0">
         {/* ── Stats Cards ── */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          {[
-            { label: "Total Tests", value: stats.total, icon: ClipboardList },
-            { label: "Published", value: stats.published, icon: CheckCircle },
-            { label: "Draft", value: stats.draft, icon: Edit },
-            {
-              label: "Total Attempts",
-              value: stats.attempts.toLocaleString(),
-              icon: Users,
-            },
-          ].map(({ label, value, icon }) => {
-            const StatIcon = icon;
-            return (
-              <div
-                key={label}
-                className="bg-white rounded border border-gray-200 p-5 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide">
-                      {label}
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900 mt-1">
-                      {value}
-                    </p>
-                  </div>
-                  <div
-                    className="p-3 rounded"
-                    style={{ backgroundColor: "#e8f5e2" }}
-                  >
-                    <StatIcon size={22} style={{ color: "#3AB000" }} />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Tests</p>
+            <p className="text-2xl font-black text-gray-900">{stats.total}</p>
+          </div>
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Published</p>
+            <p className="text-2xl font-black text-[#3AB000]">{stats.published}</p>
+          </div>
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Drafts</p>
+            <p className="text-2xl font-black text-amber-600">{stats.draft}</p>
+          </div>
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Attempts</p>
+            <p className="text-2xl font-black text-blue-600">{stats.attempts}</p>
+          </div>
         </div>
 
-        {/* ── Top Bar ── */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 w-full">
-            <div className="flex items-center gap-0 border border-gray-300 rounded overflow-hidden flex-shrink-0 w-full sm:w-auto">
-              {["all", "published", "draft"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setFilterStatus(tab)}
-                  className="flex-1 sm:flex-none px-4 sm:px-5 py-2 text-xs sm:text-sm font-medium border-r border-gray-300 last:border-r-0 transition-colors whitespace-nowrap"
-                  style={
-                    filterStatus === tab
-                      ? { backgroundColor: "#3AB000", color: "#fff" }
-                      : { backgroundColor: "#fff", color: "#4b5563" }
-                  }
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center border border-gray-300 rounded overflow-hidden h-10 flex-1 w-full sm:max-w-[420px]">
-              <input
-                type="text"
-                placeholder="Search tests, subjects, tags…"
-                className="flex-1 px-3 text-sm text-gray-700 focus:outline-none h-full bg-white"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <button
-                className="text-white text-sm px-4 h-full font-medium transition-colors whitespace-nowrap"
-                style={{ backgroundColor: "#3AB000" }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#2d8a00")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#3AB000")
-                }
-              >
-                Search
-              </button>
-            </div>
+        {/* ── Search & Filter ── */}
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <input
+              type="text"
+              placeholder="Search tests..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3AB000] outline-none"
+            />
           </div>
-          <div className="flex gap-2 w-full sm:w-auto">
+          <div className="flex gap-4 items-center w-full md:w-auto">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3AB000] outline-none bg-white flex-1 md:flex-none"
+            >
+              <option value="all">All Status</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+            </select>
             <button
               onClick={() => {
                 setEditingTest(null);
                 setShowModal(true);
               }}
-              className="text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-sm transition-colors flex items-center gap-2 flex-1 sm:flex-none justify-center"
-              style={{ backgroundColor: "#3AB000" }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = "#2d8a00")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = "#3AB000")
-              }
+              className="bg-[#3AB000] text-white px-6 py-2 rounded-lg font-bold hover:bg-[#2d8a00] transition-colors flex items-center justify-center gap-2 flex-1 md:flex-none"
             >
-              <Plus size={16} /> Create Test
+              <Plus size={18} /> Create Test
             </button>
           </div>
         </div>
 
-        {/* Filters row */}
-        <div className="flex flex-wrap items-center gap-3 mb-4">
-          {isFiltered && (
-            <button
-              onClick={() => {
-                setSearchQuery("");
-                setFilterStatus("all");
-              }}
-              className="text-xs font-semibold flex items-center gap-1 px-2 py-1 rounded border border-gray-300 hover:bg-gray-50 transition-colors"
-              style={{ color: "#3AB000" }}
-            >
-              <X size={12} /> Clear
-            </button>
-          )}
-          <span className="ml-auto text-xs text-gray-500">
-            Showing{" "}
-            <span className="font-semibold text-gray-800">
-              {filtered.length}
-            </span>{" "}
-            of{" "}
-            <span className="font-semibold text-gray-800">{tests.length}</span>{" "}
-            tests
-          </span>
-        </div>
-
-        {/* ── Test Cards ── */}
+        {/* ── Tests List ── */}
         <div className="space-y-4">
           {isLoadingTests ? (
-            <div className="bg-white rounded border border-gray-200 p-12 text-center text-gray-600">
-              Loading tests...
-            </div>
+            <div className="text-center py-20 text-gray-500">Loading tests...</div>
           ) : filtered.length === 0 ? (
-            <div className="bg-white rounded border border-gray-200 p-12 text-center">
-              <div className="bg-gray-100 w-16 h-16 rounded flex items-center justify-center mx-auto mb-3">
-                <Filter className="text-gray-400" size={32} />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">
-                No Tests Found
-              </h3>
-              <p className="text-gray-500 text-sm mb-4">
-                Try adjusting your filters or create a new test.
-              </p>
-              <button
-                onClick={() => {
-                  setEditingTest(null);
-                  setShowModal(true);
-                }}
-                className="px-5 py-2 text-white rounded text-sm font-bold inline-flex items-center gap-2 transition-colors"
-                style={{ backgroundColor: "#3AB000" }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#2d8a00")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#3AB000")
-                }
-              >
-                <Plus size={15} /> Create Test
-              </button>
+            <div className="text-center py-20 text-gray-500 bg-white rounded-xl border border-dashed border-gray-300">
+              No tests found.
             </div>
           ) : (
-            filtered.map((test) => {
-              const isExpired =
-                test.endDate && new Date(test.endDate) < new Date();
-              return (
-                <div
-                  key={test.id}
-                  className="bg-white rounded border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-                >
-                  {/* Card Header */}
-                  <div
-                    style={{
-                      backgroundColor: isExpired ? "#6b7280" : "#3AB000",
-                    }}
-                    className="px-6 py-4 flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <PlayCircle
-                        className="text-green-200 flex-shrink-0"
-                        size={20}
-                      />
-                      <div>
-                        <h3 className="text-white font-bold text-sm leading-tight break-words line-clamp-2">
-                          {test.title}
-                        </h3>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {isExpired && (
-                        <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-wider">
-                          Inactive
-                        </span>
-                      )}
-                      <button
-                        onClick={() => toggleStatus(test.id)}
-                        className={`px-3 py-1 rounded text-xs font-semibold transition ${test.status === "published" ? "bg-[#e8f5e2] text-[#2d8a00]" : "bg-gray-100 text-gray-600"}`}
-                      >
-                        {test.status === "published"
-                          ? "● Published"
-                          : "○ Draft"}
-                      </button>
+            filtered.map((test) => (
+              <div key={test.id} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:border-[#3AB000] transition-all group">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#3AB000] transition-colors">{test.title}</h3>
+                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                      <span className="flex items-center gap-1"><Monitor size={14} /> ID: {test.id?.slice(-6)}</span>
+                      <span className="flex items-center gap-1"><Users size={14} /> {test.attempts} Attempts</span>
+                      <span className="flex items-center gap-1"><Calendar size={14} /> {new Date(test.createdDate).toLocaleDateString()}</span>
                     </div>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setDetailsTest(test);
+                        setShowDetailsModal(true);
+                      }}
+                      className="p-2 text-gray-400 hover:text-[#3AB000] hover:bg-[#e8f5e2] rounded-lg transition-all"
+                      title="View Details"
+                    >
+                      <Eye size={18} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingTest(test);
+                        setShowModal(true);
+                      }}
+                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                      title="Edit"
+                    >
+                      <Edit size={18} />
+                    </button>
 
-                  {/* Card Body */}
-                  <div className="p-5">
-                    {/* Meta */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                      {[
-                        {
-                          icon: BookOpen,
-                          label: "Questions",
-                          value: test.totalQuestions,
-                        },
-                        {
-                          icon: BarChart3,
-                          label: "Marks",
-                          value: test.totalMarks,
-                        },
-                        {
-                          icon: Clock,
-                          label: "Duration",
-                          value: `${test.duration} min`,
-                        },
-                        {
-                          icon: Users,
-                          label: "Attempts",
-                          value: test.attempts,
-                        },
-                      ].map(({ icon, label, value }) => {
-                        const StatIcon = icon;
-                        return (
-                          <div
-                            key={label}
-                            className="flex items-center gap-2 bg-gray-50 rounded px-3 py-2 border border-gray-100"
-                          >
-                            <div
-                              className="p-1.5 rounded"
-                              style={{ backgroundColor: "#e8f5e2" }}
-                            >
-                              <StatIcon size={14} style={{ color: "#3AB000" }} />
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase tracking-wide">
-                                {label}
-                              </p>
-                              <p className="text-sm font-bold text-gray-900">
-                                {value}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Avg score bar */}
-                    {test.status === "published" && test.attempts > 0 && (
-                      <div className="bg-[#e8f5e2] border border-[#c5e8a0] rounded p-3 mb-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-[#2d8a00] font-semibold uppercase tracking-wide">
-                            Average Score
-                          </span>
-                          <span className="text-sm font-bold text-[#2d8a00]">
-                            {test.avgScore}%
-                          </span>
-                        </div>
-                        <div className="w-full bg-white rounded-full h-2 border border-[#c5e8a0]">
-                          <div
-                            className="h-2 rounded-full"
-                            style={{
-                              width: `${test.avgScore}%`,
-                              backgroundColor: "#3AB000",
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Tags + meta */}
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mb-4">
-                      {test.tags.map((tg, i) => (
-                        <span
-                          key={i}
-                          className="flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded"
-                        >
-                          <Tag size={10} />
-                          {tg}
-                        </span>
-                      ))}
-                      <span className="flex items-center gap-1">
-                        <Calendar size={11} />
-                        {new Date(test.createdDate).toLocaleDateString(
-                          "en-IN",
-                          { day: "numeric", month: "short", year: "numeric" },
-                        )}
-                      </span>
-                      {test.endDate && (
-                        <span
-                          className={`flex items-center gap-1 ${isExpired ? "text-red-500 font-bold" : "text-gray-500"}`}
-                        >
-                          <Clock size={11} />
-                          Ends:{" "}
-                          {new Date(test.endDate).toLocaleDateString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </span>
-                      )}
-                      {test.isPublic ? (
-                        <span className="flex items-center gap-1 text-[#3AB000]">
-                          <Globe size={11} />
-                          Public
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1 text-gray-500">
-                          <Lock size={11} />
-                          Private
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setDetailsTest(test);
-                          setShowDetailsModal(true);
-                        }}
-                        className="flex-1 px-4 py-2 text-white rounded text-sm font-bold flex items-center justify-center gap-2 transition-colors"
-                        style={{ backgroundColor: "#3AB000" }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#2d8a00")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#3AB000")
-                        }
-                      >
-                        <Eye size={15} /> View Details
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditingTest(test);
-                          setShowModal(true);
-                        }}
-                        className="p-2 hover:bg-[#e8f5e2] rounded transition-colors text-[#3AB000]"
-                        title="Edit"
-                      >
-                        <Edit size={17} />
-                      </button>
-                      <button
-                        onClick={() => handleDuplicate(test)}
-                        className="p-2 hover:bg-blue-50 rounded transition-colors text-blue-600"
-                        title="Duplicate"
-                      >
-                        <Copy size={17} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(test.id)}
-                        className="p-2 hover:bg-red-50 rounded transition-colors text-red-500"
-                        title="Delete"
-                      >
-                        <Trash2 size={17} />
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleDelete(test.id)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                      title="Delete"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 </div>
-              );
-            })
-          )}
-          {testsError && (
-            <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {testsError}
-            </div>
+              </div>
+            ))
           )}
         </div>
-
-        {/* Footer */}
-        {filtered.length > 0 && (
-          <div className="mt-6 bg-white rounded border border-gray-200 p-4 flex items-center justify-between text-sm text-gray-600">
-            <span>
-              Showing{" "}
-              <span className="font-semibold text-gray-900">
-                {filtered.length}
-              </span>{" "}
-              of{" "}
-              <span className="font-semibold text-gray-900">
-                {tests.length}
-              </span>{" "}
-              tests
-            </span>
-            <span className="text-gray-400 text-xs">
-              Click status badge to toggle publish state · Click Advance to move
-              pipeline
-            </span>
-          </div>
-        )}
       </div>
 
-      {/* Modals */}
       {showDetailsModal && detailsTest && (
-        <DetailsModal
-          test={detailsTest}
-          onClose={() => {
-            setShowDetailsModal(false);
-            setDetailsTest(null);
-          }}
-        />
+        <DetailsModal test={detailsTest} onClose={() => setShowDetailsModal(false)} />
       )}
+
       {showModal && (
         <TestModal
           editingTest={editingTest}

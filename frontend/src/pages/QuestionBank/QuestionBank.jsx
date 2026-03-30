@@ -28,7 +28,6 @@ const INITIAL_QUESTIONS = [
     id: 1,
     question: "What is Newton's Second Law of Motion?",
     questionHi: "न्यूटन का गति का दूसरा नियम क्या है?",
-    subject: "Physics",
     difficulty: "Medium",
     options: ["F = ma", "F = mv", "F = m/a", "F = ma²"],
     optionsHi: ["F = ma", "F = mv", "F = m/a", "F = ma²"],
@@ -46,7 +45,6 @@ const INITIAL_QUESTIONS = [
     id: 2,
     question: "Which of the following is the quadratic formula?",
     questionHi: "निम्नलिखित में से द्विघात सूत्र कौन सा है?",
-    subject: "Mathematics",
     difficulty: "Easy",
     options: [
       "x = (-b ± √(b²-4ac)) / 2a",
@@ -75,7 +73,6 @@ const INITIAL_QUESTIONS = [
     question: "The process by which plants make food using sunlight is called?",
     questionHi:
       "वह प्रक्रिया जिसके द्वारा पौधे सूर्य के प्रकाश का उपयोग करके भोजन बनाते हैं, कहलाती है?",
-    subject: "Biology",
     difficulty: "Easy",
     options: ["Photosynthesis", "Respiration", "Transpiration", "Osmosis"],
     optionsHi: ["प्रकाश संश्लेषण", "श्वसन", "वाष्पोत्सर्जन", "परासरण"],
@@ -94,7 +91,6 @@ const INITIAL_QUESTIONS = [
     question: "Which data structure uses LIFO (Last In First Out) principle?",
     questionHi:
       "कौन सी डेटा संरचना LIFO (लास्ट इन फर्स्ट आउट) सिद्धांत का उपयोग करती है?",
-    subject: "Computer Science",
     difficulty: "Medium",
     options: ["Stack", "Queue", "Array", "Linked List"],
     optionsHi: ["स्टैक", "क्यू", "ऐरे", "लिंक्ड लिस्ट"],
@@ -112,7 +108,6 @@ const INITIAL_QUESTIONS = [
     id: 5,
     question: "What is the chemical formula of water?",
     questionHi: "पानी का रासायनिक सूत्र क्या है?",
-    subject: "Chemistry",
     difficulty: "Easy",
     options: ["H₂O", "CO₂", "NaCl", "H₂SO₄"],
     optionsHi: ["H₂O", "CO₂", "NaCl", "H₂SO₄"],
@@ -130,7 +125,6 @@ const INITIAL_QUESTIONS = [
     id: 6,
     question: "Who wrote the play 'Hamlet'?",
     questionHi: "'हैमलेट' नाटक किसने लिखा?",
-    subject: "English",
     difficulty: "Easy",
     options: [
       "William Shakespeare",
@@ -153,7 +147,6 @@ const INITIAL_QUESTIONS = [
     id: 7,
     question: "What is the SI unit of electric current?",
     questionHi: "विद्युत धारा का SI मात्रक क्या है?",
-    subject: "Physics",
     difficulty: "Easy",
     options: ["Ampere", "Volt", "Ohm", "Watt"],
     optionsHi: ["एम्पीयर", "वोल्ट", "ओम", "वाट"],
@@ -171,7 +164,6 @@ const INITIAL_QUESTIONS = [
     id: 8,
     question: "Which sorting algorithm has the best average time complexity?",
     questionHi: "किस सॉर्टिंग एल्गोरिदम की औसत समय जटिलता सबसे अच्छी है?",
-    subject: "Computer Science",
     difficulty: "Hard",
     options: [
       "Merge Sort – O(n log n)",
@@ -197,23 +189,6 @@ const INITIAL_QUESTIONS = [
   },
 ];
 
-const SUBJECTS = [
-  "Mathematics",
-  "Science",
-  "Social Science",
-  "Maths",
-  "GK",
-  "स्वास्थ्य एवं पोषण",
-  "प्रबंधन एवं प्रशासन",
-  "Computer",
-  "Physics",
-  "Chemistry",
-  "Biology",
-  "English",
-  "Computer Science",
-  "History",
-  "Geography",
-];
 const DIFFICULTY_LEVELS = ["Easy", "Medium", "Hard"];
 
 const DIFFICULTY_COLORS = {
@@ -225,7 +200,6 @@ const DIFFICULTY_COLORS = {
 const EMPTY_FORM = {
   question: "",
   questionHi: "",
-  subject: "",
   difficulty: "",
   options: [], // English options
   optionsHi: [], // Hindi options (parallel array)
@@ -243,7 +217,6 @@ const normalizeQuestion = (q) => ({
   id: q?._id || q?.id || uid(),
   question: String(q?.question || ""),
   questionHi: String(q?.questionHi || ""),
-  subject: String(q?.subject || ""),
   difficulty: String(q?.difficulty || ""),
   options: Array.isArray(q?.options) ? q.options : [],
   optionsHi: Array.isArray(q?.optionsHi) ? q.optionsHi : [],
@@ -299,7 +272,6 @@ export default function QuestionBank() {
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterSubject, setFilterSubject] = useState("all");
   const [filterDifficulty, setFilterDifficulty] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [displayLang, setDisplayLang] = useState("both"); // "en" | "hi" | "both"
@@ -340,8 +312,6 @@ export default function QuestionBank() {
     const total = questions.length;
     const active = questions.filter((q) => q.status === "active").length;
     const draft = questions.filter((q) => q.status === "draft").length;
-    const subjects = new Set(questions.map((q) => q.subject).filter(Boolean))
-      .size;
     return [
       {
         label: "Total Questions",
@@ -367,14 +337,6 @@ export default function QuestionBank() {
         iconBg: "bg-amber-100",
         iconColor: "text-amber-600",
       },
-      {
-        label: "Subjects Covered",
-        value: subjects,
-        icon: Layers,
-        border: "border-blue-500",
-        iconBg: "bg-blue-100",
-        iconColor: "text-blue-600",
-      },
     ];
   }, [questions]);
 
@@ -389,24 +351,18 @@ export default function QuestionBank() {
         String(q.questionHi || "")
           .toLowerCase()
           .includes(searchQuery.toLowerCase()) ||
-        String(q.subject || "")
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
         tags.some((t) =>
           String(t).toLowerCase().includes(searchQuery.toLowerCase()),
         );
-      const matchSubject =
-        filterSubject === "all" || q.subject === filterSubject;
       const matchDiff =
         filterDifficulty === "all" || q.difficulty === filterDifficulty;
       const matchStatus = filterStatus === "all" || q.status === filterStatus;
-      return matchSearch && matchSubject && matchDiff && matchStatus;
+      return matchSearch && matchDiff && matchStatus;
     });
-  }, [questions, searchQuery, filterSubject, filterDifficulty, filterStatus]);
+  }, [questions, searchQuery, filterDifficulty, filterStatus]);
 
   const isFiltered =
     searchQuery ||
-    filterSubject !== "all" ||
     filterDifficulty !== "all" ||
     filterStatus !== "all";
 
@@ -498,7 +454,6 @@ export default function QuestionBank() {
   const validateForm = () => {
     if (
       !formData.question ||
-      !formData.subject ||
       !formData.difficulty
     )
       return "Please fill in all required fields.";
@@ -519,7 +474,6 @@ export default function QuestionBank() {
     const payload = {
       question: formData.question.trim(),
       questionHi: formData.questionHi.trim(),
-      subject: formData.subject,
       difficulty: formData.difficulty,
       options: formData.options,
       optionsHi:
@@ -567,7 +521,6 @@ export default function QuestionBank() {
     const payload = {
       question: `${q.question} (Copy)`,
       questionHi: q.questionHi ? `${q.questionHi} (प्रति)` : "",
-      subject: q.subject || "",
       difficulty: q.difficulty || "Easy",
       options: Array.isArray(q.options) ? q.options : [],
       optionsHi: Array.isArray(q.optionsHi) ? q.optionsHi : [],
@@ -692,18 +645,6 @@ export default function QuestionBank() {
                   Search
                 </button>
               </div>
-              <select
-                value={filterSubject}
-                onChange={(e) => setFilterSubject(e.target.value)}
-                className="border border-gray-300 rounded h-10 px-3 text-sm text-gray-700 focus:outline-none bg-white"
-              >
-                <option value="all">All Subjects</option>
-                {SUBJECTS.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
             </div>
             <div className="flex gap-3 w-full sm:w-auto">
               {selectedIds.length > 0 && (
@@ -761,7 +702,6 @@ export default function QuestionBank() {
               <button
                 onClick={() => {
                   setSearchQuery("");
-                  setFilterSubject("all");
                   setFilterDifficulty("all");
                   setFilterStatus("all");
                 }}
@@ -846,9 +786,6 @@ export default function QuestionBank() {
                                 className={`text-xs font-semibold px-2 py-0.5 rounded-sm ${DIFFICULTY_COLORS[q.difficulty] || "bg-gray-100 text-gray-600"}`}
                               >
                                 {q.difficulty}
-                              </span>
-                              <span className="text-xs font-semibold px-2 py-0.5 rounded-sm bg-[#e8f5e2] text-[#2d8a00]">
-                                {q.subject}
                               </span>
                               {/* Hindi badge */}
                               {q.questionHi && (
@@ -946,13 +883,7 @@ export default function QuestionBank() {
                             >
                               <Edit size={16} />
                             </button>
-                            <button
-                              onClick={() => handleDuplicate(q)}
-                              className="p-2 hover:bg-blue-100 rounded-sm transition-colors text-blue-600"
-                              title="Duplicate"
-                            >
-                              <Copy size={16} />
-                            </button>
+
                             <button
                               onClick={() => handleDelete(q.id)}
                               className="p-2 hover:bg-rose-100 rounded-sm transition-colors text-rose-600"
@@ -1144,28 +1075,6 @@ export default function QuestionBank() {
                       placeholder="प्रश्न हिंदी में लिखें..."
                       className="w-full px-4 py-3 border-2 border-orange-200 rounded-sm text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 resize-none"
                     />
-                  </div>
-                </div>
-
-                {/* Subject */}
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">
-                      Subject <span className="text-rose-500">*</span>
-                    </label>
-                    <select
-                      name="subject"
-                      value={formData.subject}
-                      onChange={handleInput}
-                      className={inputCls}
-                    >
-                      <option value="">Select Subject</option>
-                      {SUBJECTS.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
                   </div>
                 </div>
 

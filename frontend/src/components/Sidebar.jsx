@@ -123,7 +123,7 @@ const Sidebar = () => {
       { name: "Dashboard", icon: LayoutDashboard, path: dashboardPath },
       { name: "Job Postings", icon: Users, path: "/job-postings" },
       { name: "Application Form", icon: FileText, path: "/application-form" },
-      { name: "Exam Management ", icon: Bell, path: "/exam-management" },
+      { name: "MY EXAM", icon: Bell, path: "/exam-management" },
     ];
 
     if (role === "admin") {

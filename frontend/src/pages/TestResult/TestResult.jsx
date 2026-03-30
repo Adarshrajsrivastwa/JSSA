@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
+import { api } from "../../utils/api";
 import {
   History,
   Search,
@@ -28,7 +29,6 @@ const MOCK_HISTORY = [
     student: "Aarav Sharma",
     avatar: "AS",
     testTitle: "Algebra Basics",
-    subject: "Mathematics",
     cls: "Class 10A",
     type: "Unit Test",
     totalMarks: 100,
@@ -45,7 +45,6 @@ const MOCK_HISTORY = [
     student: "Priya Verma",
     avatar: "PV",
     testTitle: "Algebra Basics",
-    subject: "Mathematics",
     cls: "Class 10A",
     type: "Unit Test",
     totalMarks: 100,
@@ -62,7 +61,6 @@ const MOCK_HISTORY = [
     student: "Rohan Gupta",
     avatar: "RG",
     testTitle: "Human Body Systems",
-    subject: "Biology",
     cls: "Class 9B",
     type: "Mid Term",
     totalMarks: 80,
@@ -79,7 +77,6 @@ const MOCK_HISTORY = [
     student: "Sneha Patel",
     avatar: "SP",
     testTitle: "Newton's Laws",
-    subject: "Physics",
     cls: "Class 11C",
     type: "Weekly Test",
     totalMarks: 50,
@@ -96,7 +93,6 @@ const MOCK_HISTORY = [
     student: "Karan Mehta",
     avatar: "KM",
     testTitle: "Periodic Table",
-    subject: "Chemistry",
     cls: "Class 11A",
     type: "Quiz",
     totalMarks: 30,
@@ -113,7 +109,6 @@ const MOCK_HISTORY = [
     student: "Anjali Singh",
     avatar: "AN",
     testTitle: "World War II",
-    subject: "History",
     cls: "Class 10B",
     type: "Unit Test",
     totalMarks: 100,
@@ -130,7 +125,6 @@ const MOCK_HISTORY = [
     student: "Vikram Nair",
     avatar: "VN",
     testTitle: "Algebra Basics",
-    subject: "Mathematics",
     cls: "Class 10A",
     type: "Unit Test",
     totalMarks: 100,
@@ -147,7 +141,6 @@ const MOCK_HISTORY = [
     student: "Divya Rao",
     avatar: "DR",
     testTitle: "Newton's Laws",
-    subject: "Physics",
     cls: "Class 11C",
     type: "Weekly Test",
     totalMarks: 50,
@@ -164,7 +157,6 @@ const MOCK_HISTORY = [
     student: "Amit Kumar",
     avatar: "AK",
     testTitle: "Human Body Systems",
-    subject: "Biology",
     cls: "Class 9B",
     type: "Mid Term",
     totalMarks: 80,
@@ -181,7 +173,6 @@ const MOCK_HISTORY = [
     student: "Pooja Joshi",
     avatar: "PJ",
     testTitle: "Periodic Table",
-    subject: "Chemistry",
     cls: "Class 11A",
     type: "Quiz",
     totalMarks: 30,
@@ -198,7 +189,6 @@ const MOCK_HISTORY = [
     student: "Rahul Tiwari",
     avatar: "RT",
     testTitle: "World War II",
-    subject: "History",
     cls: "Class 10B",
     type: "Unit Test",
     totalMarks: 100,
@@ -215,7 +205,6 @@ const MOCK_HISTORY = [
     student: "Neha Saxena",
     avatar: "NS",
     testTitle: "Algebra Basics",
-    subject: "Mathematics",
     cls: "Class 10A",
     type: "Unit Test",
     totalMarks: 100,
@@ -232,7 +221,6 @@ const MOCK_HISTORY = [
     student: "Suresh Iyer",
     avatar: "SI",
     testTitle: "Newton's Laws",
-    subject: "Physics",
     cls: "Class 11C",
     type: "Weekly Test",
     totalMarks: 50,
@@ -249,7 +237,6 @@ const MOCK_HISTORY = [
     student: "Meera Pillai",
     avatar: "MP",
     testTitle: "Human Body Systems",
-    subject: "Biology",
     cls: "Class 9B",
     type: "Mid Term",
     totalMarks: 80,
@@ -266,7 +253,6 @@ const MOCK_HISTORY = [
     student: "Arjun Desai",
     avatar: "AD",
     testTitle: "Periodic Table",
-    subject: "Chemistry",
     cls: "Class 11A",
     type: "Quiz",
     totalMarks: 30,
@@ -296,7 +282,6 @@ function DetailModal({ record, allHistory, onClose }) {
   const testAll = allHistory.filter(
     (h) =>
       h.testTitle === record.testTitle &&
-      h.subject === record.subject &&
       h.cls === record.cls,
   );
 
@@ -607,10 +592,20 @@ function DetailModal({ record, allHistory, onClose }) {
                         className={`transition-colors ${r.id === record.id ? "bg-[#e8f5e2]" : "hover:bg-[#e8f5e2]"}`}
                       >
                         <td className="px-4 py-3">
-                          <p className="font-semibold text-gray-900">
-                            {r.student}
-                          </p>
-                          <p className="text-xs text-gray-400">{r.cls}</p>
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                              style={{ backgroundColor: "#3AB000" }}
+                            >
+                              {r.avatar}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900">
+                                {r.student}
+                              </p>
+                              <p className="text-xs text-gray-400">{r.cls}</p>
+                            </div>
+                          </div>
                         </td>
                         <td className="px-4 py-3 font-bold text-gray-800">
                           {r.score}
@@ -678,7 +673,55 @@ function DetailModal({ record, allHistory, onClose }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function TestHistory() {
-  const [history] = useState(MOCK_HISTORY);
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [selectedJob, setSelectedJob] = useState(null);
+
+  useEffect(() => {
+    const fetchResults = async () => {
+      setLoading(true);
+      try {
+        const response = await api.testResults.getAll();
+        if (response.message === "exam not done yet") {
+          setHistory([]);
+          setErrorMsg("exam not done yet");
+        } else if (Array.isArray(response)) {
+          setHistory(response);
+          setErrorMsg("");
+        } else if (response.error) {
+          setErrorMsg(response.error);
+        }
+      } catch (err) {
+        console.error("Failed to fetch test results:", err);
+        setErrorMsg("Failed to load results");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchResults();
+  }, []);
+
+  const uniqueJobs = useMemo(() => {
+    const jobs = {};
+    history.forEach((h) => {
+      const key = `${h.testTitle}-${h.cls}`;
+      if (!jobs[key]) {
+        jobs[key] = {
+          title: h.testTitle,
+          cls: h.cls,
+          count: 0,
+          lastAttempt: h.completedAt,
+        };
+      }
+      jobs[key].count++;
+      if (new Date(h.completedAt) > new Date(jobs[key].lastAttempt)) {
+        jobs[key].lastAttempt = h.completedAt;
+      }
+    });
+    return Object.values(jobs);
+  }, [history]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
@@ -701,6 +744,13 @@ export default function TestHistory() {
 
   const filtered = useMemo(() => {
     let d = [...history];
+    if (selectedJob) {
+      d = d.filter(
+        (h) =>
+          h.testTitle === selectedJob.title &&
+          h.cls === selectedJob.cls,
+      );
+    }
     if (searchQuery)
       d = d.filter(
         (h) =>
@@ -721,7 +771,7 @@ export default function TestHistory() {
         : String(bv).localeCompare(String(av));
     });
     return d;
-  }, [history, searchQuery, filterStatus, sortConfig]);
+  }, [history, searchQuery, filterStatus, sortConfig, selectedJob]);
 
   const paginated = useMemo(
     () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
@@ -797,459 +847,539 @@ export default function TestHistory() {
   return (
     <DashboardLayout>
       <div className="min-h-screen bg-white ml-0 p-0 md:ml-6 px-2 md:px-0">
-        {/* ── Stats Cards ── */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          {[
-            {
-              label: "Total Attempts",
-              value: stats.total,
-              icon: ClipboardList,
-            },
-            { label: "Passed", value: stats.passed, icon: CheckCircle },
-            { label: "Failed", value: stats.failed, icon: XCircle },
-            { label: "Avg Score", value: `${stats.avgPct}%`, icon: BarChart3 },
-          ].map(({ label, value, icon: Icon }) => (
-            <div
-              key={label}
-              className="bg-white rounded border border-gray-200 p-5 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide">
-                    {label}
-                  </p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">
-                    {value}
-                  </p>
-                </div>
-                <div
-                  className="p-3 rounded"
-                  style={{ backgroundColor: "#e8f5e2" }}
-                >
-                  <Icon size={22} style={{ color: "#3AB000" }} />
-                </div>
-              </div>
+        {/* Header Section */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            {selectedJob && (
+              <button
+                onClick={() => setSelectedJob(null)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                title="Back to All Jobs"
+              >
+                <X size={20} className="text-gray-500" />
+              </button>
+            )}
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {selectedJob ? `Result: ${selectedJob.title}` : "All Test Results"}
+              </h1>
+              <p className="text-sm text-gray-500">
+                {selectedJob
+                  ? `Viewing attempts for ${selectedJob.cls}`
+                  : "Select a test to view detailed results"}
+              </p>
             </div>
-          ))}
+          </div>
         </div>
 
-        {/* ── Top Bar: Tabs + Search + Filters ── */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 w-full">
-            {/* Status Tabs */}
-            <div className="flex items-center gap-0 border border-gray-300 rounded overflow-hidden flex-shrink-0 w-full sm:w-auto">
-              {["all", "pass", "fail"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => {
-                    setFilterStatus(tab);
-                    setPage(1);
-                  }}
-                  className="flex-1 sm:flex-none px-4 sm:px-6 py-2 text-xs sm:text-sm font-medium border-r border-gray-300 last:border-r-0 transition-colors whitespace-nowrap"
-                  style={
-                    filterStatus === tab
-                      ? { backgroundColor: "#3AB000", color: "#fff" }
-                      : { backgroundColor: "#fff", color: "#4b5563" }
-                  }
+        {!selectedJob ? (
+          /* ── All Jobs View ── */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {loading ? (
+              <div className="col-span-full py-20 text-center text-gray-500">
+                Loading tests...
+              </div>
+            ) : errorMsg === "exam not done yet" || uniqueJobs.length === 0 ? (
+              <div className="col-span-full py-20 text-center text-gray-400">
+                {errorMsg || "No tests found."}
+              </div>
+            ) : (
+              uniqueJobs.map((job) => (
+                <div
+                  key={`${job.title}-${job.subject}-${job.cls}`}
+                  onClick={() => setSelectedJob(job)}
+                  className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-all cursor-pointer group"
                 >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
+                  <div className="flex items-center justify-between mb-4">
+                    <div
+                      className="p-3 rounded-lg bg-[#e8f5e2] text-[#3AB000] group-hover:bg-[#3AB000] group-hover:text-white transition-colors"
+                    >
+                      <ClipboardList size={24} />
+                    </div>
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                      {job.count} Attempt{job.count !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-[#3AB000] transition-colors">
+                    {job.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    {job.cls}
+                  </p>
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <Calendar size={14} />
+                      <span>
+                        Last:{" "}
+                        {new Date(job.lastAttempt).toLocaleDateString("en-IN")}
+                      </span>
+                    </div>
+                    <span className="text-xs font-bold text-[#3AB000] group-hover:underline">
+                      View Results →
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        ) : (
+          /* ── Particular Result View ── */
+          <>
+            {/* ── Stats Cards ── */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              {[
+                {
+                  label: "Total Attempts",
+                  value: stats.total,
+                  icon: ClipboardList,
+                },
+                { label: "Passed", value: stats.passed, icon: CheckCircle },
+                { label: "Failed", value: stats.failed, icon: XCircle },
+                { label: "Avg Score", value: `${stats.avgPct}%`, icon: BarChart3 },
+              ].map(({ label, value, icon: Icon }) => (
+                <div
+                  key={label}
+                  className="bg-white rounded border border-gray-200 p-5 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide">
+                        {label}
+                      </p>
+                      <p className="text-3xl font-bold text-gray-900 mt-1">
+                        {value}
+                      </p>
+                    </div>
+                    <div
+                      className="p-3 rounded"
+                      style={{ backgroundColor: "#e8f5e2" }}
+                    >
+                      <Icon size={22} style={{ color: "#3AB000" }} />
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
 
-            {/* Search */}
-            <div className="flex items-center border border-gray-300 rounded overflow-hidden h-10 flex-1 w-full sm:max-w-[500px]">
-              <input
-                type="text"
-                placeholder="Search by student or test name..."
-                className="flex-1 px-3 sm:px-4 text-xs sm:text-sm text-gray-700 focus:outline-none h-full bg-white"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setPage(1);
-                }}
-              />
+            {/* ── Top Bar: Tabs + Search + Filters ── */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 w-full">
+                {/* Status Tabs */}
+                <div className="flex items-center gap-0 border border-gray-300 rounded overflow-hidden flex-shrink-0 w-full sm:w-auto">
+                  {["all", "pass", "fail"].map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => {
+                        setFilterStatus(tab);
+                        setPage(1);
+                      }}
+                      className="flex-1 sm:flex-none px-4 sm:px-6 py-2 text-xs sm:text-sm font-medium border-r border-gray-300 last:border-r-0 transition-colors whitespace-nowrap"
+                      style={
+                        filterStatus === tab
+                          ? { backgroundColor: "#3AB000", color: "#fff" }
+                          : { backgroundColor: "#fff", color: "#4b5563" }
+                      }
+                    >
+                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Search */}
+                <div className="flex items-center border border-gray-300 rounded overflow-hidden h-10 flex-1 w-full sm:max-w-[500px]">
+                  <input
+                    type="text"
+                    placeholder="Search by student or test name..."
+                    className="flex-1 px-3 sm:px-4 text-xs sm:text-sm text-gray-700 focus:outline-none h-full bg-white"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setPage(1);
+                    }}
+                  />
+                  <button
+                    className="text-white text-xs sm:text-sm px-4 sm:px-6 h-full font-medium transition-colors whitespace-nowrap"
+                    style={{ backgroundColor: "#3AB000" }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#2d8a00")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#3AB000")
+                    }
+                  >
+                    Search
+                  </button>
+                </div>
+              </div>
+
+              {/* Export */}
               <button
-                className="text-white text-xs sm:text-sm px-4 sm:px-6 h-full font-medium transition-colors whitespace-nowrap"
-                style={{ backgroundColor: "#3AB000" }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#2d8a00")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#3AB000")
-                }
+                onClick={handleExport}
+                className="bg-black hover:bg-[#3AB000] text-white text-xs sm:text-sm font-medium px-4 sm:px-6 py-2.5 rounded-sm transition-colors whitespace-nowrap w-full sm:w-auto flex items-center justify-center gap-2"
               >
-                Search
+                <Download size={15} /> Export CSV
               </button>
             </div>
-          </div>
 
-          {/* Export */}
-          <button
-            onClick={handleExport}
-            className="bg-black hover:bg-[#3AB000] text-white text-xs sm:text-sm font-medium px-4 sm:px-6 py-2.5 rounded-sm transition-colors whitespace-nowrap w-full sm:w-auto flex items-center justify-center gap-2"
-          >
-            <Download size={15} /> Export CSV
-          </button>
-        </div>
+            {/* Active filters indicator */}
+            {isFiltered && (
+              <div className="mb-3 flex items-center gap-2">
+                <span className="text-xs text-gray-500">
+                  Showing{" "}
+                  <span className="font-semibold text-gray-700">
+                    {filtered.length}
+                  </span>{" "}
+                  result{filtered.length !== 1 ? "s" : ""}
+                </span>
+                <button
+                  onClick={clearFilters}
+                  className="text-xs font-semibold flex items-center gap-1 px-2 py-0.5 rounded border border-gray-300 hover:bg-gray-50 transition-colors"
+                  style={{ color: "#3AB000" }}
+                >
+                  <X size={12} /> Clear
+                </button>
+              </div>
+            )}
 
-        {/* Active filters indicator */}
-        {isFiltered && (
-          <div className="mb-3 flex items-center gap-2">
-            <span className="text-xs text-gray-500">
-              Showing{" "}
-              <span className="font-semibold text-gray-700">
-                {filtered.length}
-              </span>{" "}
-              result{filtered.length !== 1 ? "s" : ""}
-            </span>
-            <button
-              onClick={clearFilters}
-              className="text-xs font-semibold flex items-center gap-1 px-2 py-0.5 rounded border border-gray-300 hover:bg-gray-50 transition-colors"
-              style={{ color: "#3AB000" }}
-            >
-              <X size={12} /> Clear
-            </button>
-          </div>
-        )}
-
-        {/* ── Desktop Table ── */}
-        <div className="hidden md:block bg-white rounded overflow-hidden border border-gray-200">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[900px]">
-              <thead>
-                <tr style={{ backgroundColor: "#3AB000" }}>
-                  {[
-                    { label: "Student", key: "student" },
-                    { label: "Test", key: "testTitle" },
-                    { label: "Score", key: "pct" },
-                    { label: "Time / Attempts", key: "timeTaken" },
-                    { label: "Date", key: "completedAt" },
-                    { label: "Status", key: "status" },
-                  ].map(({ label, key }) => (
-                    <th
-                      key={key}
-                      onClick={() => handleSort(key)}
-                      className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap cursor-pointer hover:bg-[#2d8a00] select-none transition-colors"
-                    >
-                      <div className="flex items-center justify-center gap-1">
-                        {label}
-                        <SI col={key} />
-                      </div>
-                    </th>
-                  ))}
-                  <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-gray-100">
-                {paginated.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="py-12 text-center text-gray-400 text-sm"
-                    >
-                      <div className="flex flex-col items-center gap-2">
-                        <History size={36} className="text-gray-300" />
-                        <p>No records found.</p>
-                        {isFiltered && (
-                          <button
-                            onClick={clearFilters}
-                            className="text-xs font-semibold hover:underline"
-                            style={{ color: "#3AB000" }}
-                          >
-                            Clear filters
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  paginated.map((h) => (
-                    <tr
-                      key={h.id}
-                      className="hover:bg-[#e8f5e2] transition-colors"
-                    >
-                      {/* Student */}
-                      <td className="px-4 py-4 text-center">
-                        <div className="flex items-center gap-2 justify-center">
-                          <div
-                            className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
-                            style={{ backgroundColor: "#3AB000" }}
-                          >
-                            {h.avatar}
+            {/* ── Desktop Table ── */}
+            <div className="hidden md:block bg-white rounded overflow-hidden border border-gray-200">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[900px]">
+                  <thead>
+                    <tr style={{ backgroundColor: "#3AB000" }}>
+                      {[
+                        { label: "Student", key: "student" },
+                        { label: "Test Title", key: "testTitle" },
+                        { label: "Score", key: "pct" },
+                        { label: "Time / Attempts", key: "timeTaken" },
+                        { label: "Date", key: "completedAt" },
+                        { label: "Status", key: "status" },
+                      ].map(({ label, key }) => (
+                        <th
+                          key={key}
+                          onClick={() => handleSort(key)}
+                          className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap cursor-pointer hover:bg-[#2d8a00] select-none transition-colors"
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            {label}
+                            <SI col={key} />
                           </div>
-                          <div className="text-left">
-                            <p className="font-semibold text-sm text-gray-800">
-                              {h.student}
+                        </th>
+                      ))}
+                      <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-gray-100">
+                    {loading ? (
+                      <tr>
+                        <td colSpan={7} className="py-12 text-center text-gray-500">
+                          Loading test history...
+                        </td>
+                      </tr>
+                    ) : errorMsg === "exam not done yet" || paginated.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={7}
+                          className="py-20 text-center text-gray-400 text-sm"
+                        >
+                          {errorMsg || "No records found."}
+                        </td>
+                      </tr>
+                    ) : (
+                      paginated.map((h) => (
+                        <tr
+                          key={h.id}
+                          className="hover:bg-[#e8f5e2] transition-colors"
+                        >
+                          {/* Student */}
+                          <td className="px-4 py-4 text-center">
+                            <div className="flex items-center gap-2 justify-center">
+                              <div
+                                className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                                style={{ backgroundColor: "#3AB000" }}
+                              >
+                                {h.avatar}
+                              </div>
+                              <div className="text-left">
+                                <p className="font-semibold text-sm text-gray-800">
+                                  {h.student}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Test */}
+                          <td className="px-4 py-4">
+                            <div className="font-semibold text-sm text-gray-800">
+                              {h.testTitle}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {h.subject} | {h.cls}
+                            </div>
+                          </td>
+
+                          {/* Score */}
+                          <td className="px-4 py-4 text-center">
+                            <p className="font-bold text-gray-800 text-sm">
+                              {h.score}
+                              <span className="text-xs text-gray-400 font-normal">
+                                /{h.totalMarks}
+                              </span>
                             </p>
-                          </div>
+                            <div className="flex items-center gap-1.5 mt-1 justify-center">
+                              <div className="w-14 bg-gray-200 rounded-full h-1.5">
+                                <div
+                                  className="h-1.5 rounded-full"
+                                  style={{
+                                    width: `${h.pct}%`,
+                                    backgroundColor: "#3AB000",
+                                  }}
+                                />
+                              </div>
+                              <span
+                                className={`text-xs font-bold ${pctColor(h.pct)}`}
+                              >
+                                {h.pct}%
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Time / Attempts */}
+                          <td className="px-4 py-4 text-center text-gray-700 whitespace-nowrap">
+                            <p className="text-sm flex items-center gap-1 justify-center">
+                              <Clock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                              {h.timeTaken} min
+                            </p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {h.attempts} attempt{h.attempts !== 1 ? "s" : ""}
+                            </p>
+                          </td>
+
+                          {/* Date */}
+                          <td className="px-4 py-4 text-center text-gray-700 whitespace-nowrap text-sm">
+                            {new Date(h.completedAt).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </td>
+
+                          {/* Status */}
+                          <td className="px-4 py-4 text-center">
+                            <span
+                              className={`inline-flex items-center gap-1 px-3 py-1 rounded text-xs font-semibold ${
+                                h.status === "pass"
+                                  ? "bg-[#e8f5e2] text-[#2d8a00]"
+                                  : "bg-red-50 text-red-600"
+                              }`}
+                            >
+                              {h.status === "pass" ? (
+                                <CheckCircle size={12} />
+                              ) : (
+                                <XCircle size={12} />
+                              )}
+                              {h.status === "pass" ? "Pass" : "Fail"}
+                            </span>
+                          </td>
+
+                          {/* Action */}
+                          <td className="px-4 py-4 text-center">
+                            <button
+                              onClick={() => setSelectedRecord(h)}
+                              className="transition-colors"
+                              style={{ color: "#3AB000" }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.color = "#2d8a00")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.color = "#3AB000")
+                              }
+                              title="View Details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* ── Mobile Card View ── */}
+            <div className="md:hidden space-y-3">
+              {loading ? (
+                <div className="bg-white rounded border border-gray-200 p-8 text-center text-gray-500">
+                  Loading test history...
+                </div>
+              ) : errorMsg === "exam not done yet" || paginated.length === 0 ? (
+                <div className="bg-white rounded border border-gray-200 p-8 text-center text-gray-400 text-sm">
+                  {errorMsg || "No records found."}
+                </div>
+              ) : (
+                paginated.map((h) => (
+                  <div
+                    key={h.id}
+                    className="bg-white rounded border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2 flex-1">
+                        <div
+                          className="w-9 h-9 rounded flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                          style={{ backgroundColor: "#3AB000" }}
+                        >
+                          {h.avatar}
                         </div>
-                      </td>
+                        <div>
+                          <p className="font-semibold text-sm text-gray-800">
+                            {h.student}
+                          </p>
+                          <p className="text-xs text-gray-500">{h.cls}</p>
+                        </div>
+                      </div>
+                      <span
+                        className={`text-xs font-semibold px-2 py-1 rounded ${
+                          h.status === "pass"
+                            ? "bg-[#e8f5e2] text-[#2d8a00]"
+                            : "bg-red-50 text-red-600"
+                        }`}
+                      >
+                        {h.status === "pass" ? "Pass" : "Fail"}
+                      </span>
+                    </div>
 
-                      {/* Test */}
-                      <td className="px-4 py-4 text-center">
-                        <p className="font-semibold text-sm text-gray-800 truncate max-w-[180px] mx-auto">
-                          {h.testTitle}
-                        </p>
-                      </td>
-
-                      {/* Score */}
-                      <td className="px-4 py-4 text-center">
-                        <p className="font-bold text-gray-800 text-sm">
-                          {h.score}
-                          <span className="text-xs text-gray-400 font-normal">
-                            /{h.totalMarks}
-                          </span>
-                        </p>
-                        <div className="flex items-center gap-1.5 mt-1 justify-center">
-                          <div className="w-14 bg-gray-200 rounded-full h-1.5">
-                            <div
-                              className="h-1.5 rounded-full"
-                              style={{
-                                width: `${h.pct}%`,
-                                backgroundColor: "#3AB000",
-                              }}
-                            />
-                          </div>
+                    <div className="space-y-2 text-sm text-gray-700 mb-3">
+                      <div className="flex items-start">
+                        <span className="font-medium w-20 flex-shrink-0">
+                          Test:
+                        </span>
+                        <span className="flex-1">{h.testTitle}</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="font-medium w-20 flex-shrink-0">
+                          Score:
+                        </span>
+                        <span className="flex-1">
+                          {h.score}/{h.totalMarks}
                           <span
-                            className={`text-xs font-bold ${pctColor(h.pct)}`}
+                            className={`ml-2 font-bold text-xs ${pctColor(h.pct)}`}
                           >
                             {h.pct}%
                           </span>
-                        </div>
-                      </td>
-
-                      {/* Time / Attempts */}
-                      <td className="px-4 py-4 text-center text-gray-700 whitespace-nowrap">
-                        <p className="text-sm flex items-center gap-1 justify-center">
-                          <Clock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                          {h.timeTaken} min
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {h.attempts} attempt{h.attempts !== 1 ? "s" : ""}
-                        </p>
-                      </td>
-
-                      {/* Date */}
-                      <td className="px-4 py-4 text-center text-gray-700 whitespace-nowrap text-sm">
-                        {new Date(h.completedAt).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </td>
-
-                      {/* Status */}
-                      <td className="px-4 py-4 text-center">
-                        <span
-                          className={`inline-flex items-center gap-1 px-3 py-1 rounded text-xs font-semibold ${
-                            h.status === "pass"
-                              ? "bg-[#e8f5e2] text-[#2d8a00]"
-                              : "bg-red-50 text-red-600"
-                          }`}
-                        >
-                          {h.status === "pass" ? (
-                            <CheckCircle size={12} />
-                          ) : (
-                            <XCircle size={12} />
-                          )}
-                          {h.status === "pass" ? "Pass" : "Fail"}
                         </span>
-                      </td>
-
-                      {/* Action */}
-                      <td className="px-4 py-4 text-center">
-                        <button
-                          onClick={() => setSelectedRecord(h)}
-                          className="transition-colors"
-                          style={{ color: "#3AB000" }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.color = "#2d8a00")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.color = "#3AB000")
-                          }
-                          title="View Details"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* ── Mobile Card View ── */}
-        <div className="md:hidden space-y-3">
-          {paginated.length === 0 ? (
-            <div className="bg-white rounded border border-gray-200 p-8 text-center text-gray-400 text-sm">
-              No records found.
-            </div>
-          ) : (
-            paginated.map((h) => (
-              <div
-                key={h.id}
-                className="bg-white rounded border border-gray-200 p-4 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2 flex-1">
-                    <div
-                      className="w-9 h-9 rounded flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
-                      style={{ backgroundColor: "#3AB000" }}
-                    >
-                      {h.avatar}
+                      </div>
+                      <div className="flex items-start">
+                        <span className="font-medium w-20 flex-shrink-0">
+                          Time:
+                        </span>
+                        <span className="flex-1">{h.timeTaken} min</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="font-medium w-20 flex-shrink-0">
+                          Date:
+                        </span>
+                        <span className="flex-1">
+                          {new Date(h.completedAt).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-sm text-gray-800">
-                        {h.student}
-                      </p>
-                      <p className="text-xs text-gray-500">{h.cls}</p>
-                    </div>
-                  </div>
-                  <span
-                    className={`text-xs font-semibold px-2 py-1 rounded ${
-                      h.status === "pass"
-                        ? "bg-[#e8f5e2] text-[#2d8a00]"
-                        : "bg-red-50 text-red-600"
-                    }`}
-                  >
-                    {h.status === "pass" ? "Pass" : "Fail"}
-                  </span>
-                </div>
 
-                <div className="space-y-2 text-sm text-gray-700 mb-3">
-                  <div className="flex items-start">
-                    <span className="font-medium w-20 flex-shrink-0">
-                      Test:
-                    </span>
-                    <span className="flex-1">{h.testTitle}</span>
-                  </div>
-                  <div className="flex items-start">
-                    <span className="font-medium w-20 flex-shrink-0">
-                      Score:
-                    </span>
-                    <span className="flex-1">
-                      {h.score}/{h.totalMarks}
-                      <span
-                        className={`ml-2 font-bold text-xs ${pctColor(h.pct)}`}
+                    <div className="flex items-center justify-end pt-3 border-t border-gray-100">
+                      <button
+                        onClick={() => setSelectedRecord(h)}
+                        className="p-2 transition-colors"
+                        style={{ color: "#3AB000" }}
+                        title="View Details"
                       >
-                        {h.pct}%
-                      </span>
-                    </span>
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-start">
-                    <span className="font-medium w-20 flex-shrink-0">
-                      Time:
-                    </span>
-                    <span className="flex-1">{h.timeTaken} min</span>
-                  </div>
-                  <div className="flex items-start">
-                    <span className="font-medium w-20 flex-shrink-0">
-                      Date:
-                    </span>
-                    <span className="flex-1">
-                      {new Date(h.completedAt).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end pt-3 border-t border-gray-100">
-                  <button
-                    onClick={() => setSelectedRecord(h)}
-                    className="p-2 transition-colors"
-                    style={{ color: "#3AB000" }}
-                    title="View Details"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* ── Pagination ── */}
-        {filtered.length > 0 && (
-          <div className="flex flex-col sm:flex-row justify-between sm:justify-end items-center gap-3 sm:gap-4 mt-6">
-            <div className="text-xs sm:text-sm text-gray-600 sm:hidden">
-              Page {page} of {totalPages}
+                ))
+              )}
             </div>
-            <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto justify-center">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="disabled:opacity-50 text-white px-6 sm:px-10 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors rounded-sm flex-1 sm:flex-none"
-                style={{ backgroundColor: "#3AB000" }}
-                onMouseEnter={(e) =>
-                  !e.currentTarget.disabled &&
-                  (e.currentTarget.style.backgroundColor = "#2d8a00")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#3AB000")
-                }
-              >
-                Back
-              </button>
 
-              <div className="hidden sm:flex items-center gap-2 text-sm font-medium">
-                {pageNums.map((p) => (
+            {/* ── Pagination ── */}
+            {filtered.length > 0 && (
+              <div className="flex flex-col sm:flex-row justify-between sm:justify-end items-center gap-3 sm:gap-4 mt-6">
+                <div className="text-xs sm:text-sm text-gray-600 sm:hidden">
+                  Page {page} of {totalPages}
+                </div>
+                <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto justify-center">
                   <button
-                    key={p}
-                    onClick={() => setPage(p)}
-                    className="w-7 h-7 flex items-center justify-center rounded text-sm transition-colors"
-                    style={
-                      p === page
-                        ? { color: "#3AB000", fontWeight: "700" }
-                        : { color: "#6b7280" }
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="disabled:opacity-50 text-white px-6 sm:px-10 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors rounded-sm flex-1 sm:flex-none"
+                    style={{ backgroundColor: "#3AB000" }}
+                    onMouseEnter={(e) =>
+                      !e.currentTarget.disabled &&
+                      (e.currentTarget.style.backgroundColor = "#2d8a00")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#3AB000")
                     }
                   >
-                    {p}
+                    Back
                   </button>
-                ))}
-              </div>
 
-              <div className="sm:hidden text-sm font-medium text-gray-700 px-2">
-                {page}
-              </div>
+                  <div className="hidden sm:flex items-center gap-2 text-sm font-medium">
+                    {pageNums.map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setPage(p)}
+                        className="w-7 h-7 flex items-center justify-center rounded text-sm transition-colors"
+                        style={
+                          p === page
+                            ? { color: "#3AB000", fontWeight: "700" }
+                            : { color: "#6b7280" }
+                        }
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
 
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="disabled:opacity-50 text-white px-6 sm:px-10 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors rounded-sm flex-1 sm:flex-none"
-                style={{ backgroundColor: "#3AB000" }}
-                onMouseEnter={(e) =>
-                  !e.currentTarget.disabled &&
-                  (e.currentTarget.style.backgroundColor = "#2d8a00")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#3AB000")
-                }
-              >
-                Next
-              </button>
-            </div>
-          </div>
+                  <div className="sm:hidden text-sm font-medium text-gray-700 px-2">
+                    {page}
+                  </div>
+
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="disabled:opacity-50 text-white px-6 sm:px-10 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors rounded-sm flex-1 sm:flex-none"
+                    style={{ backgroundColor: "#3AB000" }}
+                    onMouseEnter={(e) =>
+                      !e.currentTarget.disabled &&
+                      (e.currentTarget.style.backgroundColor = "#2d8a00")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#3AB000")
+                    }
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {selectedRecord && (
+          <DetailModal
+            record={selectedRecord}
+            allHistory={history}
+            onClose={() => setSelectedRecord(null)}
+          />
         )}
       </div>
-
-      {/* Detail Modal */}
-      {selectedRecord && (
-        <DetailModal
-          record={selectedRecord}
-          allHistory={history}
-          onClose={() => setSelectedRecord(null)}
-        />
-      )}
     </DashboardLayout>
   );
 }

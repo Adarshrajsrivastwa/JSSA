@@ -619,4 +619,24 @@ export const uploadAPI = {
   },
 };
 
+/**
+ * Test Results API
+ */
+export const testResultsAPI = {
+  getAll: async () => {
+    return apiRequest("/test-result", { method: "GET" });
+  },
+};
+
+// Combined API object
+export const api = {
+  auth: authAPI,
+  applications: applicationsAPI,
+  jobPostings: jobPostingsAPI,
+  questionBank: questionBankAPI,
+  createPaper: createPaperAPI,
+  upload: uploadAPI,
+  testResults: testResultsAPI,
+};
+
 export default apiRequest;

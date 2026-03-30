@@ -346,6 +346,9 @@ router.get("/", async (req, res) => {
         { candidateName: { $regex: escapedSearch, $options: "i" } },
         { mobile: { $regex: escapedSearch, $options: "i" } },
         { district: { $regex: escapedSearch, $options: "i" } },
+        { applicationNumber: { $regex: escapedSearch, $options: "i" } },
+        { email: { $regex: escapedSearch, $options: "i" } },
+        { fatherName: { $regex: escapedSearch, $options: "i" } },
       ];
     }
 

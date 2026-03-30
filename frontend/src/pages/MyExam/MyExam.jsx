@@ -14,7 +14,6 @@ const MOCK_EXAMS = [
   {
     id: "exam-001",
     title: "Mathematics Final Exam",
-    subject: "Mathematics",
     class: "Class 10",
     type: "Final",
     duration: 60,
@@ -55,7 +54,6 @@ const MOCK_EXAMS = [
   {
     id: "exam-002",
     title: "Science Mid-Term",
-    subject: "Science",
     class: "Class 9",
     type: "Mid-Term",
     duration: 45,
@@ -81,7 +79,6 @@ const MOCK_EXAMS = [
   {
     id: "exam-003",
     title: "English Literature Quiz",
-    subject: "English",
     class: "Class 11",
     type: "Quiz",
     duration: 30,
@@ -107,7 +104,6 @@ const MOCK_EXAMS = [
   {
     id: "exam-004",
     title: "History Annual Exam",
-    subject: "History",
     class: "Class 8",
     type: "Annual",
     duration: 90,
@@ -149,7 +145,7 @@ const STEP = {
   submitted: "submitted",
 };
 
-export default function ExamManagement() {
+export default function MyExam() {
   const [step, setStep] = useState(STEP.list);
   const [examRows, setExamRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -342,7 +338,7 @@ export default function ExamManagement() {
 
   const summaryText = useMemo(() => {
     if (!selectedExam) return "";
-    return `${selectedExam.subject} · ${selectedExam.class} · ${selectedExam.type}`;
+    return `${selectedExam.class} · ${selectedExam.type}`;
   }, [selectedExam]);
 
   if (loading) {
@@ -382,7 +378,7 @@ export default function ExamManagement() {
           <div className="max-w-6xl mx-auto space-y-6">
             <div className="bg-white rounded-xl border border-[#c5edaa] shadow-sm p-5 md:p-6">
               <h1 className="text-3xl font-bold text-gray-800">
-                Exam Management
+                My Exam
               </h1>
               <p className="text-sm text-gray-600 mt-1">
                 Start exams based on their scheduled start and end dates.

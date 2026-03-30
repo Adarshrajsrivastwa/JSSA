@@ -71,7 +71,8 @@ router.get("/", async (req, res) => {
         .allowDiskUse(true)
         .skip(skip)
         .limit(limitNum)
-        .populate("createdBy", "email role"),
+        .populate("createdBy", "email role")
+        .populate("assignedStudents"),
       CreatePaper.countDocuments(query),
     ]);
 
@@ -193,10 +194,10 @@ router.get("/assigned", authenticate, async (req, res) => {
  */
 router.get("/:id", async (req, res) => {
   try {
-    const test = await CreatePaper.findById(req.params.id).populate(
-      "createdBy",
-      "email role",
-    );
+    const test = await CreatePaper.findById(req.params.id)
+      .populate("createdBy", "email role")
+      .populate("assignedStudents", "candidateName mobile email district fatherName")
+      .populate("questionConfigs.questionId", "question options marks difficulty topic");
     if (!test) return res.status(404).json({ error: "Test not found" });
 
     res.json({
