@@ -19,6 +19,7 @@ import {
   BarChart3,
   Activity,
   CheckCircle,
+  CheckCircle2,
   XCircle,
   AlertCircle,
 } from "lucide-react";
@@ -100,15 +101,15 @@ export default function AdminDashboard() {
           link: "/job-postings",
         },
         {
-          title: "Total Job Postings",
-          value: dashboardData.stats.totalJobPostings.toString(),
-          change: "+0%",
+          title: "Paid Applications",
+          value: (dashboardData.stats.totalPaidApplications || 0).toLocaleString(),
+          change: "Total Paid",
           isPositive: true,
-          icon: Users,
+          icon: CheckCircle2,
           color: "from-orange-500 to-orange-600",
           bgColor: "bg-orange-50",
           textColor: "text-orange-600",
-          link: "/job-postings",
+          link: "/application-form",
         },
       ]
     : [];
@@ -160,7 +161,7 @@ export default function AdminDashboard() {
   const categoryData = dashboardData?.statusDistribution
     ? Object.entries(dashboardData.statusDistribution)
         .map(([name, value], index) => {
-          const colors = ["#16a34a", "#22c55e", "#4ade80", "#86efac", "#f59e0b"];
+          const colors = ["#16a34a", "#f59e0b", "#dc2626", "#3b82f6", "#6366f1"];
           return {
             name: name || "Pending",
             value: value,
@@ -360,10 +361,10 @@ export default function AdminDashboard() {
             <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
               <div className="mb-4">
                 <h2 className="text-xl font-bold text-gray-900 mb-1">
-                  Application Status
+                  Payment Status
                 </h2>
                 <p className="text-sm text-gray-600">
-                  Distribution by status
+                  Distribution by payment status
                 </p>
               </div>
               <ResponsiveContainer width="100%" height={280}>
@@ -374,14 +375,21 @@ export default function AdminDashboard() {
                     cy="50%"
                     labelLine={false}
                     label={({ name, percent }) =>
-                      `${name}: ${(percent * 100).toFixed(0)}%`
+                      `${name.toUpperCase()}: ${(percent * 100).toFixed(0)}%`
                     }
                     outerRadius={90}
                     dataKey="value"
                   >
-                    {(categoryData.length > 0 ? categoryData : [{ name: "No Data", value: 1, color: "#e5e7eb" }]).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
+                    {(categoryData.length > 0 ? categoryData : [{ name: "No Data", value: 1, color: "#e5e7eb" }]).map((entry, index) => {
+                      // Map specific colors for payment statuses
+                      let fillColor = entry.color;
+                      const status = entry.name.toLowerCase();
+                      if (status === 'paid') fillColor = '#16a34a'; // Green
+                      if (status === 'pending') fillColor = '#f59e0b'; // Yellow/Orange
+                      if (status === 'failed') fillColor = '#dc2626'; // Red
+                      
+                      return <Cell key={`cell-${index}`} fill={fillColor} />;
+                    })}
                   </Pie>
                   <Tooltip
                     contentStyle={{
@@ -535,15 +543,15 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          app.status === "Approved"
-                            ? "bg-green-100 text-green-700"
-                            : app.status === "Pending"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-gray-100 text-gray-700"
+                        className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${
+                          app.paymentStatus === "paid"
+                            ? "bg-green-100 text-green-700 border border-green-200"
+                            : app.paymentStatus === "pending"
+                              ? "bg-yellow-100 text-yellow-700 border border-yellow-200"
+                              : "bg-red-100 text-red-700 border border-red-200"
                         }`}
                       >
-                        {app.status || "Pending"}
+                        {app.paymentStatus || "Pending"}
                       </span>
                     </div>
                   ))

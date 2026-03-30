@@ -105,6 +105,7 @@ router.use(authenticate);
 
 const createValidation = [
   body("question").notEmpty().withMessage("Question is required"),
+  body("subject").notEmpty().withMessage("Subject is required"),
   body("difficulty")
     .isIn(["Easy", "Medium", "Hard"])
     .withMessage("Difficulty must be Easy, Medium, or Hard"),

@@ -22,9 +22,10 @@ import {
   Award,
   CheckCircle2,
   ChevronRight,
+  PlayCircle,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
-import { dashboardAPI, applicationsAPI, jobPostingsAPI, notificationsAPI } from "../utils/api";
+import { dashboardAPI, applicationsAPI, jobPostingsAPI, notificationsAPI, createPaperAPI, noticesAPI } from "../utils/api";
 import ScrollerCarousel from "../components/Scroller/ScrollerCarousel";
 
 export default function ApplicantDashboard() {
@@ -36,6 +37,7 @@ export default function ApplicantDashboard() {
   const [recentApplications, setRecentApplications] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [jobPostings, setJobPostings] = useState([]);
+  const [assignedTests, setAssignedTests] = useState([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -46,6 +48,16 @@ export default function ApplicantDashboard() {
         const statsResponse = await dashboardAPI.getStats();
         if (statsResponse.success && statsResponse.data) {
           setDashboardData(statsResponse.data);
+        }
+
+        // Fetch assigned tests
+        try {
+          const testsResponse = await createPaperAPI.getAssigned();
+          if (testsResponse.success && testsResponse.data) {
+            setAssignedTests(testsResponse.data.tests || []);
+          }
+        } catch (err) {
+          console.error("Error fetching assigned tests:", err);
         }
 
         // Fetch recent applications
@@ -66,14 +78,42 @@ export default function ApplicantDashboard() {
           setRecentApplications(transformed);
         }
 
-        // Fetch notifications
+        // Fetch notifications and notices
         try {
-          const notifResponse = await notificationsAPI.getAll(true);
+          const [notifResponse, noticesResponse] = await Promise.all([
+            notificationsAPI.getAll(true),
+            noticesAPI.getAll(true)
+          ]);
+
+          let combined = [];
+          
           if (notifResponse.success && notifResponse.data) {
-            setNotifications(notifResponse.data.notifications || notifResponse.data || []);
+            const notifs = (notifResponse.data.notifications || notifResponse.data || []).map(n => ({
+              ...n,
+              type: 'notification',
+              displayTitle: n.title,
+              displayLink: n.url || n.link
+            }));
+            combined = [...combined, ...notifs];
           }
+
+          if (noticesResponse.success && noticesResponse.data) {
+            const notices = (noticesResponse.data.notices || noticesResponse.data || []).map(n => ({
+              ...n,
+              type: 'notice',
+              displayTitle: n.noticeEnglish && n.noticeHindi 
+                ? `${n.noticeEnglish} / ${n.noticeHindi}` 
+                : (n.noticeEnglish || n.noticeHindi || n.importantNotice),
+              displayLink: null // Notices usually don't have direct links in this model
+            }));
+            combined = [...combined, ...notices];
+          }
+
+          // Sort by date
+          combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          setNotifications(combined);
         } catch (err) {
-          console.error("Error fetching notifications:", err);
+          console.error("Error fetching notifications/notices:", err);
         }
 
         // Fetch active job postings
@@ -209,6 +249,71 @@ export default function ApplicantDashboard() {
             </p>
           </div>
 
+          {/* Live & Upcoming Tests */}
+          {assignedTests.some(test => test.windowStatus === "active" || test.windowStatus === "upcoming") && (
+            <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <PlayCircle className="w-5 h-5 text-[#3AB000]" />
+                  Assigned Tests
+                </h2>
+                <button
+                  onClick={() => navigate("/exam-management")}
+                  className="text-[#3AB000] text-sm font-semibold hover:underline"
+                >
+                  Go to Exam Portal →
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {assignedTests
+                  .filter(test => test.windowStatus === "active" || test.windowStatus === "upcoming")
+                  .map((test) => (
+                    <div
+                      key={test._id}
+                      className={`p-4 rounded-xl border transition shadow-sm hover:shadow-md cursor-pointer ${
+                        test.windowStatus === "active"
+                          ? "bg-green-50 border-green-200"
+                          : "bg-blue-50 border-blue-200"
+                      }`}
+                      onClick={() => navigate("/exam-management")}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          test.windowStatus === "active"
+                            ? "bg-[#3AB000] text-white"
+                            : "bg-blue-500 text-white"
+                        }`}>
+                          {test.windowStatus === "active" ? "Live Now" : "Upcoming"}
+                        </span>
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <Clock className="w-3 h-3" />
+                          {test.duration} Min
+                        </div>
+                      </div>
+                      <h3 className="font-bold text-gray-900 text-sm mb-2 line-clamp-2">
+                        {test.title}
+                      </h3>
+                      <div className="flex items-center justify-between mt-4">
+                        <div className="text-[10px] text-gray-500 italic">
+                          {test.windowStatus === "active" 
+                            ? `Ends: ${new Date(test.endDate).toLocaleDateString()}`
+                            : `Starts: ${new Date(test.startDate).toLocaleDateString()}`
+                          }
+                        </div>
+                        <button className={`px-3 py-1 rounded text-xs font-bold ${
+                          test.windowStatus === "active"
+                            ? "bg-[#3AB000] text-white"
+                            : "bg-gray-200 text-gray-600"
+                        }`}>
+                          {test.windowStatus === "active" ? "Start Test" : "Wait"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
           {/* Application Flow */}
           <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200">
             <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
@@ -267,25 +372,37 @@ export default function ApplicantDashboard() {
                         key={notif._id}
                         className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-green-50 transition-colors cursor-pointer"
                         onClick={() => {
-                          if (notif.link) {
-                            navigate(notif.link);
+                          if (notif.displayLink) {
+                            if (notif.displayLink.startsWith('http')) {
+                              window.open(notif.displayLink, '_blank');
+                            } else {
+                              navigate(notif.displayLink);
+                            }
                           }
                         }}
                       >
                         <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-full bg-[#3AB000] flex items-center justify-center flex-shrink-0">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                            notif.type === 'notice' ? 'bg-[#3AB000]' : 'bg-blue-500'
+                          }`}>
                             <Bell className="w-5 h-5 text-white" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <h3 className="font-bold text-gray-900 text-sm mb-1">
-                              {notif.title || "Notification"}
+                              {notif.displayTitle || "Notification"}
                             </h3>
-                            <p className="text-xs text-gray-600 line-clamp-2">
-                              {notif.message || notif.description || ""}
-                            </p>
+                            {notif.message || notif.description ? (
+                              <p className="text-xs text-gray-600 line-clamp-2">
+                                {notif.message || notif.description}
+                              </p>
+                            ) : null}
                             {notif.createdAt && (
-                              <p className="text-xs text-gray-400 mt-2">
-                                {new Date(notif.createdAt).toLocaleDateString()}
+                              <p className="text-[10px] text-gray-400 mt-2 font-medium">
+                                {new Date(notif.createdAt).toLocaleDateString('en-GB', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric'
+                                })}
                               </p>
                             )}
                           </div>

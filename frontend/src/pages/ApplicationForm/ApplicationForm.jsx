@@ -373,11 +373,13 @@ const ApplicationForm = () => {
                             <h3 className={`text-lg font-bold ${isInactive ? "text-gray-600" : "text-gray-900"}`}>
                               {job.post}
                             </h3>
-                            {isInactive && (
-                              <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-[10px] font-bold uppercase tracking-wider border border-gray-200">
-                                Inactive / Expired
-                              </span>
-                            )}
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                              isInactive 
+                                ? "bg-red-50 text-red-600 border-red-100" 
+                                : "bg-green-50 text-green-600 border-green-100"
+                            }`}>
+                              {isInactive ? "Inactive" : "Active"}
+                            </span>
                           </div>
                         </div>
                         <div className="flex items-center gap-4 ml-8">

@@ -566,7 +566,14 @@ export default function ExamManagement() {
               {selectedExam?.title}
             </h2>
             <p className="text-sm text-gray-500 mt-1">{summaryText}</p>
-            <div className="mt-4 p-4 bg-[#f0fce8] border border-[#b5e08a] rounded-lg">
+            
+            {selectedExam?.description && (
+              <div className="mt-4 text-sm text-gray-600 border-l-4 border-[#3AB000] pl-4 py-1 italic">
+                {selectedExam.description}
+              </div>
+            )}
+
+            <div className="mt-6 p-4 bg-[#f0fce8] border border-[#b5e08a] rounded-lg">
               <p className="text-sm font-semibold text-[#1a5000] mb-2">
                 Instructions
               </p>

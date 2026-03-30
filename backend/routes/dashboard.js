@@ -35,6 +35,12 @@ router.get("/stats", async (req, res) => {
     // Total applications
     const totalApplications = await Application.countDocuments(applicationQuery);
 
+    // Total paid applications
+    const totalPaidApplications = await Application.countDocuments({
+      ...applicationQuery,
+      paymentStatus: "paid"
+    });
+
     // Applications today
     const applicationsToday = await Application.countDocuments({
       ...applicationQuery,
@@ -63,20 +69,21 @@ router.get("/stats", async (req, res) => {
       status: "Active",
     });
 
-    // Get applications by status
-    const applicationsByStatus = await Application.aggregate([
+    // Get applications by payment status
+    const applicationsByPaymentStatus = await Application.aggregate([
       { $match: applicationQuery },
       {
         $group: {
-          _id: "$status",
+          _id: "$paymentStatus",
           count: { $sum: 1 },
         },
       },
     ]);
 
-    const statusMap = {};
-    applicationsByStatus.forEach((item) => {
-      statusMap[item._id] = item.count;
+    const paymentStatusMap = {};
+    applicationsByPaymentStatus.forEach((item) => {
+      const status = item._id || "pending";
+      paymentStatusMap[status] = item.count;
     });
 
     // Get monthly application data for last 6 months
@@ -132,7 +139,7 @@ router.get("/stats", async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(5)
       .populate("jobPostingId", "advtNo post")
-      .select("candidateName district status createdAt jobPostingId");
+      .select("candidateName district status createdAt jobPostingId paymentStatus");
 
     // Calculate approval rate (last 30 days)
     const thirtyDaysAgo = new Date();
@@ -173,6 +180,7 @@ router.get("/stats", async (req, res) => {
       data: {
         stats: {
           totalApplications: totalApplications,
+          totalPaidApplications: totalPaidApplications,
           applicationsToday: applicationsToday,
           todayChange: todayChange,
           totalJobPostings: totalJobPostings,
@@ -188,9 +196,10 @@ router.get("/stats", async (req, res) => {
             ? app.jobPostingId.post?.en || app.jobPostingId.post || "N/A"
             : "General",
           status: app.status || "Pending",
+          paymentStatus: app.paymentStatus || "pending",
           createdAt: app.createdAt,
         })),
-        statusDistribution: statusMap,
+        statusDistribution: paymentStatusMap,
         districtDistribution: districtData,
       },
     });

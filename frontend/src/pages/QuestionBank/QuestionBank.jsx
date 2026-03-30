@@ -199,6 +199,13 @@ const INITIAL_QUESTIONS = [
 
 const SUBJECTS = [
   "Mathematics",
+  "Science",
+  "Social Science",
+  "Maths",
+  "GK",
+  "स्वास्थ्य एवं पोषण",
+  "प्रबंधन एवं प्रशासन",
+  "Computer",
   "Physics",
   "Chemistry",
   "Biology",

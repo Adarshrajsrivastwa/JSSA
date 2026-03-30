@@ -513,6 +513,7 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
   const [showQuestionPicker, setShowQuestionPicker] = useState(false);
   const [questionSearch, setQuestionSearch] = useState("");
   const [qFilterDifficulty, setQFilterDifficulty] = useState("all");
+  const [qFilterSubject, setQFilterSubject] = useState("all");
   const [applicants, setApplicants] = useState([]);
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
   const [applicantError, setApplicantError] = useState("");
@@ -541,10 +542,26 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
   // Filtered titles for custom dropdown
   const filteredTitles = useMemo(() => {
     const q = titleSearch.toLowerCase().trim();
-    return (Array.isArray(titleOptions) ? titleOptions : []).filter((opt) =>
+    const filtered = (Array.isArray(titleOptions) ? titleOptions : []).filter((opt) =>
       opt.toLowerCase().includes(q),
     );
-  }, [titleOptions, titleSearch]);
+
+    // Sort: Active first, Inactive later
+    return filtered.sort((a, b) => {
+      const getStatusScore = (title) => {
+        const posting = postings.find((p) => {
+          const titleEn = typeof p.post === 'object' ? p.post.en : p.post;
+          const titleHi = typeof p.post === 'object' ? p.post.hi : p.post;
+          return titleEn === title || titleHi === title || p.title === title || p.advtNo === title;
+        });
+        const isOpen = posting ? isVacancyOpen(posting.lastDate) : true;
+        const isActive = posting ? (posting.status !== "Inactive" && isOpen) : true;
+        return isActive ? 1 : 0;
+      };
+
+      return getStatusScore(b) - getStatusScore(a);
+    });
+  }, [titleOptions, titleSearch, postings]);
 
   // Debounce student search
   useEffect(() => {
@@ -644,6 +661,12 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
     [questionBank],
   );
 
+  // Unique subjects from question bank
+  const qbSubjects = useMemo(
+    () => [...new Set(questionBank.map((q) => q.subject).filter(Boolean))],
+    [questionBank],
+  );
+
   const filteredQB = useMemo(() => {
     const q = questionSearch.trim().toLowerCase();
     return questionBank.filter((item) => {
@@ -656,9 +679,11 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
         );
       const matchDiff =
         qFilterDifficulty === "all" || item.difficulty === qFilterDifficulty;
-      return matchSearch && matchDiff;
+      const matchSub =
+        qFilterSubject === "all" || item.subject === qFilterSubject;
+      return matchSearch && matchDiff && matchSub;
     });
-  }, [questionBank, questionSearch, qFilterDifficulty]);
+  }, [questionBank, questionSearch, qFilterDifficulty, qFilterSubject]);
 
   const handleInput = (e) => {
     const { name, value, type, checked } = e.target;
@@ -804,26 +829,45 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
                           No titles found.
                         </div>
                       ) : (
-                        filteredTitles.map((opt) => (
-                          <div
-                            key={opt}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setFormData((p) => ({ ...p, title: opt }));
-                              setIsTitleDropdownOpen(false);
-                              setTitleSearch("");
-                            }}
-                            className={`px-4 py-2.5 text-xs cursor-pointer hover:bg-[#e8f5e2] transition-colors border-b border-gray-50 last:border-0 ${
-                              formData.title === opt
-                                ? "bg-[#e8f5e2] text-[#3AB000] font-bold"
-                                : "text-gray-700"
-                            }`}
-                          >
-                            <p className="leading-normal break-words">
-                              {opt}
-                            </p>
-                          </div>
-                        ))
+                        filteredTitles.map((opt) => {
+                          const posting = postings.find((p) => {
+                            const titleEn = typeof p.post === 'object' ? p.post.en : p.post;
+                            const titleHi = typeof p.post === 'object' ? p.post.hi : p.post;
+                            return titleEn === opt || titleHi === opt || p.title === opt || p.advtNo === opt;
+                          });
+                          const isOpen = posting ? isVacancyOpen(posting.lastDate) : true;
+                          const isActive = posting ? (posting.status !== "Inactive" && isOpen) : true;
+
+                          return (
+                            <div
+                              key={opt}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFormData((p) => ({ ...p, title: opt }));
+                                setIsTitleDropdownOpen(false);
+                                setTitleSearch("");
+                              }}
+                              className={`px-4 py-2.5 text-xs cursor-pointer hover:bg-[#e8f5e2] transition-colors border-b border-gray-50 last:border-0 ${
+                                formData.title === opt
+                                  ? "bg-[#e8f5e2] text-[#3AB000] font-bold"
+                                  : "text-gray-700"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <p className="leading-normal break-words flex-1">
+                                  {opt}
+                                </p>
+                                <span className={`shrink-0 px-1.5 py-0.5 rounded-[4px] text-[9px] font-bold uppercase tracking-wider border ${
+                                  isActive 
+                                    ? "bg-green-50 text-green-600 border-green-100" 
+                                    : "bg-red-50 text-red-600 border-red-100"
+                                }`}>
+                                  {isActive ? "Active" : "Inactive"}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })
                       )}
                     </div>
                   </div>
@@ -1308,6 +1352,19 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
               {/* Filters row */}
               <div className="flex items-center gap-2 flex-wrap">
                 <Filter size={13} className="text-gray-400 flex-shrink-0" />
+                {/* Subject filter */}
+                <select
+                  value={qFilterSubject}
+                  onChange={(e) => setQFilterSubject(e.target.value)}
+                  className="px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-[#3AB000] focus:border-[#3AB000] bg-white outline-none"
+                >
+                  <option value="all">All Subjects</option>
+                  {qbSubjects.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
                 {/* Difficulty filter */}
                 <select
                   value={qFilterDifficulty}
@@ -1473,7 +1530,26 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const isVacancyOpen = (lastDate) => {
+  if (!lastDate) return true;
+  try {
+    const parts = lastDate.split(/[-/.]/);
+    let date;
+    if (parts.length === 3) {
+      if (parts[0].length === 4) date = new Date(parts[0], parts[1] - 1, parts[2]);
+      else date = new Date(parts[2], parts[1] - 1, parts[0]);
+    } else date = new Date(lastDate);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today <= date;
+  } catch {
+    return true;
+  }
+};
+
+// ─── Modal Component ───────────────────────────────────────────────────────────
 export default function TestManagement() {
   const [tests, setTests] = useState([]);
   const [questionBank, setQuestionBank] = useState([]);
@@ -1534,6 +1610,13 @@ export default function TestManagement() {
         : [];
       setPostings(postingsData);
       const titles = postingsData
+        .sort((a, b) => {
+          const aOpen = isVacancyOpen(a.lastDate) && a.status !== "Inactive";
+          const bOpen = isVacancyOpen(b.lastDate) && b.status !== "Inactive";
+          if (aOpen && !bOpen) return -1;
+          if (!aOpen && bOpen) return 1;
+          return 0;
+        })
         .map((item) =>
           String(item?.title || item?.post?.en || item?.advtNo || "").trim(),
         )
