@@ -374,14 +374,14 @@ export default function MyExam() {
   if (step === STEP.list) {
     return (
       <DashboardLayout>
-        <div className="min-h-screen bg-gradient-to-br from-[#f0fce8] via-white to-[#e8f5d8] p-4 md:p-8">
+        <div className="min-h-screen bg-gray-50 p-4 md:p-8">
           <div className="max-w-6xl mx-auto space-y-6">
-            <div className="bg-white rounded-xl border border-[#c5edaa] shadow-sm p-5 md:p-6">
-              <h1 className="text-3xl font-bold text-gray-800">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-8">
+              <h1 className="text-3xl font-extrabold text-gray-900">
                 My Exam
               </h1>
-              <p className="text-sm text-gray-600 mt-1">
-                Start exams based on their scheduled start and end dates.
+              <p className="text-sm text-gray-500 mt-2">
+                Manage your assigned exams, view schedules, and start your assessments.
               </p>
             </div>
 
@@ -409,7 +409,7 @@ export default function MyExam() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       {activeExams.map((exam) => (
                         <div
-                          key={exam.id}
+                          key={exam._id || exam.id}
                           className="bg-white border border-[#c5edaa] rounded-xl p-5 shadow-sm hover:shadow-md transition"
                         >
                           <div className="flex items-start justify-between gap-3">
@@ -424,7 +424,7 @@ export default function MyExam() {
                             <p>
                               Questions:{" "}
                               <span className="font-semibold">
-                                {exam.questions.length}
+                                {exam.questions?.length || 0}
                               </span>{" "}
                               · Duration:{" "}
                               <span className="font-semibold">
@@ -432,11 +432,11 @@ export default function MyExam() {
                               </span>
                             </p>
                             <p className="text-xs text-gray-600">
-                              Attempts: {exam.attemptsUsed}/{exam.maxAttempts}
+                              Attempts: {exam.attemptsUsed || 0}/{exam.maxAttempts || 1}
                             </p>
                             <p className="text-xs text-gray-500">
-                              Start: {exam.startDate || "-"} | End:{" "}
-                              {exam.endDate || "-"}
+                              Start: {exam.startDate ? new Date(exam.startDate).toLocaleDateString() : "-"} | End:{" "}
+                              {exam.endDate ? new Date(exam.endDate).toLocaleDateString() : "-"}
                             </p>
                           </div>
                           <button
@@ -468,7 +468,7 @@ export default function MyExam() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       {upcomingExams.map((exam) => (
                         <div
-                          key={exam.id}
+                          key={exam._id || exam.id}
                           className="bg-white border border-blue-100 rounded-xl p-5 shadow-sm"
                         >
                           <div className="flex items-start justify-between gap-3">
@@ -483,7 +483,7 @@ export default function MyExam() {
                             <p>
                               Questions:{" "}
                               <span className="font-semibold">
-                                {exam.questions.length}
+                                {exam.questions?.length || 0}
                               </span>{" "}
                               · Duration:{" "}
                               <span className="font-semibold">
@@ -493,7 +493,54 @@ export default function MyExam() {
                             <p className="text-xs text-gray-600">
                               Starts at:{" "}
                               <span className="font-semibold text-blue-600">
-                                {exam.startDate || "-"}
+                                {exam.startDate ? new Date(exam.startDate).toLocaleDateString() : "-"}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-600 mb-3">
+                    Ended Exams
+                  </h2>
+                  {endedExams.length === 0 ? (
+                    <div className="bg-white border rounded-lg p-4 text-sm text-gray-500 shadow-sm">
+                      No ended exams.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      {endedExams.map((exam) => (
+                        <div
+                          key={exam._id || exam.id}
+                          className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm grayscale opacity-80"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <h3 className="text-xl font-semibold text-gray-800">
+                              {exam.title}
+                            </h3>
+                            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+                              Ended
+                            </span>
+                          </div>
+                          <div className="mt-3 text-sm text-gray-700 space-y-1">
+                            <p>
+                              Questions:{" "}
+                              <span className="font-semibold">
+                                {exam.questions?.length || 0}
+                              </span>{" "}
+                              · Duration:{" "}
+                              <span className="font-semibold">
+                                {exam.duration} min
+                              </span>
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              Ended on:{" "}
+                              <span className="font-semibold">
+                                {exam.endDate ? new Date(exam.endDate).toLocaleDateString() : "-"}
                               </span>
                             </p>
                           </div>
@@ -577,8 +624,8 @@ export default function MyExam() {
                 <li>Total Questions: <strong>{selectedExam?.totalQuestions || questions.length}</strong></li>
                 <li>Duration: <strong>{selectedExam?.duration} Minutes</strong></li>
                 <li>Ensure a stable internet connection.</li>
-                <li>Do not refresh the page during the test.</li>
-                <li>Test will auto-submit when time expires.</li>
+                <li>Do not refresh the page during the exam.</li>
+                <li>Exam will auto-submit when time expires.</li>
               </ul>
             </div>
             {error ? <p className="text-sm text-red-600 mt-4">{error}</p> : null}

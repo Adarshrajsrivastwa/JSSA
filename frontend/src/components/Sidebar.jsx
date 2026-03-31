@@ -17,6 +17,7 @@ import {
   CreditCard,
   Film,
   Bell,
+  BookOpen,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 
@@ -123,8 +124,11 @@ const Sidebar = () => {
       { name: "Dashboard", icon: LayoutDashboard, path: dashboardPath },
       { name: "Job Postings", icon: Users, path: "/job-postings" },
       { name: "Application Form", icon: FileText, path: "/application-form" },
-      { name: "MY EXAM", icon: Bell, path: "/exam-management" },
     ];
+
+    if (role === "applicant") {
+      base.push({ name: "My Exam", icon: Bell, path: "/my-exam" });
+    }
 
     if (role === "admin") {
       base.push(
@@ -133,9 +137,16 @@ const Sidebar = () => {
         { name: "Notifications", icon: Bell, path: "/notifications-manage" },
         { name: "Notice", icon: Bell, path: "/notice" },
         { name: "Payment Settings", icon: CreditCard, path: "/settings" },
-        { name: "Question bank  ", icon: FileText, path: "/question-bank  " },
-        { name: "Create Paper  ", icon: FileText, path: "/create-paper  " },
-        { name: "Test Result  ", icon: Bell, path: "/test-result " },
+        {
+          name: "Exam Management",
+          icon: BookOpen,
+          path: "/exam-management",
+          children: [
+            { name: "Question Bank", icon: FileText, path: "/question-bank" },
+            { name: "Exam Event", icon: FileText, path: "/create-paper" },
+            { name: "Exam Results", icon: Bell, path: "/test-result" },
+          ],
+        },
         {
           name: "Settings",
           icon: Settings,

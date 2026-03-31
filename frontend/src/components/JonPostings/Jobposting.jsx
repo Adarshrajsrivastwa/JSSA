@@ -96,11 +96,17 @@ const EDUCATION_OPTIONS = [
   "M.A",
 ];
 
+const POST_OPTIONS = [
+  { en: "District Manager", hi: "जिला प्रबंधक" },
+  { en: "Block Supervisor cum Panchayat Executive", hi: "प्रखंड पर्यवेक्षक सह पंचायत कार्यपालक" },
+  { en: "Panchayat Executive", hi: "पंचायत कार्यपालक" },
+];
+
 const SELECTION_OPTIONS = [
-  "Based on Graduation Marks & Interview / स्नातक अंक और साक्षात्कार के आधार पर",
-  "Based on Graduation Mark & Interview",
-  "Written Test & Interview",
-  "Direct Interview",
+  "Based on Graduation Marks & Exam / स्नातक अंक और परीक्षा के आधार पर",
+  "Based on Graduation Mark & Exam",
+  "Written Test & Exam",
+  "Direct Exam",
   "Merit Based",
 ];
 
@@ -249,6 +255,28 @@ const JobPostingForm = ({
     const { name, value, files } = e.target;
     if (files) {
       setForm((f) => ({ ...f, [name]: files[0] }));
+    } else if (name === "post") {
+      const selectedOption = POST_OPTIONS.find((opt) => opt.en === value);
+      if (selectedOption) {
+        setForm((f) => ({
+          ...f,
+          post: selectedOption.en,
+          postHi: selectedOption.hi,
+        }));
+      } else {
+        setForm((f) => ({ ...f, [name]: value }));
+      }
+    } else if (name === "postHi") {
+      const selectedOption = POST_OPTIONS.find((opt) => opt.hi === value);
+      if (selectedOption) {
+        setForm((f) => ({
+          ...f,
+          post: selectedOption.en,
+          postHi: selectedOption.hi,
+        }));
+      } else {
+        setForm((f) => ({ ...f, [name]: value }));
+      }
     } else {
       setForm((f) => ({ ...f, [name]: value }));
     }
@@ -545,22 +573,34 @@ const JobPostingForm = ({
             {/* Post Name - English and Hindi */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField label="Post (English)" required={!isEdit} error={errors.post}>
-                <input
+                <select
                   name="post"
                   value={form.post}
                   onChange={handleChange}
-                  placeholder="Enter post name (e.g. District Manager)"
                   className={inputCls(errors.post)}
-                />
+                >
+                  <option value="">Select post name (English)</option>
+                  {POST_OPTIONS.map((opt) => (
+                    <option key={opt.en} value={opt.en}>
+                      {opt.en}
+                    </option>
+                  ))}
+                </select>
               </FormField>
               <FormField label="Post (Hindi) / पद" required={!isEdit} error={errors.postHi}>
-                <input
+                <select
                   name="postHi"
                   value={form.postHi}
                   onChange={handleChange}
-                  placeholder="पद का नाम दर्ज करें (जैसे जिला प्रबंधक)"
                   className={inputCls(errors.postHi)}
-                />
+                >
+                  <option value="">पद का नाम चुनें (Hindi)</option>
+                  {POST_OPTIONS.map((opt) => (
+                    <option key={opt.hi} value={opt.hi}>
+                      {opt.hi}
+                    </option>
+                  ))}
+                </select>
               </FormField>
             </div>
 
@@ -747,7 +787,7 @@ const JobPostingForm = ({
                   name="selectionProcess"
                   value={form.selectionProcess}
                   onChange={handleChange}
-                  placeholder="Enter selection process (e.g. Based on Graduation Marks & Interview)"
+                  placeholder="Enter selection process (e.g. Based on Graduation Marks & Exam)"
                   className={inputCls(errors.selectionProcess)}
                 />
               </FormField>
@@ -756,7 +796,7 @@ const JobPostingForm = ({
                   name="selectionProcessHi"
                   value={form.selectionProcessHi}
                   onChange={handleChange}
-                  placeholder="चयन प्रक्रिया दर्ज करें (जैसे स्नातक अंक और साक्षात्कार के आधार पर)"
+                  placeholder="चयन प्रक्रिया दर्ज करें (जैसे स्नातक अंक और परीक्षा के आधार पर)"
                   className={inputCls(errors.selectionProcessHi)}
                 />
               </FormField>

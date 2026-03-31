@@ -343,12 +343,12 @@ router.get("/", async (req, res) => {
       // Escape special regex characters to prevent "Regular expression is invalid" errors
       const escapedSearch = String(search).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       query.$or = [
-        { candidateName: { $regex: escapedSearch, $options: "i" } },
-        { mobile: { $regex: escapedSearch, $options: "i" } },
-        { district: { $regex: escapedSearch, $options: "i" } },
         { applicationNumber: { $regex: escapedSearch, $options: "i" } },
+        { candidateName: { $regex: escapedSearch, $options: "i" } },
         { email: { $regex: escapedSearch, $options: "i" } },
+        { mobile: { $regex: escapedSearch, $options: "i" } },
         { fatherName: { $regex: escapedSearch, $options: "i" } },
+        { district: { $regex: escapedSearch, $options: "i" } },
       ];
     }
 

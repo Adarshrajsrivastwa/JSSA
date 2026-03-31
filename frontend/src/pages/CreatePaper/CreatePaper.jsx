@@ -420,7 +420,7 @@ function DetailsModal({ test, onClose }) {
                     <div>
                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Description</p>
                       <p className="text-sm font-bold text-gray-800 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100 italic">
-                        "{test.description || "No description provided for this test."}"
+                        "{test.description || "No description provided for this event."}"
                       </p>
                     </div>
                   </div>
@@ -740,7 +740,7 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
           className="text-white px-6 py-4 flex items-center justify-between shrink-0"
         >
           <h3 className="text-base font-bold">
-            {editingTest ? "Edit Test" : "Create New Test"}
+            {editingTest ? "Edit Event" : "Create New Event"}
           </h3>
           <button
             onClick={onClose}
@@ -754,7 +754,7 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
         <div className="border-b border-gray-200 bg-white shrink-0 overflow-x-auto">
           <div className="flex">
             {[
-              { key: "details", label: "Test Details" },
+              { key: "details", label: "Event Details" },
               { key: "applicants", label: "Select Students" },
               { key: "settings", label: "Settings" },
             ].map((tab) => (
@@ -781,14 +781,14 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
               {/* Test Title — Custom Searchable Dropdown */}
               <div className="relative" ref={titleDropdownRef}>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
-                  Test Title <span className="text-red-500">*</span>
+                  Event Title <span className="text-red-500">*</span>
                 </label>
                 <div
                   className={`${inputCls} flex items-center justify-between cursor-pointer relative ${isTitleDropdownOpen ? "ring-2 ring-[#3AB000] border-[#3AB000]" : ""}`}
                   onClick={() => setIsTitleDropdownOpen(!isTitleDropdownOpen)}
                 >
                   <span className={`truncate flex-1 ${!formData.title ? "text-gray-400" : "text-gray-900 font-medium"}`}>
-                    {formData.title || "Select test title"}
+                    {formData.title || "Select event title"}
                   </span>
                   <ChevronDown
                     size={16}
@@ -1547,7 +1547,7 @@ export default function TestManagement() {
     setTestsError("");
     const response = await createPaperAPI.getAll({ page: 1, limit: 0 });
     if (!response?.success) {
-      setTestsError(response?.error || "Failed to load tests.");
+      setTestsError(response?.error || "Failed to load events.");
       setIsLoadingTests(false);
       return;
     }
@@ -1714,7 +1714,7 @@ export default function TestManagement() {
 
     const response = await createPaperAPI.create(payload);
     if (!response?.success) {
-      alert(response?.error || "Failed to duplicate test.");
+      alert(response?.error || "Failed to duplicate event.");
       return;
     }
     await loadTests();
@@ -1744,7 +1744,7 @@ export default function TestManagement() {
         {/* ── Stats Cards ── */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Tests</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Events</p>
             <p className="text-2xl font-black text-gray-900">{stats.total}</p>
           </div>
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
@@ -1767,7 +1767,7 @@ export default function TestManagement() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
             <input
               type="text"
-              placeholder="Search tests..."
+              placeholder="Search events..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3AB000] outline-none"
@@ -1790,7 +1790,7 @@ export default function TestManagement() {
               }}
               className="bg-[#3AB000] text-white px-6 py-2 rounded-lg font-bold hover:bg-[#2d8a00] transition-colors flex items-center justify-center gap-2 flex-1 md:flex-none"
             >
-              <Plus size={18} /> Create Test
+              <Plus size={18} /> Create Event
             </button>
           </div>
         </div>

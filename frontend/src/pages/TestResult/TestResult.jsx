@@ -427,11 +427,11 @@ function DetailModal({ record, allHistory, onClose }) {
               <div className="grid grid-cols-2 gap-6">
                 <div className="bg-white rounded border border-gray-200 p-6 space-y-4 shadow-sm">
                   <h3 className="font-bold text-xs uppercase tracking-wide text-gray-700 border-b pb-2">
-                    Test Information
+                    Exam Information
                   </h3>
                   <InfoRow
                     icon={BookOpen}
-                    label="Test Name"
+                    label="Exam Name"
                     value={record.testTitle}
                   />
                 </div>
@@ -567,7 +567,7 @@ function DetailModal({ record, allHistory, onClose }) {
           {activeTab === "history" && (
             <div className="space-y-4">
               <h3 className="font-bold text-xs uppercase tracking-wide text-gray-700">
-                All Attempts for this test ({testAll.length})
+                All Attempts for this exam ({testAll.length})
               </h3>
               <div className="bg-white rounded border border-gray-200 overflow-hidden shadow-sm">
                 <table className="w-full text-sm">
@@ -861,12 +861,12 @@ export default function TestHistory() {
             )}
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {selectedJob ? `Result: ${selectedJob.title}` : "All Test Results"}
+                {selectedJob ? `Result: ${selectedJob.title}` : "All Exam Results"}
               </h1>
               <p className="text-sm text-gray-500">
                 {selectedJob
                   ? `Viewing attempts for ${selectedJob.cls}`
-                  : "Select a test to view detailed results"}
+                  : "Select an exam to view detailed results"}
               </p>
             </div>
           </div>
@@ -877,11 +877,11 @@ export default function TestHistory() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {loading ? (
               <div className="col-span-full py-20 text-center text-gray-500">
-                Loading tests...
+                Loading exams...
               </div>
             ) : errorMsg === "exam not done yet" || uniqueJobs.length === 0 ? (
               <div className="col-span-full py-20 text-center text-gray-400">
-                {errorMsg || "No tests found."}
+                {errorMsg || "No exams found."}
               </div>
             ) : (
               uniqueJobs.map((job) => (
@@ -901,23 +901,23 @@ export default function TestHistory() {
                     </span>
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-[#3AB000] transition-colors">
-                    {job.title}
-                  </h3>
-                  <p className="text-sm text-gray-500 mb-4">
-                    {job.cls}
-                  </p>
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div className="flex items-center gap-2 text-xs text-gray-400">
-                      <Calendar size={14} />
-                      <span>
-                        Last:{" "}
-                        {new Date(job.lastAttempt).toLocaleDateString("en-IN")}
-                      </span>
-                    </div>
-                    <span className="text-xs font-bold text-[#3AB000] group-hover:underline">
-                      View Results →
-                    </span>
-                  </div>
+            {job.title}
+          </h3>
+          <p className="text-sm text-gray-500 mb-4">
+            {job.cls}
+          </p>
+          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <Calendar size={14} />
+              <span>
+                Last Attempt:{" "}
+                {new Date(job.lastAttempt).toLocaleDateString("en-IN")}
+              </span>
+            </div>
+            <span className="text-xs font-bold text-[#3AB000] group-hover:underline">
+              View Results →
+            </span>
+          </div>
                 </div>
               ))
             )}
@@ -989,7 +989,7 @@ export default function TestHistory() {
                 <div className="flex items-center border border-gray-300 rounded overflow-hidden h-10 flex-1 w-full sm:max-w-[500px]">
                   <input
                     type="text"
-                    placeholder="Search by student or test name..."
+                    placeholder="Search by student or exam name..."
                     className="flex-1 px-3 sm:px-4 text-xs sm:text-sm text-gray-700 focus:outline-none h-full bg-white"
                     value={searchQuery}
                     onChange={(e) => {

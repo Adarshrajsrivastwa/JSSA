@@ -147,20 +147,12 @@ export default function ApplicantDashboard() {
       textColor: "text-blue-600",
     },
     {
-      stage: "Test",
+      stage: "Exam",
       icon: BookOpen,
-      description: "Complete the assessment test",
+      description: "Complete the assessment exam",
       color: "bg-purple-500",
       lightColor: "bg-purple-50",
       textColor: "text-purple-600",
-    },
-    {
-      stage: "Interview",
-      icon: UserCheck,
-      description: "Attend the interview",
-      color: "bg-orange-500",
-      lightColor: "bg-orange-50",
-      textColor: "text-orange-600",
     },
     {
       stage: "MoU",
@@ -249,19 +241,19 @@ export default function ApplicantDashboard() {
             </p>
           </div>
 
-          {/* Live & Upcoming Tests */}
+          {/* Live & Upcoming Exams */}
           {assignedTests.some(test => test.windowStatus === "active" || test.windowStatus === "upcoming") && (
             <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                   <PlayCircle className="w-5 h-5 text-[#3AB000]" />
-                  Assigned Tests
+                  Assigned Exams
                 </h2>
                 <button
                   onClick={() => navigate("/my-exam")}
                   className="text-[#3AB000] text-sm font-semibold hover:underline"
                 >
-                  Go to Exam Portal →
+                  Go to My Exam →
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -305,7 +297,7 @@ export default function ApplicantDashboard() {
                             ? "bg-[#3AB000] text-white"
                             : "bg-gray-200 text-gray-600"
                         }`}>
-                          {test.windowStatus === "active" ? "Start Test" : "Wait"}
+                          {test.windowStatus === "active" ? "Start Exam" : "Wait"}
                         </button>
                       </div>
                     </div>

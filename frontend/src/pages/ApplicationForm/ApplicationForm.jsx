@@ -334,13 +334,37 @@ const ApplicationForm = () => {
   };
 
   // Show job postings list (only for admin)
-  if (role === "admin" && !selectedJobPostingId) {
+  if (role === "admin" && !selectedJobPostingId && !debouncedSearchQuery) {
     return (
       <DashboardLayout>
         <div className="p-0 ml-0 md:ml-6 px-2 md:px-0">
-          <div className="mb-4">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">All Job Openings</h2>
-            <p className="text-gray-600">Select a job to view applications</p>
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-6">
+            <div className="mb-0">
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">All Job Openings</h2>
+              <p className="text-sm text-gray-600">Select a job or search globally</p>
+            </div>
+
+            {/* Global Search for Admin */}
+            <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto lg:items-center lg:justify-end lg:flex-1">
+              <div className="flex items-center border border-gray-300 rounded overflow-hidden h-10 flex-1 w-full sm:max-w-[500px]">
+                <input
+                  type="text"
+                  placeholder="Search by App No, Name, Mobile, Email..."
+                  className="flex-1 px-3 sm:px-4 text-xs sm:text-sm text-gray-700 focus:outline-none h-full bg-white"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                />
+                <button 
+                  onClick={() => fetchApplications()}
+                  className="bg-[#3AB000] hover:bg-[#2d8a00] text-white text-xs sm:text-sm px-4 sm:px-6 h-full font-medium transition-colors whitespace-nowrap"
+                >
+                  Search
+                </button>
+              </div>
+            </div>
           </div>
 
           {jobPostingsLoading ? (
@@ -425,16 +449,16 @@ const ApplicationForm = () => {
       <div className="p-0 ml-0 md:ml-6 px-2 md:px-0">
         {/* ── Top Bar ── */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
-          {role === "admin" && selectedJobPostingId && (
+          {role === "admin" && (selectedJobPostingId || debouncedSearchQuery) && (
             <button
               onClick={handleBackToJobs}
               className="flex items-center gap-2 text-[#3AB000] hover:text-[#2d8a00] font-medium transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Job List
+              {debouncedSearchQuery && !selectedJobPostingId ? "Back to Jobs" : "Back to Job List"}
             </button>
           )}
-          {selectedJobPosting && (
+          {selectedJobPosting ? (
             <div className="flex-1">
               <h3 className="text-lg font-bold text-gray-900">
                 {typeof selectedJobPosting.post === 'object' 
@@ -443,7 +467,14 @@ const ApplicationForm = () => {
               </h3>
               <p className="text-sm text-gray-600">Advt. No: {selectedJobPosting.advtNo}</p>
             </div>
-          )}
+          ) : debouncedSearchQuery ? (
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-gray-900">
+                Global Search Results
+              </h3>
+              <p className="text-sm text-gray-600">Showing matches for "{debouncedSearchQuery}"</p>
+            </div>
+          ) : null}
           {/* Search */}
           <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto lg:items-center lg:justify-end lg:flex-1">
             <div className="flex items-center border border-gray-300 rounded overflow-hidden h-10 flex-1 w-full sm:max-w-[500px]">
@@ -495,6 +526,11 @@ const ApplicationForm = () => {
                   <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
                     Photo
                   </th>
+                  {!selectedJobPostingId && (
+                    <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
+                      Job Post
+                    </th>
+                  )}
                   <th className="px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap">
                     Application No.
                   </th>
@@ -548,6 +584,11 @@ const ApplicationForm = () => {
                           </div>
                         )}
                       </td>
+                      {!selectedJobPostingId && (
+                        <td className="px-4 py-4 text-center text-gray-700 max-w-[150px] truncate font-medium">
+                          {getJobTitleForApplication(app)}
+                        </td>
+                      )}
                       <td className="px-4 py-4 text-center text-gray-700 font-medium">
                         {app.applicationNumber || "N/A"}
                       </td>
@@ -666,6 +707,11 @@ const ApplicationForm = () => {
             <div className="text-sm font-bold text-gray-900 mb-1 truncate">
               {app.candidateName}
             </div>
+            {!selectedJobPostingId && (
+              <div className="text-xs text-[#3AB000] font-medium truncate mb-1">
+                {getJobTitleForApplication(app)}
+              </div>
+            )}
             <div className="text-xs font-semibold text-gray-800 mb-1">
               App No: {app.applicationNumber || "N/A"}
             </div>
