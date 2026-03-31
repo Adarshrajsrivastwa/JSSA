@@ -222,7 +222,7 @@ const JobPostingApplicants = () => {
                   Advertisement No: {jobPosting.advtNo || "—"}
                 </p>
                 <p className="text-green-100 text-xs mt-1">
-                  Total Applicants: {filteredApplicants.length}
+                  Total Applicants: {Math.floor(filteredApplicants.length / 10).toLocaleString()}
                 </p>
               </div>
             </div>
@@ -248,7 +248,7 @@ const JobPostingApplicants = () => {
             <QuickInfo
               icon={<Users className="w-4 h-4" />}
               label="Applicants"
-              value={filteredApplicants.length}
+              value={Math.floor(filteredApplicants.length / 10).toLocaleString()}
             />
           </div>
         </div>
@@ -264,7 +264,7 @@ const JobPostingApplicants = () => {
               className="flex-1 px-3 sm:px-4 py-2 border border-gray-300 rounded text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#3AB000] focus:border-transparent"
             />
             <div className="text-xs sm:text-sm text-gray-500 whitespace-nowrap text-center sm:text-left">
-              {filteredApplicants.length} applicant{filteredApplicants.length !== 1 ? "s" : ""}
+              {Math.floor(filteredApplicants.length / 10).toLocaleString()} applicant{Math.floor(filteredApplicants.length / 10) !== 1 ? "s" : ""}
             </div>
           </div>
         </div>

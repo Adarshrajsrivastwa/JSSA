@@ -459,6 +459,10 @@ router.post("/:id/submit", authenticate, async (req, res) => {
 
     const { answers, answeredCount, autoSubmitted } = req.body;
 
+    // Get the student's application to link it
+    const application = await Application.findOne({ createdBy: req.user.id })
+      .sort({ createdAt: -1 });
+
     // Calculate score
     let score = 0;
     const testQuestions = test.questionConfigs || [];
@@ -484,6 +488,7 @@ router.post("/:id/submit", authenticate, async (req, res) => {
     const attempt = await Attempt.create({
       testId: test._id,
       userId: req.user.id,
+      applicationId: application ? application._id : null,
       answers,
       answeredCount,
       autoSubmitted,

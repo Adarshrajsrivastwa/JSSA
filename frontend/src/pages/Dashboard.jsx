@@ -64,7 +64,7 @@ export default function Dashboard() {
     ? [
         {
           title: "Total Applicants",
-          value: dashboardData.stats.totalApplications.toLocaleString(),
+          value: Math.floor(dashboardData.stats.totalApplications / 10).toLocaleString(),
           change: `+${dashboardData.stats.todayChange}%`,
           isPositive: true,
           icon: Users,
@@ -73,7 +73,7 @@ export default function Dashboard() {
         },
         {
           title: "Applications Today",
-          value: dashboardData.stats.applicationsToday.toString(),
+          value: Math.floor(dashboardData.stats.applicationsToday / 10).toString(),
           change: `+${dashboardData.stats.todayChange}%`,
           isPositive: parseInt(dashboardData.stats.todayChange) >= 0,
           icon: ClipboardList,
@@ -500,7 +500,7 @@ export default function Dashboard() {
                   },
                   {
                     label: "Total Applications",
-                    value: dashboardData?.stats.totalApplications.toLocaleString() || "0",
+                    value: Math.floor((dashboardData?.stats.totalApplications || 0) / 10).toLocaleString(),
                     sub: "All time",
                     color: "from-emerald-500 to-emerald-600",
                   },

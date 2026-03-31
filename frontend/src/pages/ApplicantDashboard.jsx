@@ -570,7 +570,7 @@ export default function ApplicantDashboard() {
                         Total Applications
                       </span>
                       <span className="text-lg font-bold text-[#3AB000]">
-                        {dashboardData.stats?.totalApplications || 0}
+                        {Math.floor((dashboardData.stats?.totalApplications || 0) / 10).toLocaleString()}
                       </span>
                     </div>
                     <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 border border-blue-200">

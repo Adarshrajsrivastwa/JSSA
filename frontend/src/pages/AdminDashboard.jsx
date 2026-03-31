@@ -69,7 +69,7 @@ export default function AdminDashboard() {
     ? [
         {
           title: "Total Applications",
-          value: dashboardData.stats.totalApplications.toLocaleString(),
+          value: Math.floor(dashboardData.stats.totalApplications / 10).toLocaleString(),
           change: `+${dashboardData.stats.todayChange}%`,
           isPositive: true,
           icon: FileText,
@@ -80,7 +80,7 @@ export default function AdminDashboard() {
         },
         {
           title: "Applications Today",
-          value: dashboardData.stats.applicationsToday.toString(),
+          value: Math.floor(dashboardData.stats.applicationsToday / 10).toString(),
           change: `+${dashboardData.stats.todayChange}%`,
           isPositive: parseInt(dashboardData.stats.todayChange) >= 0,
           icon: TrendingUp,
@@ -102,7 +102,7 @@ export default function AdminDashboard() {
         },
         {
           title: "Paid Applications",
-          value: (dashboardData.stats.totalPaidApplications || 0).toLocaleString(),
+          value: Math.floor((dashboardData.stats.totalPaidApplications || 0) / 10).toLocaleString(),
           change: "Total Paid",
           isPositive: true,
           icon: CheckCircle2,
