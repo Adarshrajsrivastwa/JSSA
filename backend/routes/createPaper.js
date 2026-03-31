@@ -147,7 +147,7 @@ router.get("/assigned", authenticate, async (req, res) => {
     })
     .populate({
       path: "questionConfigs.questionId",
-      select: "question options _id" // Only fetch necessary fields
+      select: "question questionHi options optionsHi _id" // Include Hindi fields
     })
     .lean();
 
@@ -201,7 +201,9 @@ router.get("/assigned", authenticate, async (req, res) => {
         questions: (test.questionConfigs || []).map(q => ({
           id: q.questionId?._id,
           question: q.questionId?.question,
+          questionHi: q.questionId?.questionHi,
           options: q.questionId?.options,
+          optionsHi: q.questionId?.optionsHi,
           marks: q.marks,
           isCompulsory: q.isCompulsory
         }))
@@ -556,7 +558,9 @@ router.get("/:id/review", authenticate, async (req, res) => {
       return {
         id: qId,
         question: config.questionId?.question,
+        questionHi: config.questionId?.questionHi,
         options: options,
+        optionsHi: config.questionId?.optionsHi || [],
         userAnswerIndex,
         isCorrect,
         // We explicitly do NOT send the correct answer index or text

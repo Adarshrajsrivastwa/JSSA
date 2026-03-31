@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Clock,
   Eye,
+  Languages,
   Monitor,
   PlayCircle,
   Trophy,
@@ -173,6 +174,138 @@ export default function MyExam() {
   const [submissionResult, setSubmissionResult] = useState(null);
   const [reviewData, setReviewData] = useState(null);
   const [loadingReview, setLoadingReview] = useState(false);
+  const [examLanguage, setExamLanguage] = useState("en"); // "en" or "hi"
+
+  const translations = {
+    en: {
+      instructions: "Instructions",
+      totalQuestions: "Total Questions",
+      duration: "Duration",
+      minutes: "Minutes",
+      stableInternet: "Ensure a stable internet connection.",
+      noRefresh: "Do not refresh the page during the exam.",
+      autoSubmit: "Exam will auto-submit when time expires.",
+      selectLanguage: "Select Exam Language / परीक्षा की भाषा चुनें",
+      defaultLang: "Default language",
+      hindiMedium: "Hindi medium",
+      back: "Back",
+      startExam: "Start Exam",
+      alreadyAttempted: "You have already attempted this exam once. Re-attempt is not allowed.",
+      questionNavigator: "Question Navigator",
+      questionXofY: (x, y) => `Question ${x} of ${y}`,
+      answered: "Answered",
+      previous: "Previous",
+      next: "Next",
+      endSubmit: "End & Submit",
+      submitting: "Submitting...",
+      noQuestions: "No questions available for this exam.",
+      myExam: "My Exam",
+      manageExams: "Manage your assigned exams, view schedules, and start your assessments.",
+      activeExams: "Active Exams",
+      upcomingExams: "Upcoming Exams",
+      history: "History",
+      noActiveExams: "No active exam in current start/end date.",
+      noUpcomingExams: "No upcoming exams.",
+      noHistory: "No exam history found.",
+      questionsCount: "Questions",
+      attempts: "Attempts",
+      start: "Start",
+      end: "End",
+      review: "Review",
+      result: "Result",
+      examClosed: "Exam Closed",
+      examPeriodExpired: "Exam Period Expired",
+      attempted: "Attempted",
+      notAttempted: "Not Attempted",
+      startsAt: "Starts at",
+      endedOn: "Ended on",
+      attemptedOn: "Attempted on",
+      score: "Your Score",
+      status: "Status",
+      pass: "PASS",
+      fail: "FAIL",
+      resultPending: "Result Pending",
+      examResult: "Exam Result",
+      scheduledFor: "Scheduled For",
+      resultTBA: (date) => `Results will be declared on ${date}.`,
+      close: "Close",
+      examSubmitted: "Exam Submitted!",
+      examRecorded: "Your exam attempt has been successfully recorded. Results will be available soon.",
+      backToDashboard: "Back to Dashboard",
+      finishedReview: "Finished Review",
+      reviewTitle: (title) => `Review: ${title}`,
+      reviewSubtitle: "Check your submitted answers. Correct answers are not shown.",
+      correct: "Correct",
+      incorrect: "Incorrect",
+      notAttemptedUpper: "NOT ATTEMPTED",
+      backToList: "Back to List",
+    },
+    hi: {
+      instructions: "निर्देश",
+      totalQuestions: "कुल प्रश्न",
+      duration: "अवधि",
+      minutes: "मिनट",
+      stableInternet: "एक स्थिर इंटरनेट कनेक्शन सुनिश्चित करें।",
+      noRefresh: "परीक्षा के दौरान पेज को रिफ्रेश न करें।",
+      autoSubmit: "समय समाप्त होने पर परीक्षा स्वतः सबमिट हो जाएगी।",
+      selectLanguage: "परीक्षा की भाषा चुनें / Select Exam Language",
+      defaultLang: "डिफ़ॉल्ट भाषा",
+      hindiMedium: "हिंदी माध्यम",
+      back: "पीछे",
+      startExam: "परीक्षा शुरू करें",
+      alreadyAttempted: "आप पहले ही इस परीक्षा का प्रयास कर चुके हैं। पुनः प्रयास की अनुमति नहीं है।",
+      questionNavigator: "प्रश्न नेविगेटर",
+      questionXofY: (x, y) => `प्रश्न ${x} का ${y}`,
+      answered: "उत्तर दिया",
+      previous: "पिछला",
+      next: "अगला",
+      endSubmit: "समाप्त और सबमिट करें",
+      submitting: "सबमिट हो रहा है...",
+      noQuestions: "इस परीक्षा के लिए कोई प्रश्न उपलब्ध नहीं हैं।",
+      myExam: "मेरी परीक्षा",
+      manageExams: "अपने असाइन किए गए एग्जाम प्रबंधित करें, शेड्यूल देखें और मूल्यांकन शुरू करें।",
+      activeExams: "सक्रिय परीक्षाएं",
+      upcomingExams: "आगामी परीक्षाएं",
+      history: "इतिहास",
+      noActiveExams: "वर्तमान तिथि में कोई सक्रिय परीक्षा नहीं है।",
+      noUpcomingExams: "कोई आगामी परीक्षा नहीं है।",
+      noHistory: "कोई परीक्षा इतिहास नहीं मिला।",
+      questionsCount: "प्रश्न",
+      attempts: "प्रयास",
+      start: "शुरू",
+      end: "समाप्त",
+      review: "समीक्षा",
+      result: "परिणाम",
+      examClosed: "परीक्षा बंद",
+      examPeriodExpired: "परीक्षा अवधि समाप्त",
+      attempted: "प्रयास किया",
+      notAttempted: "प्रयास नहीं किया",
+      startsAt: "शुरू होता है",
+      endedOn: "समाप्त हुआ",
+      attemptedOn: "प्रयास किया गया",
+      score: "आपका स्कोर",
+      status: "स्थिति",
+      pass: "उत्तीर्ण",
+      fail: "अनुत्तीर्ण",
+      resultPending: "परिणाम लंबित",
+      examResult: "परीक्षा परिणाम",
+      scheduledFor: "निर्धारित तिथि",
+      resultTBA: (date) => `परिणाम ${date} को घोषित किए जाएंगे।`,
+      close: "बंद करें",
+      examSubmitted: "परीक्षा सबमिट हो गई!",
+      examRecorded: "आपका परीक्षा प्रयास सफलतापूर्वक रिकॉर्ड कर लिया गया है। परिणाम जल्द ही उपलब्ध होंगे।",
+      backToDashboard: "डैशबोर्ड पर वापस जाएं",
+      finishedReview: "समीक्षा समाप्त",
+      reviewTitle: (title) => `समीक्षा: ${title}`,
+      reviewSubtitle: "अपने सबमिट किए गए उत्तरों की जाँच करें। सही उत्तर नहीं दिखाए गए हैं।",
+      correct: "सही",
+      incorrect: "गलत",
+      notAttemptedUpper: "प्रयास नहीं किया",
+      backToList: "सूची पर वापस जाएं",
+    }
+  };
+
+  const t = translations[examLanguage] || translations.en;
 
   const screenStreamRef = useRef(null);
 
@@ -414,10 +547,10 @@ export default function MyExam() {
           <div className="max-w-6xl mx-auto space-y-6">
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-8">
               <h1 className="text-3xl font-extrabold text-gray-900">
-                My Exam
+                {t.myExam}
               </h1>
               <p className="text-sm text-gray-500 mt-2">
-                Manage your assigned exams, view schedules, and start your assessments.
+                {t.manageExams}
               </p>
             </div>
 
@@ -429,17 +562,17 @@ export default function MyExam() {
 
             {examRows.length === 0 ? (
               <div className="bg-white border rounded-lg p-4 text-gray-600 shadow-sm">
-                No exams available right now.
+                {t.noQuestions}
               </div>
             ) : (
               <div className="space-y-7">
                 <div>
                   <h2 className="text-xl font-semibold text-[#2d8a00] mb-3">
-                    Active Exams
+                    {t.activeExams}
                   </h2>
                   {activeExams.length === 0 ? (
                     <div className="bg-white border rounded-lg p-4 text-sm text-gray-500 shadow-sm">
-                      No active exam in current start/end date.
+                      {t.noActiveExams}
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -455,20 +588,20 @@ export default function MyExam() {
                           </div>
                           <div className="mt-3 text-sm text-gray-700 space-y-1">
                             <p>
-                              Questions:{" "}
+                              {t.questionsCount}:{" "}
                               <span className="font-semibold">
                                 {exam.questions?.length || 0}
                               </span>{" "}
-                              · Duration:{" "}
+                              · {t.duration}:{" "}
                               <span className="font-semibold">
-                                {exam.duration} min
+                                {exam.duration} {t.minutes}
                               </span>
                             </p>
                             <p className="text-xs text-gray-600">
-                              Attempts: {exam.attemptsUsed || 0}/{exam.maxAttempts || 1}
+                              {t.attempts}: {exam.attemptsUsed || 0}/{exam.maxAttempts || 1}
                             </p>
                             <p className="text-xs text-gray-500">
-                              Start: {exam.startDate ? new Date(exam.startDate).toLocaleDateString() : "-"} | End:{" "}
+                              {t.start}: {exam.startDate ? new Date(exam.startDate).toLocaleDateString() : "-"} | {t.end}:{" "}
                               {exam.endDate ? new Date(exam.endDate).toLocaleDateString() : "-"}
                             </p>
                           </div>
@@ -478,7 +611,7 @@ export default function MyExam() {
                                 onClick={() => selectExam(exam)}
                                 className="px-5 py-2.5 bg-[#3AB000] text-white rounded-md font-medium hover:bg-[#2d8a00] transition"
                               >
-                                Start Exam
+                                {t.startExam}
                               </button>
                             ) : null}
                             
@@ -489,20 +622,24 @@ export default function MyExam() {
                                   disabled={loadingReview}
                                   className="px-5 py-2.5 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 transition disabled:opacity-50"
                                 >
-                                  {loadingReview ? "Loading..." : "Review"}
+                                  {loadingReview ? "Loading..." : t.review}
                                 </button>
                                 <button
                                   onClick={() => handleResult(exam)}
-                                  className="px-5 py-2.5 bg-purple-600 text-white rounded-md font-medium hover:bg-purple-700 transition"
+                                  className={`px-5 py-2.5 text-white rounded-md font-medium transition ${
+                                    exam.resultDate && new Date() < new Date(exam.resultDate) 
+                                      ? "bg-amber-500 hover:bg-amber-600" 
+                                      : "bg-purple-600 hover:bg-purple-700"
+                                  }`}
                                 >
-                                  Result
+                                  {exam.resultDate && new Date() < new Date(exam.resultDate) ? t.resultPending : t.result}
                                 </button>
                               </>
                             )}
                             
                             {!exam.canStart && exam.attemptsUsed === 0 && (
                               <span className="text-xs font-bold text-gray-400 bg-gray-100 px-3 py-1.5 rounded">
-                                Exam Closed
+                                {t.examClosed}
                               </span>
                             )}
                           </div>
@@ -514,11 +651,11 @@ export default function MyExam() {
 
                 <div>
                   <h2 className="text-xl font-semibold text-blue-700 mb-3">
-                    Upcoming Exams
+                    {t.upcomingExams}
                   </h2>
                   {upcomingExams.length === 0 ? (
                     <div className="bg-white border rounded-lg p-4 text-sm text-gray-500 shadow-sm">
-                      No upcoming exams.
+                      {t.noUpcomingExams}
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -532,22 +669,22 @@ export default function MyExam() {
                               {exam.title}
                             </h3>
                             <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
-                              Upcoming
+                              {t.upcomingExams}
                             </span>
                           </div>
                           <div className="mt-3 text-sm text-gray-700 space-y-1">
                             <p>
-                              Questions:{" "}
+                              {t.questionsCount}:{" "}
                               <span className="font-semibold">
                                 {exam.questions?.length || 0}
                               </span>{" "}
-                              · Duration:{" "}
+                              · {t.duration}:{" "}
                               <span className="font-semibold">
-                                {exam.duration} min
+                                {exam.duration} {t.minutes}
                               </span>
                             </p>
                             <p className="text-xs text-gray-600">
-                              Starts at:{" "}
+                              {t.startsAt}:{" "}
                               <span className="font-semibold text-blue-600">
                                 {exam.startDate ? new Date(exam.startDate).toLocaleDateString() : "-"}
                               </span>
@@ -561,13 +698,17 @@ export default function MyExam() {
                                   disabled={loadingReview}
                                   className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50"
                                 >
-                                  Review
+                                  {t.review}
                                 </button>
                                 <button
                                   onClick={() => handleResult(exam)}
-                                  className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 transition"
+                                  className={`px-4 py-2 text-white rounded-md text-sm font-medium transition ${
+                                    exam.resultDate && new Date() < new Date(exam.resultDate) 
+                                      ? "bg-amber-500 hover:bg-amber-600" 
+                                      : "bg-purple-600 hover:bg-purple-700"
+                                  }`}
                                 >
-                                  Result
+                                  {exam.resultDate && new Date() < new Date(exam.resultDate) ? t.resultPending : t.result}
                                 </button>
                               </>
                             )}
@@ -580,11 +721,11 @@ export default function MyExam() {
 
                 <div>
                   <h2 className="text-xl font-semibold text-gray-600 mb-3">
-                    History
+                    {t.history}
                   </h2>
                   {historyExams.length === 0 ? (
                     <div className="bg-white border rounded-lg p-4 text-sm text-gray-500 shadow-sm">
-                      No exam history found.
+                      {t.noHistory}
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -600,24 +741,24 @@ export default function MyExam() {
                             <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                               exam.attemptsUsed > 0 ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-600"
                             }`}>
-                              {exam.attemptsUsed > 0 ? "Attempted" : "Not Attempted"}
+                              {exam.attemptsUsed > 0 ? t.attempted : t.notAttempted}
                             </span>
                           </div>
                           <div className="mt-3 text-sm text-gray-700 space-y-1">
                             <p>
-                              Questions:{" "}
+                              {t.questionsCount}:{" "}
                               <span className="font-semibold">
                                 {exam.questions?.length || 0}
                               </span>{" "}
-                              · Duration:{" "}
+                              · {t.duration}:{" "}
                               <span className="font-semibold">
-                                {exam.duration} min
+                                {exam.duration} {t.minutes}
                               </span>
                             </p>
                             <p className="text-xs text-gray-600">
                               {exam.windowStatus === "ended" 
-                                ? `Ended on: ${exam.endDate ? new Date(exam.endDate).toLocaleDateString() : "-"}`
-                                : `Attempted on: ${exam.userAttempt?.createdAt ? new Date(exam.userAttempt.createdAt).toLocaleDateString() : "-"}`
+                                ? `${t.endedOn}: ${exam.endDate ? new Date(exam.endDate).toLocaleDateString() : "-"}`
+                                : `${t.attemptedOn}: ${exam.userAttempt?.createdAt ? new Date(exam.userAttempt.createdAt).toLocaleDateString() : "-"}`
                               }
                             </p>
                           </div>
@@ -629,18 +770,22 @@ export default function MyExam() {
                                   disabled={loadingReview}
                                   className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50"
                                 >
-                                  Review
+                                  {t.review}
                                 </button>
                                 <button
                                   onClick={() => handleResult(exam)}
-                                  className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 transition"
+                                  className={`px-4 py-2 text-white rounded-md text-sm font-medium transition ${
+                                    exam.resultDate && new Date() < new Date(exam.resultDate) 
+                                      ? "bg-amber-500 hover:bg-amber-600" 
+                                      : "bg-purple-600 hover:bg-purple-700"
+                                  }`}
                                 >
-                                  Result
+                                  {exam.resultDate && new Date() < new Date(exam.resultDate) ? t.resultPending : t.result}
                                 </button>
                               </>
                             ) : (
                               <span className="text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1.5 rounded border border-gray-100">
-                                Exam Period Expired
+                                {t.examPeriodExpired}
                               </span>
                             )}
                           </div>
@@ -666,18 +811,28 @@ export default function MyExam() {
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-8 flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-extrabold text-gray-900">
-                  Review: {reviewData.testTitle}
+                  {t.reviewTitle(reviewData.testTitle)}
                 </h1>
                 <p className="text-sm text-gray-500 mt-1">
-                  Check your submitted answers. Correct answers are not shown.
+                  {t.reviewSubtitle}
                 </p>
               </div>
-              <button
-                onClick={() => setStep(STEP.list)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
-              >
-                Back to List
-              </button>
+              <div className="flex items-center gap-3">
+                <select
+                  value={examLanguage}
+                  onChange={(e) => setExamLanguage(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-[#3AB000] outline-none"
+                >
+                  <option value="en">English</option>
+                  <option value="hi">हिंदी (Hindi)</option>
+                </select>
+                <button
+                  onClick={() => setStep(STEP.list)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
+                >
+                  {t.backToList}
+                </button>
+              </div>
             </div>
 
             <div className="space-y-6">
@@ -685,23 +840,28 @@ export default function MyExam() {
                 <div key={q.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                   <div className="flex justify-between items-start mb-4">
                     <h3 className="text-lg font-bold text-gray-900">
-                      Question {idx + 1}
+                      {t.questionXofY(idx + 1, reviewData.review.length)}
                     </h3>
                     {q.userAnswerIndex !== undefined ? (
                       <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                         q.isCorrect ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                       }`}>
-                        {q.isCorrect ? "Correct" : "Incorrect"}
+                        {q.isCorrect ? t.correct : t.incorrect}
                       </span>
                     ) : (
                       <span className="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gray-100 text-gray-500">
-                        Not Attempted
+                        {t.notAttemptedUpper}
                       </span>
                     )}
                   </div>
-                  <p className="text-gray-800 font-medium mb-4">{q.question}</p>
+                  <p className="text-gray-800 font-medium mb-4">
+                    {examLanguage === "hi" && q.questionHi ? q.questionHi : q.question}
+                  </p>
                   <div className="grid grid-cols-1 gap-2">
-                    {q.options.map((opt, optIdx) => (
+                    {(examLanguage === "hi" && q.optionsHi?.length === q.options.length 
+                      ? q.optionsHi 
+                      : q.options
+                    ).map((opt, optIdx) => (
                       <div
                         key={optIdx}
                         className={`p-3 rounded-lg border text-sm flex items-center justify-between ${
@@ -731,7 +891,7 @@ export default function MyExam() {
                 onClick={() => setStep(STEP.list)}
                 className="px-8 py-3 bg-[#3AB000] text-white rounded-xl font-bold hover:bg-[#2d8a00] transition shadow-md"
               >
-                Finished Review
+                {t.finishedReview}
               </button>
             </div>
           </div>
@@ -741,46 +901,63 @@ export default function MyExam() {
   }
 
   if (step === STEP.result && selectedExam) {
-    const isAvailable = selectedExam.resultAvailable;
-    const resDateStr = selectedExam.resultDate ? new Date(selectedExam.resultDate).toLocaleDateString("en-IN", {
+    const now = new Date();
+    const resultDate = selectedExam.resultDate ? new Date(selectedExam.resultDate) : null;
+    const isActuallyAvailable = resultDate ? now >= resultDate : true;
+
+    const resDateStr = resultDate ? resultDate.toLocaleDateString("en-IN", {
       day: "2-digit",
       month: "long",
       year: "numeric"
     }) : "TBA";
+
+    const score = selectedExam.userAttempt?.score || 0;
+    const totalMarks = selectedExam.totalMarks || 100;
+    const passingMarks = selectedExam.passingMarks || 0;
+    const isPassed = score >= passingMarks;
 
     return (
       <DashboardLayout>
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-white rounded-2xl border border-gray-200 shadow-xl p-8 text-center">
             <div className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-6 ${
-              isAvailable ? "bg-green-100 text-green-600" : "bg-blue-100 text-blue-600"
+              isActuallyAvailable ? (isPassed ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600") : "bg-blue-100 text-blue-600"
             }`}>
-              {isAvailable ? <Trophy className="w-10 h-10" /> : <Calendar className="w-10 h-10" />}
+              {isActuallyAvailable ? (isPassed ? <Trophy className="w-10 h-10" /> : <XCircle className="w-10 h-10" />) : <Calendar className="w-10 h-10" />}
             </div>
             
             <h1 className="text-2xl font-black text-gray-900 mb-2">
-              {isAvailable ? "Exam Result" : "Result Pending"}
+              {isActuallyAvailable ? t.examResult : t.resultPending}
             </h1>
             <p className="text-gray-500 text-sm mb-6">
               {selectedExam.title}
             </p>
 
-            {isAvailable ? (
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-100 mb-6">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Your Score</p>
-                <p className="text-4xl font-black text-gray-900">
-                  {selectedExam.userAttempt?.score || 0}
-                  <span className="text-lg text-gray-400 font-bold ml-1">/ {selectedExam.totalMarks || 100}</span>
-                </p>
+            {isActuallyAvailable ? (
+              <div className="space-y-4 mb-6">
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{t.score}</p>
+                  <p className="text-4xl font-black text-gray-900">
+                    {score}
+                    <span className="text-lg text-gray-400 font-bold ml-1">/ {totalMarks}</span>
+                  </p>
+                </div>
+                
+                <div className={`rounded-xl p-4 border ${isPassed ? "bg-green-50 border-green-100" : "bg-red-50 border-red-100"}`}>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{t.status}</p>
+                  <p className={`text-2xl font-black ${isPassed ? "text-green-600" : "text-red-600"}`}>
+                    {isPassed ? t.pass : t.fail}
+                  </p>
+                </div>
               </div>
             ) : (
               <div className="bg-blue-50 rounded-xl p-6 border border-blue-100 mb-6">
-                <p className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-1">Scheduled For</p>
+                <p className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-1">{t.scheduledFor}</p>
                 <p className="text-xl font-black text-blue-900">
                   {resDateStr}
                 </p>
                 <p className="text-[10px] text-blue-400 mt-2 italic">
-                  Results will be visible here after declaration.
+                  {t.resultTBA(resDateStr)}
                 </p>
               </div>
             )}
@@ -789,7 +966,7 @@ export default function MyExam() {
               onClick={() => setStep(STEP.list)}
               className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition shadow-lg"
             >
-              Close
+              {t.close}
             </button>
           </div>
         </div>
@@ -815,21 +992,53 @@ export default function MyExam() {
 
             <div className="mt-6 p-4 bg-[#f0fce8] border border-[#b5e08a] rounded-lg">
               <p className="text-sm font-semibold text-[#1a5000] mb-2">
-                Instructions
+                {t.instructions}
               </p>
               <ul className="text-sm text-gray-700 space-y-1">
-                <li>Total Questions: <strong>{selectedExam?.totalQuestions || questions.length}</strong></li>
-                <li>Duration: <strong>{selectedExam?.duration} Minutes</strong></li>
-                <li>Ensure a stable internet connection.</li>
-                <li>Do not refresh the page during the exam.</li>
-                <li>Exam will auto-submit when time expires.</li>
+                <li>{t.totalQuestions}: <strong>{selectedExam?.totalQuestions || questions.length}</strong></li>
+                <li>{t.duration}: <strong>{selectedExam?.duration} {t.minutes}</strong></li>
+                <li>{t.stableInternet}</li>
+                <li>{t.noRefresh}</li>
+                <li>{t.autoSubmit}</li>
               </ul>
             </div>
+
+            {/* Language Selection */}
+            <div className="mt-6">
+              <p className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+                <Languages size={16} className="text-[#3AB000]" />
+                {t.selectLanguage}
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => setExamLanguage("en")}
+                  className={`p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition-all ${
+                    examLanguage === "en"
+                      ? "border-[#3AB000] bg-green-50"
+                      : "border-gray-100 bg-gray-50 hover:border-gray-200"
+                  }`}
+                >
+                  <span className="text-xl font-black text-gray-900">English</span>
+                  <span className="text-xs text-gray-500 font-medium">{t.defaultLang}</span>
+                </button>
+                <button
+                  onClick={() => setExamLanguage("hi")}
+                  className={`p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition-all ${
+                    examLanguage === "hi"
+                      ? "border-[#3AB000] bg-green-50"
+                      : "border-gray-100 bg-gray-50 hover:border-gray-200"
+                  }`}
+                >
+                  <span className="text-xl font-black text-gray-900">हिंदी</span>
+                  <span className="text-xs text-gray-500 font-medium">{t.hindiMedium}</span>
+                </button>
+              </div>
+            </div>
+
             {error ? <p className="text-sm text-red-600 mt-4">{error}</p> : null}
             {selectedExam && !selectedExam.canStart ? (
               <p className="text-sm text-[#2d8a00] mt-3">
-                You have already attempted this exam once. Re-attempt is not
-                allowed.
+                {t.alreadyAttempted}
               </p>
             ) : null}
             <div className="flex gap-3 mt-6">
@@ -837,7 +1046,7 @@ export default function MyExam() {
                 onClick={() => setStep(STEP.list)}
                 className="px-4 py-2 border border-gray-300 rounded-md"
               >
-                Back
+                {t.back}
               </button>
               <button
                 onClick={beginExam}
@@ -848,7 +1057,7 @@ export default function MyExam() {
                     : "bg-gray-200 text-gray-500 cursor-not-allowed"
                 }`}
               >
-                Start Exam
+                {t.startExam}
               </button>
             </div>
           </div>
@@ -865,15 +1074,15 @@ export default function MyExam() {
             <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full mx-auto flex items-center justify-center mb-8">
               <CheckCircle2 className="w-12 h-12" />
             </div>
-            <h1 className="text-3xl font-black text-gray-900 mb-4">Exam Submitted!</h1>
+            <h1 className="text-3xl font-black text-gray-900 mb-4">{t.examSubmitted}</h1>
             <p className="text-gray-500 mb-8 leading-relaxed">
-              Your exam attempt has been successfully recorded. Results will be available soon.
+              {t.examRecorded}
             </p>
             <button
               onClick={() => setStep(STEP.list)}
               className="w-full py-4 bg-[#3AB000] text-white rounded-xl font-bold hover:bg-[#2d8a00] transition-all transform hover:scale-[1.02] shadow-lg"
             >
-              Back to Dashboard
+              {t.backToDashboard}
             </button>
           </div>
         </div>
@@ -904,7 +1113,7 @@ export default function MyExam() {
       <div className="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
         <div className="space-y-4">
           <div className="bg-white text-gray-900 rounded-lg p-3">
-            <p className="font-semibold mb-2">Question Navigator</p>
+            <p className="font-semibold mb-2">{t.questionNavigator}</p>
             <div className="grid grid-cols-5 gap-2">
               {questions.map((q, index) => (
                 <button
@@ -930,17 +1139,22 @@ export default function MyExam() {
             <>
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold">
-                  Question {currentQuestion + 1} of {questions.length}
+                  {t.questionXofY(currentQuestion + 1, questions.length)}
                 </h2>
                 {answers[current.id] !== undefined ? (
                   <span className="text-[#3AB000] text-sm font-semibold flex items-center gap-1">
-                    <CheckCircle2 size={16} /> Answered
+                    <CheckCircle2 size={16} /> {t.answered}
                   </span>
                 ) : null}
               </div>
-              <p className="text-base font-medium mb-4">{current.question}</p>
+              <p className="text-base font-medium mb-4">
+                {examLanguage === "hi" && current.questionHi ? current.questionHi : current.question}
+              </p>
               <div className="space-y-2">
-                {current.options.map((option, idx) => (
+                {(examLanguage === "hi" && current.optionsHi?.length === current.options.length 
+                  ? current.optionsHi 
+                  : current.options
+                ).map((option, idx) => (
                   <button
                     key={idx}
                     onClick={() =>
@@ -965,7 +1179,7 @@ export default function MyExam() {
                   disabled={currentQuestion === 0}
                   className="px-4 py-2 border rounded disabled:opacity-50"
                 >
-                  Previous
+                  {t.previous}
                 </button>
                 {currentQuestion === questions.length - 1 ? (
                   <button
@@ -973,7 +1187,7 @@ export default function MyExam() {
                     disabled={submittingAttempt}
                     className="px-6 py-2 bg-[#2d8a00] text-white rounded hover:bg-[#1f6000] disabled:opacity-60"
                   >
-                    {submittingAttempt ? "Submitting..." : "End & Submit"}
+                    {submittingAttempt ? t.submitting : t.endSubmit}
                   </button>
                 ) : (
                   <button
@@ -984,14 +1198,14 @@ export default function MyExam() {
                     }
                     className="px-4 py-2 bg-[#3AB000] text-white rounded hover:bg-[#2d8a00]"
                   >
-                    Next
+                    {t.next}
                   </button>
                 )}
               </div>
             </>
           ) : (
             <p className="text-sm text-gray-500">
-              No questions available for this exam.
+              {t.noQuestions}
             </p>
           )}
         </div>
