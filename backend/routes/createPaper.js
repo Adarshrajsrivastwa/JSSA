@@ -62,7 +62,14 @@ router.get("/", async (req, res) => {
     }
 
     const pageNum = Math.max(parseInt(page, 10) || 1, 1);
-    const limitNum = Math.min(Math.max(parseInt(limit, 10) || 100, 1), 500);
+    
+    // If limit is "0", treat as no limit (capped at 10000 for safety)
+    let limitNum = parseInt(limit, 10);
+    if (limit === "0") {
+      limitNum = 10000;
+    } else {
+      limitNum = Math.min(Math.max(limitNum || 100, 1), 1000);
+    }
     const skip = (pageNum - 1) * limitNum;
 
     const [testsRaw, total] = await Promise.all([

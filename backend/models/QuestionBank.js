@@ -12,7 +12,11 @@ const questionBankSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
-
+    subject: {
+      type: String,
+      default: "General",
+      trim: true,
+    },
     difficulty: {
       type: String,
       enum: ["Easy", "Medium", "Hard"],

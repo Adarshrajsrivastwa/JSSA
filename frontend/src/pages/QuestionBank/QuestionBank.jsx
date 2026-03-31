@@ -197,9 +197,21 @@ const DIFFICULTY_COLORS = {
   Hard: "bg-rose-100 text-rose-700",
 };
 
+const SUBJECT_OPTIONS = [
+  "Science",
+  "Social Science",
+  "General Knowledge",
+  "Mathematics",
+  "Health & Nutrition",
+  "Management & Administration 2",
+  "Basic Computer Knowledge",
+  "Other",
+];
+
 const EMPTY_FORM = {
   question: "",
   questionHi: "",
+  subject: "General Knowledge",
   difficulty: "",
   options: [], // English options
   optionsHi: [], // Hindi options (parallel array)
@@ -217,6 +229,7 @@ const normalizeQuestion = (q) => ({
   id: q?._id || q?.id || uid(),
   question: String(q?.question || ""),
   questionHi: String(q?.questionHi || ""),
+  subject: String(q?.subject || "General Knowledge"),
   difficulty: String(q?.difficulty || ""),
   options: Array.isArray(q?.options) ? q.options : [],
   optionsHi: Array.isArray(q?.optionsHi) ? q.optionsHi : [],
@@ -229,56 +242,24 @@ const normalizeQuestion = (q) => ({
   createdDate: q?.createdDate || q?.createdAt || new Date().toISOString(),
 });
 
-// ─── Language Toggle Component ────────────────────────────────────────────────
-function LangToggle({ lang, setLang }) {
-  return (
-    <div className="flex items-center gap-0 border border-gray-300 rounded overflow-hidden flex-shrink-0">
-      <button
-        onClick={() => setLang("en")}
-        className={`px-4 py-1.5 text-xs font-semibold flex items-center gap-1 transition-colors border-r border-gray-300 ${
-          lang === "en"
-            ? "bg-[#3AB000] text-white"
-            : "bg-white text-gray-600 hover:bg-gray-50"
-        }`}
-      >
-        <Languages size={12} /> EN
-      </button>
-      <button
-        onClick={() => setLang("hi")}
-        className={`px-4 py-1.5 text-xs font-semibold flex items-center gap-1 transition-colors border-r border-gray-300 ${
-          lang === "hi"
-            ? "bg-[#3AB000] text-white"
-            : "bg-white text-gray-600 hover:bg-gray-50"
-        }`}
-      >
-        अ HI
-      </button>
-      <button
-        onClick={() => setLang("both")}
-        className={`px-4 py-1.5 text-xs font-semibold flex items-center gap-1 transition-colors ${
-          lang === "both"
-            ? "bg-[#3AB000] text-white"
-            : "bg-white text-gray-600 hover:bg-gray-50"
-        }`}
-      >
-        EN+HI
-      </button>
-    </div>
-  );
-}
-
 export default function QuestionBank() {
   const [questions, setQuestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterDifficulty, setFilterDifficulty] = useState("all");
+  const [searchInput, setSearchInput] = useState(""); // Local input state
+  const [searchQuery, setSearchQuery] = useState(""); // Actual search query for API
+  const [filterSubject, setFilterSubject] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [displayLang, setDisplayLang] = useState("both"); // "en" | "hi" | "both"
   const [showModal, setShowModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalQuestions, setTotalQuestions] = useState(0);
+  const limit = 20;
 
   // Option inputs for form
   const [optionInputEn, setOptionInputEn] = useState("");
@@ -288,34 +269,55 @@ export default function QuestionBank() {
   const loadQuestions = useCallback(async () => {
     setIsLoading(true);
     setApiError("");
-    const response = await questionBankAPI.getAll({ page: 1, limit: 500 });
-    if (!response?.success) {
-      setApiError(response?.error || "Failed to load questions.");
-      setQuestions([]);
-      setIsLoading(false);
-      return;
-    }
+    try {
+      const response = await questionBankAPI.getAll({
+        page: currentPage,
+        limit: limit,
+        search: searchQuery,
+        subject: filterSubject,
+        status: filterStatus,
+      });
 
-    const rows = Array.isArray(response?.data?.questions)
-      ? response.data.questions
-      : [];
-    setQuestions(rows.map(normalizeQuestion));
-    setIsLoading(false);
-  }, []);
+      if (!response?.success) {
+        setApiError(response?.error || "Failed to load questions.");
+        setQuestions([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const rows = Array.isArray(response?.data?.questions)
+        ? response.data.questions
+        : [];
+      setQuestions(rows.map(normalizeQuestion));
+      
+      if (response.data.pagination) {
+        setTotalPages(response.data.pagination.pages || 1);
+        setTotalQuestions(response.data.pagination.total || 0);
+      }
+    } catch (err) {
+      setApiError("An error occurred while fetching questions.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentPage, searchQuery, filterSubject, filterStatus]);
 
   useEffect(() => {
     loadQuestions();
   }, [loadQuestions]);
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterSubject, filterStatus]);
+
   // ── Stats ──────────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
-    const total = questions.length;
-    const active = questions.filter((q) => q.status === "active").length;
-    const draft = questions.filter((q) => q.status === "draft").length;
+    // Note: Stats here are based on the current page's data or we can fetch overall stats if needed.
+    // For now, let's keep it simple or use the totalQuestions from pagination for "Total".
     return [
       {
         label: "Total Questions",
-        value: total,
+        value: totalQuestions,
         icon: BookOpen,
         border: "border-[#3AB000]",
         iconBg: "bg-[#e8f5e2]",
@@ -323,7 +325,7 @@ export default function QuestionBank() {
       },
       {
         label: "Active",
-        value: active,
+        value: questions.filter((q) => q.status === "active").length, // Page-specific
         icon: CheckCircle,
         border: "border-emerald-500",
         iconBg: "bg-emerald-100",
@@ -331,39 +333,18 @@ export default function QuestionBank() {
       },
       {
         label: "Draft",
-        value: draft,
+        value: questions.filter((q) => q.status === "draft").length, // Page-specific
         icon: Star,
         border: "border-amber-500",
         iconBg: "bg-amber-100",
         iconColor: "text-amber-600",
       },
     ];
-  }, [questions]);
-
-  // ── Filtering ──────────────────────────────────────────────────────────────
-  const filtered = useMemo(() => {
-    return questions.filter((q) => {
-      const tags = Array.isArray(q.tags) ? q.tags : [];
-      const matchSearch =
-        String(q.question || "")
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        String(q.questionHi || "")
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        tags.some((t) =>
-          String(t).toLowerCase().includes(searchQuery.toLowerCase()),
-        );
-      const matchDiff =
-        filterDifficulty === "all" || q.difficulty === filterDifficulty;
-      const matchStatus = filterStatus === "all" || q.status === filterStatus;
-      return matchSearch && matchDiff && matchStatus;
-    });
-  }, [questions, searchQuery, filterDifficulty, filterStatus]);
+  }, [questions, totalQuestions]);
 
   const isFiltered =
     searchQuery ||
-    filterDifficulty !== "all" ||
+    filterSubject !== "all" ||
     filterStatus !== "all";
 
   // ── Form helpers ───────────────────────────────────────────────────────────
@@ -437,7 +418,7 @@ export default function QuestionBank() {
     setFormData({
       question: q.question || "",
       questionHi: q.questionHi || "",
-      subject: q.subject || "",
+      subject: q.subject || "General Knowledge",
       difficulty: q.difficulty || "",
       options: Array.isArray(q.options) ? [...q.options] : [],
       optionsHi: Array.isArray(q.optionsHi) ? [...q.optionsHi] : [],
@@ -454,6 +435,7 @@ export default function QuestionBank() {
   const validateForm = () => {
     if (
       !formData.question ||
+      !formData.subject ||
       !formData.difficulty
     )
       return "Please fill in all required fields.";
@@ -474,6 +456,7 @@ export default function QuestionBank() {
     const payload = {
       question: formData.question.trim(),
       questionHi: formData.questionHi.trim(),
+      subject: formData.subject,
       difficulty: formData.difficulty,
       options: formData.options,
       optionsHi:
@@ -521,6 +504,7 @@ export default function QuestionBank() {
     const payload = {
       question: `${q.question} (Copy)`,
       questionHi: q.questionHi ? `${q.questionHi} (प्रति)` : "",
+      subject: q.subject || "General Knowledge",
       difficulty: q.difficulty || "Easy",
       options: Array.isArray(q.options) ? q.options : [],
       optionsHi: Array.isArray(q.optionsHi) ? q.optionsHi : [],
@@ -636,12 +620,16 @@ export default function QuestionBank() {
                 />
                 <input
                   type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && setSearchQuery(searchInput)}
                   placeholder="Search questions, topics, tags..."
                   className="flex-1 px-3 text-sm text-gray-700 focus:outline-none h-full bg-white"
                 />
-                <button className="bg-[#3AB000] hover:bg-[#2d8a00] text-white text-sm px-5 h-full font-medium transition-colors whitespace-nowrap">
+                <button 
+                  onClick={() => setSearchQuery(searchInput)}
+                  className="bg-[#3AB000] hover:bg-[#2d8a00] text-white text-sm px-5 h-full font-medium transition-colors whitespace-nowrap"
+                >
                   Search
                 </button>
               </div>
@@ -683,26 +671,24 @@ export default function QuestionBank() {
             </div>
 
             <select
-              value={filterDifficulty}
-              onChange={(e) => setFilterDifficulty(e.target.value)}
+              value={filterSubject}
+              onChange={(e) => setFilterSubject(e.target.value)}
               className="border border-gray-300 rounded h-9 px-3 text-sm text-gray-700 focus:outline-none bg-white"
             >
-              <option value="all">All Difficulties</option>
-              {DIFFICULTY_LEVELS.map((d) => (
-                <option key={d} value={d}>
-                  {d}
+              <option value="all">All Subjects</option>
+              {SUBJECT_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {s}
                 </option>
               ))}
             </select>
 
-            {/* Language display toggle */}
-            <LangToggle lang={displayLang} setLang={setDisplayLang} />
-
             {isFiltered && (
               <button
                 onClick={() => {
+                  setSearchInput("");
                   setSearchQuery("");
-                  setFilterDifficulty("all");
+                  setFilterSubject("all");
                   setFilterStatus("all");
                 }}
                 className="px-4 py-2 text-[#3AB000] font-semibold text-sm hover:underline transition-colors"
@@ -714,11 +700,11 @@ export default function QuestionBank() {
             <span className="ml-auto text-sm text-gray-600">
               Showing{" "}
               <span className="font-semibold text-gray-900">
-                {filtered.length}
+                {questions.length}
               </span>{" "}
               of{" "}
               <span className="font-semibold text-gray-900">
-                {questions.length}
+                {totalQuestions}
               </span>{" "}
               questions
             </span>
@@ -731,7 +717,7 @@ export default function QuestionBank() {
             <div className="bg-white rounded-sm shadow-md p-12 text-center text-gray-600">
               Loading questions...
             </div>
-          ) : filtered.length === 0 ? (
+          ) : questions.length === 0 ? (
             <div className="bg-white rounded-sm shadow-md p-12 text-center">
               <div className="bg-gray-100 w-20 h-20 rounded-sm flex items-center justify-center mx-auto mb-4">
                 <Filter className="text-gray-400" size={40} />
@@ -750,7 +736,7 @@ export default function QuestionBank() {
               </button>
             </div>
           ) : (
-            filtered.map((q) => {
+            questions.map((q) => {
               const isExpanded = expandedId === q.id;
               const isSelected = selectedIds.includes(q.id);
               const tags = Array.isArray(q.tags) ? q.tags : [];
@@ -782,6 +768,9 @@ export default function QuestionBank() {
                               <span className="text-xs font-semibold px-2 py-0.5 rounded-sm bg-blue-100 text-blue-700">
                                 MCQ
                               </span>
+                              <span className="text-xs font-semibold px-2 py-0.5 rounded-sm bg-purple-100 text-purple-700">
+                                {q.subject}
+                              </span>
                               <span
                                 className={`text-xs font-semibold px-2 py-0.5 rounded-sm ${DIFFICULTY_COLORS[q.difficulty] || "bg-gray-100 text-gray-600"}`}
                               >
@@ -805,25 +794,13 @@ export default function QuestionBank() {
                               </button>
                             </div>
 
-                            {/* Question text — language aware */}
-                            {(displayLang === "en" ||
-                              displayLang === "both") && (
-                              <p className="text-gray-900 font-semibold text-sm leading-relaxed">
-                                {q.question}
-                              </p>
-                            )}
-                            {displayLang === "both" && q.questionHi && (
+                            {/* Question text */}
+                            <p className="text-gray-900 font-semibold text-sm leading-relaxed">
+                              {q.question}
+                            </p>
+                            {q.questionHi && (
                               <p className="text-orange-800 font-medium text-sm leading-relaxed mt-1">
                                 {q.questionHi}
-                              </p>
-                            )}
-                            {displayLang === "hi" && (
-                              <p className="text-orange-800 font-semibold text-sm leading-relaxed">
-                                {q.questionHi || (
-                                  <span className="text-gray-400 italic">
-                                    Hindi not available
-                                  </span>
-                                )}
                               </p>
                             )}
 
@@ -924,19 +901,12 @@ export default function QuestionBank() {
                                   <div className="w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 mt-0.5" />
                                 )}
                                 <div>
-                                  {(displayLang === "en" ||
-                                    displayLang === "both") && (
-                                    <div className="font-medium">{opt}</div>
+                                  <div className="font-medium">{opt}</div>
+                                  {optionsHi[i] && (
+                                    <div className="text-orange-700 text-xs mt-0.5">
+                                      {optionsHi[i]}
+                                    </div>
                                   )}
-                                  {(displayLang === "hi" ||
-                                    displayLang === "both") &&
-                                    optionsHi[i] && (
-                                      <div
-                                        className={`${displayLang === "both" ? "text-orange-700 text-xs mt-0.5" : ""}`}
-                                      >
-                                        {optionsHi[i]}
-                                      </div>
-                                    )}
                                 </div>
                               </div>
                             </div>
@@ -951,20 +921,18 @@ export default function QuestionBank() {
                             Explanation
                           </p>
                           <div className="bg-[#e8f5e2] border border-[#3AB000] rounded-sm px-4 py-3 shadow-sm space-y-1">
-                            {(displayLang === "en" || displayLang === "both") &&
-                              q.explanation && (
-                                <p className="text-sm text-[#2d8a00]">
-                                  {q.explanation}
-                                </p>
-                              )}
-                            {(displayLang === "hi" || displayLang === "both") &&
-                              q.explanationHi && (
-                                <p
-                                  className={`text-sm text-orange-800 ${displayLang === "both" && q.explanation ? "border-t border-[#3AB000] pt-1 mt-1" : ""}`}
-                                >
-                                  {q.explanationHi}
-                                </p>
-                              )}
+                            {q.explanation && (
+                              <p className="text-sm text-[#2d8a00]">
+                                {q.explanation}
+                              </p>
+                            )}
+                            {q.explanationHi && (
+                              <p
+                                className={`text-sm text-orange-800 ${q.explanation ? "border-t border-[#3AB000] pt-1 mt-1" : ""}`}
+                              >
+                                {q.explanationHi}
+                              </p>
+                            )}
                           </div>
                         </div>
                       )}
@@ -981,21 +949,65 @@ export default function QuestionBank() {
           )}
         </div>
 
-        {/* ── Footer ── */}
-        {filtered.length > 0 && (
-          <div className="mt-6 bg-white rounded-sm shadow-md p-4 flex items-center justify-between text-sm text-gray-700">
-            <div>
-              Showing{" "}
-              <span className="font-semibold text-gray-900">
-                {filtered.length}
-              </span>{" "}
-              of{" "}
-              <span className="font-semibold text-gray-900">
-                {questions.length}
-              </span>{" "}
-              questions
+        {/* ── Footer / Pagination ── */}
+        {questions.length > 0 && (
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-sm shadow-md p-4">
+            <div className="text-sm text-gray-700">
+              Showing <span className="font-semibold text-gray-900">{questions.length}</span> of <span className="font-semibold text-gray-900">{totalQuestions}</span> questions
             </div>
-            <div className="text-gray-500 text-xs">
+            
+            {/* Pagination Controls */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1 || isLoading}
+                className="px-3 py-1.5 border border-gray-300 rounded text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              
+              <div className="flex items-center gap-1">
+                {[...Array(totalPages)].map((_, i) => {
+                  const pageNum = i + 1;
+                  // Show only first, last, and pages around current
+                  if (
+                    pageNum === 1 ||
+                    pageNum === totalPages ||
+                    (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-8 h-8 rounded text-sm font-bold transition-colors ${
+                          currentPage === pageNum
+                            ? "bg-[#3AB000] text-white"
+                            : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  } else if (
+                    pageNum === currentPage - 2 ||
+                    pageNum === currentPage + 2
+                  ) {
+                    return <span key={pageNum} className="px-1 text-gray-400">...</span>;
+                  }
+                  return null;
+                })}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages || isLoading}
+                className="px-3 py-1.5 border border-gray-300 rounded text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
+            </div>
+
+            <div className="text-gray-500 text-xs hidden lg:block">
               Click a card to expand options &amp; explanation
             </div>
           </div>
@@ -1078,26 +1090,44 @@ export default function QuestionBank() {
                   </div>
                 </div>
 
-                {/* Difficulty */}
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">
-                      Difficulty <span className="text-rose-500">*</span>
-                    </label>
-                    <select
-                      name="difficulty"
-                      value={formData.difficulty}
-                      onChange={handleInput}
-                      className={inputCls}
-                    >
-                      <option value="">Select Difficulty</option>
-                      {DIFFICULTY_LEVELS.map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                {/* Subject Selection */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">
+                    Subject / विषय <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleInput}
+                    className={inputCls}
+                  >
+                    <option value="">Select Subject / विषय चुनें</option>
+                    {SUBJECT_OPTIONS.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Difficulty Selection */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">
+                    Difficulty / कठिनाई <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    name="difficulty"
+                    value={formData.difficulty}
+                    onChange={handleInput}
+                    className={inputCls}
+                  >
+                    <option value="">Select Difficulty / कठिनाई चुनें</option>
+                    {DIFFICULTY_LEVELS.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* ── Options ── */}

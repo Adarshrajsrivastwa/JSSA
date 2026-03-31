@@ -122,6 +122,17 @@ const DIFF_STYLES = {
   Mixed: "bg-blue-100 text-blue-700",
 };
 
+const SUBJECT_OPTIONS = [
+  "Science",
+  "Social Science",
+  "General Knowledge",
+  "Mathematics",
+  "Health & Nutrition",
+  "Management & Administration 2",
+  "Basic Computer Knowledge",
+  "Other",
+];
+
 const EMPTY_FORM = {
   title: "",
   questionConfigs: [],
@@ -183,6 +194,7 @@ const normalizeQuestion = (item) => ({
   id: item?._id || item?.id,
   question: String(item?.question || ""),
   topic: String(item?.topic || ""),
+  subject: String(item?.subject || "General Knowledge"),
   marks: Number(item?.marks || 1),
   difficulty: String(item?.difficulty || ""),
   options: Array.isArray(item?.options) ? item.options : [],
@@ -513,6 +525,7 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
   const [showQuestionPicker, setShowQuestionPicker] = useState(false);
   const [questionSearch, setQuestionSearch] = useState("");
   const [qFilterDifficulty, setQFilterDifficulty] = useState("all");
+  const [qFilterSubject, setQFilterSubject] = useState("all");
   const [applicants, setApplicants] = useState([]);
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
   const [applicantError, setApplicantError] = useState("");
@@ -671,9 +684,11 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
         );
       const matchDiff =
         qFilterDifficulty === "all" || item.difficulty === qFilterDifficulty;
-      return matchSearch && matchDiff;
+      const matchSubj =
+        qFilterSubject === "all" || item.subject === qFilterSubject;
+      return matchSearch && matchDiff && matchSubj;
     });
-  }, [questionBank, questionSearch, qFilterDifficulty]);
+  }, [questionBank, questionSearch, qFilterDifficulty, qFilterSubject]);
 
   const handleInput = (e) => {
     const { name, value, type, checked } = e.target;
@@ -1341,6 +1356,19 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
               {/* Filters row */}
               <div className="flex items-center gap-2 flex-wrap">
                 <Filter size={13} className="text-gray-400 flex-shrink-0" />
+                {/* Subject filter */}
+                <select
+                  value={qFilterSubject}
+                  onChange={(e) => setQFilterSubject(e.target.value)}
+                  className="px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-[#3AB000] focus:border-[#3AB000] bg-white outline-none"
+                >
+                  <option value="all">All Subjects</option>
+                  {SUBJECT_OPTIONS.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
                 {/* Difficulty filter */}
                 <select
                   value={qFilterDifficulty}
@@ -1418,6 +1446,9 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
                             <p className="text-sm font-semibold text-gray-800">
                               {q.question}
                             </p>
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 flex-shrink-0">
+                              {q.subject}
+                            </span>
                             {q.difficulty && (
                               <span
                                 className={`px-1.5 py-0.5 rounded text-[10px] font-bold flex-shrink-0 ${DIFF_STYLES[q.difficulty] || "bg-gray-100 text-gray-600"}`}
