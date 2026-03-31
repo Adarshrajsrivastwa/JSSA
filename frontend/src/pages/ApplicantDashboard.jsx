@@ -6,7 +6,6 @@ import {
   ArrowRight,
   PlusCircle,
   CheckCircle,
-  Clock,
   XCircle,
   AlertCircle,
   Users,
@@ -22,7 +21,6 @@ import {
   Award,
   CheckCircle2,
   ChevronRight,
-  PlayCircle,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { dashboardAPI, applicationsAPI, jobPostingsAPI, notificationsAPI, createPaperAPI, noticesAPI } from "../utils/api";
@@ -241,68 +239,28 @@ export default function ApplicantDashboard() {
             </p>
           </div>
 
-          {/* Live & Upcoming Exams */}
+          {/* Exam Alert Strip */}
           {assignedTests.some(test => test.windowStatus === "active" || test.windowStatus === "upcoming") && (
-            <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <PlayCircle className="w-5 h-5 text-[#3AB000]" />
-                  Assigned Exams
-                </h2>
-                <button
-                  onClick={() => navigate("/my-exam")}
-                  className="text-[#3AB000] text-sm font-semibold hover:underline"
-                >
-                  Go to My Exam →
-                </button>
+            <div className="bg-[#3AB000] text-white px-4 py-3 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md animate-pulse-slow">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-2 rounded-lg">
+                  <BookOpen className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="font-bold text-sm sm:text-base leading-none">
+                    Exam Alert!
+                  </p>
+                  <p className="text-[11px] sm:text-xs text-green-50 mt-1">
+                    You have active or upcoming exams. Please check your schedule and start on time.
+                  </p>
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {assignedTests
-                  .filter(test => test.windowStatus === "active" || test.windowStatus === "upcoming")
-                  .map((test) => (
-                    <div
-                      key={test._id}
-                      className={`p-4 rounded-xl border transition shadow-sm hover:shadow-md cursor-pointer ${
-                        test.windowStatus === "active"
-                          ? "bg-green-50 border-green-200"
-                          : "bg-blue-50 border-blue-200"
-                      }`}
-                      onClick={() => navigate("/my-exam")}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          test.windowStatus === "active"
-                            ? "bg-[#3AB000] text-white"
-                            : "bg-blue-500 text-white"
-                        }`}>
-                          {test.windowStatus === "active" ? "Live Now" : "Upcoming"}
-                        </span>
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                          <Clock className="w-3 h-3" />
-                          {test.duration} Min
-                        </div>
-                      </div>
-                      <h3 className="font-bold text-gray-900 text-sm mb-2 line-clamp-2">
-                        {test.title}
-                      </h3>
-                      <div className="flex items-center justify-between mt-4">
-                        <div className="text-[10px] text-gray-500 italic">
-                          {test.windowStatus === "active" 
-                            ? `Ends: ${new Date(test.endDate).toLocaleDateString()}`
-                            : `Starts: ${new Date(test.startDate).toLocaleDateString()}`
-                          }
-                        </div>
-                        <button className={`px-3 py-1 rounded text-xs font-bold ${
-                          test.windowStatus === "active"
-                            ? "bg-[#3AB000] text-white"
-                            : "bg-gray-200 text-gray-600"
-                        }`}>
-                          {test.windowStatus === "active" ? "Start Exam" : "Wait"}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-              </div>
+              <button
+                onClick={() => navigate("/my-exam")}
+                className="bg-white text-[#3AB000] px-5 py-2 rounded-lg text-xs font-extrabold hover:bg-green-50 transition-colors whitespace-nowrap shadow-sm"
+              >
+                Go to My Exam →
+              </button>
             </div>
           )}
 

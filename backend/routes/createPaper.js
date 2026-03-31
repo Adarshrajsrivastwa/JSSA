@@ -65,16 +65,37 @@ router.get("/", async (req, res) => {
     const limitNum = Math.min(Math.max(parseInt(limit, 10) || 100, 1), 500);
     const skip = (pageNum - 1) * limitNum;
 
-    const [tests, total] = await Promise.all([
+    const [testsRaw, total] = await Promise.all([
       CreatePaper.find(query)
         .sort({ createdAt: -1 })
         .allowDiskUse(true)
         .skip(skip)
         .limit(limitNum)
         .populate("createdBy", "email role")
-        .populate("assignedStudents"),
+        .populate("assignedStudents")
+        .lean(),
       CreatePaper.countDocuments(query),
     ]);
+
+    // Recalculate real-time attempts if needed, but for now we'll just ensure the count is correct
+    // In a production app, we might want to aggregate this, but the $inc approach is usually fine.
+    // Let's add the attempt count calculation just in case the manual $inc failed before.
+    const testIds = testsRaw.map(t => t._id);
+    const attemptsCounts = await Attempt.aggregate([
+      { $match: { testId: { $in: testIds } } },
+      { $group: { _id: "$testId", count: { $sum: 1 } } }
+    ]);
+
+    const attemptsMap = attemptsCounts.reduce((acc, curr) => {
+      acc[curr._id.toString()] = curr.count;
+      return acc;
+    }, {});
+
+    const tests = testsRaw.map(test => ({
+      ...test,
+      id: test._id.toString(),
+      attempts: attemptsMap[test._id.toString()] || 0
+    }));
 
     res.json({
       success: true,
@@ -131,10 +152,11 @@ router.get("/assigned", authenticate, async (req, res) => {
     .lean();
 
     // Fetch existing attempts for this user to calculate attemptsUsed
-    const userAttempts = await Attempt.find({ userId: req.user.id }).select("testId").lean();
-    const attemptCounts = userAttempts.reduce((acc, curr) => {
+    const userAttempts = await Attempt.find({ userId: req.user.id }).select("testId score createdAt").lean();
+    const attemptData = userAttempts.reduce((acc, curr) => {
       const id = curr.testId.toString();
-      acc[id] = (acc[id] || 0) + 1;
+      if (!acc[id]) acc[id] = [];
+      acc[id].push(curr);
       return acc;
     }, {});
 
@@ -142,7 +164,8 @@ router.get("/assigned", authenticate, async (req, res) => {
     const now = new Date();
     const processedTests = tests.map(test => {
       let windowStatus = "active";
-      const attemptsUsed = attemptCounts[test._id.toString()] || 0;
+      const attempts = attemptData[test._id.toString()] || [];
+      const attemptsUsed = attempts.length;
       let canStart = attemptsUsed < (test.maxAttempts || 1);
 
       const startDate = test.startDate ? new Date(test.startDate) : null;
@@ -156,6 +179,13 @@ router.get("/assigned", authenticate, async (req, res) => {
         canStart = false;
       }
 
+      // Check if result can be shown
+      let resultAvailable = test.showResult;
+      if (!resultAvailable && test.resultDate) {
+        const resDate = new Date(test.resultDate);
+        if (now >= resDate) resultAvailable = true;
+      }
+
       return {
         ...test,
         id: test._id.toString(), // Ensure frontend has 'id' field
@@ -164,6 +194,9 @@ router.get("/assigned", authenticate, async (req, res) => {
         attemptsUsed,
         maxAttempts: test.maxAttempts || 1,
         shuffleQuestions: test.shuffleQuestions,
+        resultDate: test.resultDate,
+        resultAvailable,
+        userAttempt: attempts.length > 0 ? attempts[0] : null, // Send first attempt for now
         // Map questions for frontend
         questions: (test.questionConfigs || []).map(q => ({
           id: q.questionId?._id,
@@ -450,6 +483,9 @@ router.post("/:id/submit", authenticate, async (req, res) => {
       endTime: new Date(),
     });
 
+    // Increment attempts count in CreatePaper
+    await CreatePaper.findByIdAndUpdate(test._id, { $inc: { attempts: 1 } });
+
     // Determine if result should be shown instantly
     const showInstant = test.showResult;
     const resultDate = test.resultDate;
@@ -478,6 +514,68 @@ router.post("/:id/submit", authenticate, async (req, res) => {
     console.error("Submit attempt error:", error);
     res.status(500).json({
       error: "Failed to submit attempt",
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/create-paper/:id/review
+ * Get attempt details for review (without correct answers)
+ */
+router.get("/:id/review", authenticate, async (req, res) => {
+  try {
+    const test = await CreatePaper.findById(req.params.id).populate("questionConfigs.questionId");
+    if (!test) return res.status(404).json({ error: "Test not found" });
+
+    const attempt = await Attempt.findOne({
+      testId: test._id,
+      userId: req.user.id,
+    }).sort({ createdAt: -1 });
+
+    if (!attempt) {
+      return res.status(404).json({ error: "No attempt found for this test" });
+    }
+
+    // Map questions with user answers and correctness, but NO correct answers
+    const reviewData = (test.questionConfigs || []).map(config => {
+      const qId = config.questionId?._id?.toString();
+      const userAnswerIndex = attempt.answers.get(qId);
+      const options = config.questionId?.options || [];
+      const correctAnswer = config.questionId?.correctAnswer;
+
+      let isCorrect = false;
+      if (userAnswerIndex !== undefined) {
+        const selectedOptionText = options[userAnswerIndex];
+        if (selectedOptionText === correctAnswer || 
+            String.fromCharCode(65 + userAnswerIndex) === correctAnswer) {
+          isCorrect = true;
+        }
+      }
+
+      return {
+        id: qId,
+        question: config.questionId?.question,
+        options: options,
+        userAnswerIndex,
+        isCorrect,
+        // We explicitly do NOT send the correct answer index or text
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        testTitle: test.title,
+        score: attempt.score,
+        totalQuestions: attempt.totalQuestions,
+        review: reviewData
+      }
+    });
+  } catch (error) {
+    console.error("Get review error:", error);
+    res.status(500).json({
+      error: "Failed to fetch review data",
       message: error.message,
     });
   }

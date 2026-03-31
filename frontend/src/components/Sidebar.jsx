@@ -140,7 +140,6 @@ const Sidebar = () => {
         {
           name: "Exam Management",
           icon: BookOpen,
-          path: "/exam-management",
           children: [
             { name: "Question Bank", icon: FileText, path: "/question-bank" },
             { name: "Exam Event", icon: FileText, path: "/create-paper" },
@@ -150,7 +149,6 @@ const Sidebar = () => {
         {
           name: "Settings",
           icon: Settings,
-          path: "/settings",
           children: [
             { name: "Account", path: "/settings/account", icon: UserCog },
             {
@@ -179,6 +177,11 @@ const Sidebar = () => {
   const handleNavigation = (item) => {
     if (item.children && item.children.length > 0) {
       toggleMenu(item.name);
+      // Automatically navigate to the first child's path if it exists
+      if (item.children[0] && item.children[0].path) {
+        if (window.innerWidth < 768) setIsOpen(false);
+        navigate(item.children[0].path);
+      }
     } else {
       setOpenMenu("");
       if (window.innerWidth < 768) setIsOpen(false);
@@ -332,7 +335,6 @@ const Sidebar = () => {
                             <li key={sub.name}>
                               <button
                                 onClick={() => {
-                                  setActiveItem(sub.path);
                                   setOpenMenu(item.name);
                                   if (window.innerWidth < 768) setIsOpen(false);
                                   navigate(sub.path);

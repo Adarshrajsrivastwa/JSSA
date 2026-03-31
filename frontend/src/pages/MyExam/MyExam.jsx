@@ -5,7 +5,17 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { CheckCircle2, Clock, Eye, Monitor } from "lucide-react";
+import {
+  BookOpen,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Eye,
+  Monitor,
+  PlayCircle,
+  Trophy,
+  XCircle,
+} from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import { createPaperAPI } from "../../utils/api";
 
@@ -143,6 +153,8 @@ const STEP = {
   instructions: "instructions",
   running: "running",
   submitted: "submitted",
+  review: "review",
+  result: "result",
 };
 
 export default function MyExam() {
@@ -159,21 +171,45 @@ export default function MyExam() {
   const [submittingAttempt, setSubmittingAttempt] = useState(false);
   const [shuffledQuestions, setShuffledQuestions] = useState([]);
   const [submissionResult, setSubmissionResult] = useState(null);
+  const [reviewData, setReviewData] = useState(null);
+  const [loadingReview, setLoadingReview] = useState(false);
 
   const screenStreamRef = useRef(null);
+
+  const handleReview = async (exam) => {
+    setLoadingReview(true);
+    try {
+      const res = await createPaperAPI.getReview(exam.id);
+      if (res.success) {
+        setReviewData(res.data);
+        setStep(STEP.review);
+      } else {
+        alert(res.error || "Failed to load review");
+      }
+    } catch (e) {
+      alert("Error loading review: " + e.message);
+    } finally {
+      setLoadingReview(false);
+    }
+  };
+
+  const handleResult = (exam) => {
+    setSelectedExam(exam);
+    setStep(STEP.result);
+  };
 
   const questions = shuffledQuestions.length > 0 ? shuffledQuestions : (selectedExam?.questions || []);
   const answeredCount = Object.keys(answers).length;
   const activeExams = useMemo(
-    () => examRows.filter((exam) => exam.windowStatus === "active"),
+    () => examRows.filter((exam) => exam.windowStatus === "active" && exam.attemptsUsed < exam.maxAttempts),
     [examRows],
   );
   const upcomingExams = useMemo(
     () => examRows.filter((exam) => exam.windowStatus === "upcoming"),
     [examRows],
   );
-  const endedExams = useMemo(
-    () => examRows.filter((exam) => exam.windowStatus === "ended"),
+  const historyExams = useMemo(
+    () => examRows.filter((exam) => exam.windowStatus === "ended" || (exam.windowStatus === "active" && exam.attemptsUsed >= exam.maxAttempts)),
     [examRows],
   );
 
@@ -416,9 +452,6 @@ export default function MyExam() {
                             <h3 className="text-xl font-semibold text-gray-800">
                               {exam.title}
                             </h3>
-                            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#e8fad8] text-[#2d8a00]">
-                              Active
-                            </span>
                           </div>
                           <div className="mt-3 text-sm text-gray-700 space-y-1">
                             <p>
@@ -439,17 +472,40 @@ export default function MyExam() {
                               {exam.endDate ? new Date(exam.endDate).toLocaleDateString() : "-"}
                             </p>
                           </div>
-                          <button
-                            onClick={() => selectExam(exam)}
-                            disabled={!exam.canStart}
-                            className={`mt-4 px-5 py-2.5 rounded-md font-medium ${
-                              exam.canStart
-                                ? "bg-[#3AB000] text-white hover:bg-[#2d8a00]"
-                                : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                            }`}
-                          >
-                            {exam.canStart ? "Start Exam" : "Already Attempted"}
-                          </button>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {exam.canStart ? (
+                              <button
+                                onClick={() => selectExam(exam)}
+                                className="px-5 py-2.5 bg-[#3AB000] text-white rounded-md font-medium hover:bg-[#2d8a00] transition"
+                              >
+                                Start Exam
+                              </button>
+                            ) : null}
+                            
+                            {exam.attemptsUsed > 0 && (
+                              <>
+                                <button
+                                  onClick={() => handleReview(exam)}
+                                  disabled={loadingReview}
+                                  className="px-5 py-2.5 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 transition disabled:opacity-50"
+                                >
+                                  {loadingReview ? "Loading..." : "Review"}
+                                </button>
+                                <button
+                                  onClick={() => handleResult(exam)}
+                                  className="px-5 py-2.5 bg-purple-600 text-white rounded-md font-medium hover:bg-purple-700 transition"
+                                >
+                                  Result
+                                </button>
+                              </>
+                            )}
+                            
+                            {!exam.canStart && exam.attemptsUsed === 0 && (
+                              <span className="text-xs font-bold text-gray-400 bg-gray-100 px-3 py-1.5 rounded">
+                                Exam Closed
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -497,6 +553,25 @@ export default function MyExam() {
                               </span>
                             </p>
                           </div>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {exam.attemptsUsed > 0 && (
+                              <>
+                                <button
+                                  onClick={() => handleReview(exam)}
+                                  disabled={loadingReview}
+                                  className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50"
+                                >
+                                  Review
+                                </button>
+                                <button
+                                  onClick={() => handleResult(exam)}
+                                  className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 transition"
+                                >
+                                  Result
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -505,25 +580,27 @@ export default function MyExam() {
 
                 <div>
                   <h2 className="text-xl font-semibold text-gray-600 mb-3">
-                    Ended Exams
+                    History
                   </h2>
-                  {endedExams.length === 0 ? (
+                  {historyExams.length === 0 ? (
                     <div className="bg-white border rounded-lg p-4 text-sm text-gray-500 shadow-sm">
-                      No ended exams.
+                      No exam history found.
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      {endedExams.map((exam) => (
+                      {historyExams.map((exam) => (
                         <div
                           key={exam._id || exam.id}
-                          className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm grayscale opacity-80"
+                          className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <h3 className="text-xl font-semibold text-gray-800">
                               {exam.title}
                             </h3>
-                            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
-                              Ended
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                              exam.attemptsUsed > 0 ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-600"
+                            }`}>
+                              {exam.attemptsUsed > 0 ? "Attempted" : "Not Attempted"}
                             </span>
                           </div>
                           <div className="mt-3 text-sm text-gray-700 space-y-1">
@@ -538,11 +615,34 @@ export default function MyExam() {
                               </span>
                             </p>
                             <p className="text-xs text-gray-600">
-                              Ended on:{" "}
-                              <span className="font-semibold">
-                                {exam.endDate ? new Date(exam.endDate).toLocaleDateString() : "-"}
-                              </span>
+                              {exam.windowStatus === "ended" 
+                                ? `Ended on: ${exam.endDate ? new Date(exam.endDate).toLocaleDateString() : "-"}`
+                                : `Attempted on: ${exam.userAttempt?.createdAt ? new Date(exam.userAttempt.createdAt).toLocaleDateString() : "-"}`
+                              }
                             </p>
+                          </div>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {exam.attemptsUsed > 0 ? (
+                              <>
+                                <button
+                                  onClick={() => handleReview(exam)}
+                                  disabled={loadingReview}
+                                  className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50"
+                                >
+                                  Review
+                                </button>
+                                <button
+                                  onClick={() => handleResult(exam)}
+                                  className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 transition"
+                                >
+                                  Result
+                                </button>
+                              </>
+                            ) : (
+                              <span className="text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1.5 rounded border border-gray-100">
+                                Exam Period Expired
+                              </span>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -550,50 +650,147 @@ export default function MyExam() {
                   )}
                 </div>
 
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-500 mb-3">
-                    Ended Exams
-                  </h2>
-                  {endedExams.length === 0 ? (
-                    <div className="bg-white border rounded-lg p-4 text-sm text-gray-500 shadow-sm">
-                      No ended exams.
-                    </div>
-                  ) : (                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      {endedExams.map((exam) => (
-                        <div
-                          key={exam.id}
-                          className="bg-gray-50 border border-gray-200 rounded-xl p-5 shadow-sm opacity-70"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <h3 className="text-xl font-semibold text-gray-800">
-                              {exam.title}
-                            </h3>
-                            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-600">
-                              Ended
-                            </span>
-                          </div>
-                          <div className="mt-3 text-sm text-gray-700 space-y-1">
-                            <p>
-                              Questions:{" "}
-                              <span className="font-semibold">
-                                {exam.questions.length}
-                              </span>{" "}
-                              · Duration:{" "}
-                              <span className="font-semibold">
-                                {exam.duration} min
-                              </span>
-                            </p>
-                            <p className="text-xs text-gray-600">
-                              Ended on: {exam.endDate || "-"}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
             )}
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (step === STEP.review && reviewData) {
+    return (
+      <DashboardLayout>
+        <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-8 flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-extrabold text-gray-900">
+                  Review: {reviewData.testTitle}
+                </h1>
+                <p className="text-sm text-gray-500 mt-1">
+                  Check your submitted answers. Correct answers are not shown.
+                </p>
+              </div>
+              <button
+                onClick={() => setStep(STEP.list)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
+              >
+                Back to List
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {reviewData.review.map((q, idx) => (
+                <div key={q.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-lg font-bold text-gray-900">
+                      Question {idx + 1}
+                    </h3>
+                    {q.userAnswerIndex !== undefined ? (
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                        q.isCorrect ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                      }`}>
+                        {q.isCorrect ? "Correct" : "Incorrect"}
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gray-100 text-gray-500">
+                        Not Attempted
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-gray-800 font-medium mb-4">{q.question}</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    {q.options.map((opt, optIdx) => (
+                      <div
+                        key={optIdx}
+                        className={`p-3 rounded-lg border text-sm flex items-center justify-between ${
+                          q.userAnswerIndex === optIdx
+                            ? q.isCorrect
+                              ? "border-green-500 bg-green-50"
+                              : "border-red-500 bg-red-50"
+                            : "border-gray-100 bg-gray-50/50 text-gray-600"
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className="font-bold">{String.fromCharCode(65 + optIdx)}.</span>
+                          {opt}
+                        </span>
+                        {q.userAnswerIndex === optIdx && (
+                          q.isCorrect ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <XCircle className="w-4 h-4 text-red-600" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex justify-center pb-10">
+              <button
+                onClick={() => setStep(STEP.list)}
+                className="px-8 py-3 bg-[#3AB000] text-white rounded-xl font-bold hover:bg-[#2d8a00] transition shadow-md"
+              >
+                Finished Review
+              </button>
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (step === STEP.result && selectedExam) {
+    const isAvailable = selectedExam.resultAvailable;
+    const resDateStr = selectedExam.resultDate ? new Date(selectedExam.resultDate).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric"
+    }) : "TBA";
+
+    return (
+      <DashboardLayout>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white rounded-2xl border border-gray-200 shadow-xl p-8 text-center">
+            <div className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-6 ${
+              isAvailable ? "bg-green-100 text-green-600" : "bg-blue-100 text-blue-600"
+            }`}>
+              {isAvailable ? <Trophy className="w-10 h-10" /> : <Calendar className="w-10 h-10" />}
+            </div>
+            
+            <h1 className="text-2xl font-black text-gray-900 mb-2">
+              {isAvailable ? "Exam Result" : "Result Pending"}
+            </h1>
+            <p className="text-gray-500 text-sm mb-6">
+              {selectedExam.title}
+            </p>
+
+            {isAvailable ? (
+              <div className="bg-gray-50 rounded-xl p-6 border border-gray-100 mb-6">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Your Score</p>
+                <p className="text-4xl font-black text-gray-900">
+                  {selectedExam.userAttempt?.score || 0}
+                  <span className="text-lg text-gray-400 font-bold ml-1">/ {selectedExam.totalMarks || 100}</span>
+                </p>
+              </div>
+            ) : (
+              <div className="bg-blue-50 rounded-xl p-6 border border-blue-100 mb-6">
+                <p className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-1">Scheduled For</p>
+                <p className="text-xl font-black text-blue-900">
+                  {resDateStr}
+                </p>
+                <p className="text-[10px] text-blue-400 mt-2 italic">
+                  Results will be visible here after declaration.
+                </p>
+              </div>
+            )}
+
+            <button
+              onClick={() => setStep(STEP.list)}
+              className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition shadow-lg"
+            >
+              Close
+            </button>
           </div>
         </div>
       </DashboardLayout>
@@ -663,38 +860,21 @@ export default function MyExam() {
   if (step === STEP.submitted) {
     return (
       <DashboardLayout>
-        <div className="p-6 max-w-3xl mx-auto text-center">
-          <div className="bg-white border rounded-xl shadow-lg p-10">
-            <div className="flex justify-center mb-6">
-              <CheckCircle2 size={80} className="text-[#3AB000]" />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white rounded-2xl border border-gray-200 shadow-xl p-10 text-center animate-in zoom-in duration-300">
+            <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full mx-auto flex items-center justify-center mb-8">
+              <CheckCircle2 className="w-12 h-12" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-800">Exam Submitted!</h2>
-            
-            <div className="mt-8 p-6 bg-[#f0fce8] border border-[#b5e08a] rounded-xl inline-block min-w-[300px]">
-              {submissionResult?.showInstant ? (
-                <>
-                  <p className="text-gray-600 text-sm mb-2 uppercase tracking-wider font-semibold">Your Score</p>
-                  <p className="text-5xl font-bold text-[#2d8a00] mb-2">{submissionResult.score}</p>
-                  <p className="text-gray-500 text-sm">Out of {selectedExam?.totalQuestions || questions.length} marks</p>
-                </>
-              ) : (
-                <p className="text-[#2d8a00] font-medium text-lg">
-                  {submissionResult?.resultMessage || "Your attempt has been saved successfully."}
-                </p>
-              )}
-            </div>
-
-            <div className="mt-10">
-              <button
-                onClick={() => {
-                  setStep(STEP.list);
-                  setSubmissionResult(null);
-                }}
-                className="px-8 py-3 bg-[#3AB000] text-white rounded-lg font-bold hover:bg-[#2d8a00] transition-all shadow-md hover:shadow-lg"
-              >
-                Back To Dashboard
-              </button>
-            </div>
+            <h1 className="text-3xl font-black text-gray-900 mb-4">Exam Submitted!</h1>
+            <p className="text-gray-500 mb-8 leading-relaxed">
+              Your exam attempt has been successfully recorded. Results will be available soon.
+            </p>
+            <button
+              onClick={() => setStep(STEP.list)}
+              className="w-full py-4 bg-[#3AB000] text-white rounded-xl font-bold hover:bg-[#2d8a00] transition-all transform hover:scale-[1.02] shadow-lg"
+            >
+              Back to Dashboard
+            </button>
           </div>
         </div>
       </DashboardLayout>

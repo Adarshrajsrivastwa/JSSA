@@ -582,6 +582,10 @@ export const createPaperAPI = {
     return apiRequest("/create-paper/assigned", { method: "GET" });
   },
 
+  getReview: async (id) => {
+    return apiRequest(`/create-paper/${id}/review`, { method: "GET" });
+  },
+
   submitAttempt: async (id, data) => {
     return apiRequest(`/create-paper/${id}/submit`, {
       method: "POST",

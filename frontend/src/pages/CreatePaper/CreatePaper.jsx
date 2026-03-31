@@ -207,8 +207,6 @@ function DetailsModal({ test, onClose }) {
             <div className="space-y-1">
               <h3 className="text-2xl font-black tracking-tight leading-tight">{test.title}</h3>
               <div className="flex items-center gap-4 text-green-50 text-xs font-bold uppercase tracking-widest opacity-90">
-                <span className="flex items-center gap-1"><Monitor size={14} /> Test ID: {test.id?.slice(-6)}</span>
-                <span className="flex items-center gap-1"><Calendar size={14} /> Created: {new Date(test.createdDate).toLocaleDateString()}</span>
               </div>
             </div>
             <button
@@ -1608,8 +1606,7 @@ export default function TestManagement() {
     const total = tests.length;
     const published = tests.filter((t) => t.status === "published").length;
     const draft = tests.filter((t) => t.status === "draft").length;
-    const attempts = tests.reduce((s, t) => s + t.attempts, 0);
-    return { total, published, draft, attempts };
+    return { total, published, draft };
   }, [tests]);
 
   const filtered = useMemo(() => {
@@ -1742,7 +1739,7 @@ export default function TestManagement() {
     <DashboardLayout>
       <div className="min-h-screen bg-white ml-0 p-0 md:ml-6 px-2 md:px-0">
         {/* ── Stats Cards ── */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Events</p>
             <p className="text-2xl font-black text-gray-900">{stats.total}</p>
@@ -1754,10 +1751,6 @@ export default function TestManagement() {
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Drafts</p>
             <p className="text-2xl font-black text-amber-600">{stats.draft}</p>
-          </div>
-          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Attempts</p>
-            <p className="text-2xl font-black text-blue-600">{stats.attempts}</p>
           </div>
         </div>
 
@@ -1810,9 +1803,6 @@ export default function TestManagement() {
                   <div className="space-y-2">
                     <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#3AB000] transition-colors">{test.title}</h3>
                     <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span className="flex items-center gap-1"><Monitor size={14} /> ID: {test.id?.slice(-6)}</span>
-                      <span className="flex items-center gap-1"><Users size={14} /> {test.attempts} Attempts</span>
-                      <span className="flex items-center gap-1"><Calendar size={14} /> {new Date(test.createdDate).toLocaleDateString()}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
