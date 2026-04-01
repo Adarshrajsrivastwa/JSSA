@@ -317,8 +317,24 @@ router.post(
         return res.status(400).json({ error: "Validation failed", errors: errors.array() });
       }
 
-      const { phone } = req.body;
+      const { phone, role } = req.body;
       let user = await User.findOne({ phone });
+
+      // If user exists, check role
+      if (user && role && user.role !== role) {
+        return res.status(403).json({
+          error: "Access denied",
+          message: `This account is registered as ${user.role}, not ${role}`,
+        });
+      }
+
+      // If user doesn't exist and trying to login as admin, block it
+      if (!user && role === "admin") {
+        return res.status(404).json({
+          error: "Access denied",
+          message: "Admin account not found with this mobile number",
+        });
+      }
 
       // Create user if doesn't exist (Applicant by default)
       if (!user) {
@@ -366,11 +382,19 @@ router.post(
   ],
   async (req, res) => {
     try {
-      const { phone, otp } = req.body;
+      const { phone, otp, role } = req.body;
       const user = await User.findOne({ phone });
 
       if (!user) {
         return res.status(404).json({ error: "User not found" });
+      }
+
+      // Check role
+      if (role && user.role !== role) {
+        return res.status(403).json({
+          error: "Access denied",
+          message: `This account is registered as ${user.role}, not ${role}`,
+        });
       }
 
       const isOtpValid = user.verifyOTP(otp);

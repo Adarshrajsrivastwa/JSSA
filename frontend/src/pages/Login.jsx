@@ -465,14 +465,14 @@ export default function JSSAbhiyanLogin() {
     setError("");
 
     try {
-      const response = await authAPI.nimbusLoginRequest(phoneValue);
+      const response = await authAPI.nimbusLoginRequest(phoneValue, formData.role);
       if (response.success) {
         setOtpSent(true);
       } else {
         setError(response.message || "Wrong phone number");
       }
     } catch (err) {
-      setError("Wrong phone number");
+      setError(err.message || "Wrong phone number");
     } finally {
       setLoading(false);
     }
@@ -488,7 +488,7 @@ export default function JSSAbhiyanLogin() {
     setError("");
 
     try {
-      const response = await authAPI.nimbusLoginVerify(phoneValue, otpValue);
+      const response = await authAPI.nimbusLoginVerify(phoneValue, otpValue, formData.role);
       if (response.success && response.data) {
         const { user, token } = response.data;
         login({
@@ -498,7 +498,7 @@ export default function JSSAbhiyanLogin() {
         });
         navigate("/dashboard", { replace: true });
       } else {
-        setError(response.error || "Wrong OTP");
+        setError(response.message || response.error || "Wrong OTP");
       }
     } catch (err) {
       setError(err.message || "Wrong OTP");

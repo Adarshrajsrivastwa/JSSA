@@ -118,16 +118,16 @@ export const authAPI = {
       body: JSON.stringify({ identifier, password, role }),
     });
   },
-  nimbusLoginRequest: async (phone) => {
+  nimbusLoginRequest: async (phone, role) => {
     return apiRequest("/auth/nimbus-login-request", {
       method: "POST",
-      body: JSON.stringify({ phone }),
+      body: JSON.stringify({ phone, role }),
     });
   },
-  nimbusLoginVerify: async (phone, otp) => {
+  nimbusLoginVerify: async (phone, otp, role) => {
     return apiRequest("/auth/nimbus-login-verify", {
       method: "POST",
-      body: JSON.stringify({ phone, otp }),
+      body: JSON.stringify({ phone, otp, role }),
     });
   },
   forgotPassword: async (email) => {
