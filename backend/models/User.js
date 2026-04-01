@@ -70,6 +70,26 @@ userSchema.pre("save", function (next) {
   next();
 });
 
+// Generate and set OTP
+userSchema.methods.generateOTP = function () {
+  const otpCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit OTP
+  this.otp = otpCode;
+  this.otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+  return otpCode;
+};
+
+// Verify OTP
+userSchema.methods.verifyOTP = function (enteredOtp) {
+  if (!this.otp || !this.otpExpiry) return false;
+  if (this.otp !== enteredOtp) return false;
+  if (Date.now() > this.otpExpiry) return false;
+  
+  // Clear OTP after successful verification
+  this.otp = null;
+  this.otpExpiry = null;
+  return true;
+};
+
 // Remove password from JSON output
 userSchema.methods.toJSON = function () {
   const userObject = this.toObject();

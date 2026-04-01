@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Eye, EyeOff, User, Lock } from "lucide-react";
+import { Eye, EyeOff, User, Lock, Phone, MessageSquare } from "lucide-react";
 import logo from "../assets/img0.png";
 import { useAuth } from "../auth/AuthProvider";
 import { roleHomePath } from "../auth/auth";
@@ -397,6 +397,12 @@ export default function JSSAbhiyanLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Nimbus OTP States
+  const [loginMethod, setLoginMethod] = useState("password"); // "password" or "otp"
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpValue, setOtpValue] = useState("");
+  const [phoneValue, setPhoneValue] = useState("");
+
   const handleInputChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -449,10 +455,62 @@ export default function JSSAbhiyanLogin() {
     }
   };
 
+  const handleRequestOTP = async () => {
+    if (!phoneValue || phoneValue.length !== 10) {
+      setError("Please enter a valid 10-digit mobile number");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await authAPI.nimbusLoginRequest(phoneValue);
+      if (response.success) {
+        setOtpSent(true);
+      } else {
+        setError(response.message || "Failed to send OTP. Please try again.");
+      }
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (!otpValue || otpValue.length < 4) {
+      setError("Please enter the OTP sent to your mobile");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await authAPI.nimbusLoginVerify(phoneValue, otpValue);
+      if (response.success && response.data) {
+        const { user, token } = response.data;
+        login({
+          identifier: user.phone || user.email,
+          role: user.role,
+          token: token,
+        });
+        navigate("/dashboard", { replace: true });
+      } else {
+        setError(response.error || "Invalid OTP. Please try again.");
+      }
+    } catch (err) {
+      setError("OTP verification failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-green-50 via-emerald-50 to-lime-50">
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col lg:flex-row">
-        {/* ── LEFT: Login Form ── */}
+        {/* LEFT: Login Form */}
         <div className="w-full lg:w-1/2 p-6 sm:p-8 lg:p-12 bg-gradient-to-br from-green-50 via-white to-emerald-50">
           {/* Brand Header */}
           <div className="mb-6 lg:mb-8">
@@ -462,6 +520,38 @@ export default function JSSAbhiyanLogin() {
               className="w-full max-w-lg object-contain"
             />
           </div>
+
+          {/* Login Method Toggle (Only for Applicants) */}
+          {formData.role === "applicant" && (
+            <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
+              <button
+                onClick={() => {
+                  setLoginMethod("password");
+                  setError("");
+                }}
+                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                  loginMethod === "password"
+                    ? "bg-white shadow-sm text-green-600"
+                    : "text-gray-500"
+                }`}
+              >
+                Password Login
+              </button>
+              <button
+                onClick={() => {
+                  setLoginMethod("otp");
+                  setError("");
+                }}
+                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                  loginMethod === "otp"
+                    ? "bg-white shadow-sm text-green-600"
+                    : "text-gray-500"
+                }`}
+              >
+                OTP Login (Nimbus)
+              </button>
+            </div>
+          )}
 
           {/* Form Fields */}
           <div className="space-y-4 sm:space-y-5">
@@ -479,9 +569,10 @@ export default function JSSAbhiyanLogin() {
                     <button
                       key={opt.value}
                       type="button"
-                      onClick={() =>
-                        setFormData((p) => ({ ...p, role: opt.value }))
-                      }
+                      onClick={() => {
+                        setFormData((p) => ({ ...p, role: opt.value }));
+                        if (opt.value === "admin") setLoginMethod("password");
+                      }}
                       className="px-4 py-3 rounded-xl border-2 text-sm font-bold transition-all"
                       style={{
                         borderColor: active ? GREEN : "#e5e7eb",
@@ -496,65 +587,123 @@ export default function JSSAbhiyanLogin() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-bold text-gray-800 mb-2">
-                Enter your Email or Username or Mobile Number
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
-                <input
-                  type="text"
-                  name="identifier"
-                  value={formData.identifier}
-                  onChange={handleInputChange}
-                  placeholder="name@example.com"
-                  className="w-full pl-10 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none text-sm"
-                  onFocus={(e) => (e.target.style.borderColor = GREEN)}
-                  onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
-                />
-              </div>
-            </div>
+            {loginMethod === "password" ? (
+              <>
+                <div>
+                  <label className="block text-sm font-bold text-gray-800 mb-2">
+                    Enter your Email or Username or Mobile Number
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
+                    <input
+                      type="text"
+                      name="identifier"
+                      value={formData.identifier}
+                      onChange={handleInputChange}
+                      placeholder="name@example.com"
+                      className="w-full pl-10 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none text-sm"
+                      onFocus={(e) => (e.target.style.borderColor = GREEN)}
+                      onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
+                    />
+                  </div>
+                </div>
 
-            <div>
-              <label className="block text-sm font-bold text-gray-800 mb-2">
-                Enter your password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  placeholder="Password (8 or more characters)"
-                  className="w-full pl-10 pr-10 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none text-sm"
-                  onFocus={(e) => (e.target.style.borderColor = GREEN)}
-                  onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3.5 text-gray-500 transition"
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = GREEN)}
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.color = "#6b7280")
-                  }
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
+                <div>
+                  <label className="block text-sm font-bold text-gray-800 mb-2">
+                    Enter your password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      placeholder="Password (8 or more characters)"
+                      className="w-full pl-10 pr-10 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none text-sm"
+                      onFocus={(e) => (e.target.style.borderColor = GREEN)}
+                      onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3.5 text-gray-500 transition"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = GREEN)}
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.color = "#6b7280")
+                      }
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Nimbus OTP Login View */
+              <div className="animate-in fade-in duration-300">
+                {!otpSent ? (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-800 mb-2">
+                      Mobile Number
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
+                      <input
+                        type="tel"
+                        maxLength={10}
+                        value={phoneValue}
+                        onChange={(e) => setPhoneValue(e.target.value.replace(/\D/g, ""))}
+                        placeholder="10 digit mobile number"
+                        className="w-full pl-10 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none text-sm"
+                        onFocus={(e) => (e.target.style.borderColor = GREEN)}
+                        onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
+                      />
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-2 italic">
+                      OTP will be sent to this number via Nimbus IT SMS service.
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-bold text-gray-800">
+                        Enter 6-digit OTP
+                      </label>
+                      <button 
+                        onClick={() => setOtpSent(false)}
+                        className="text-xs font-bold text-green-600 hover:underline"
+                      >
+                        Change Number
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <MessageSquare className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
+                      <input
+                        type="text"
+                        maxLength={6}
+                        value={otpValue}
+                        onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ""))}
+                        placeholder="000000"
+                        className="w-full pl-10 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none text-sm text-center tracking-[0.5em] font-bold"
+                        onFocus={(e) => (e.target.style.borderColor = GREEN)}
+                        onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
-            {formData.role === "applicant" && (
+            {formData.role === "applicant" && loginMethod === "password" && (
               <div className="text-right">
                 <Link
                   to="/forgot-password"
@@ -572,27 +721,41 @@ export default function JSSAbhiyanLogin() {
               </div>
             )}
 
-            <button
-              onClick={handleLogin}
-              disabled={
-                loading || !formData.identifier.trim() || !formData.password
-              }
-              className="w-full text-white py-3 sm:py-3.5 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                background: `linear-gradient(135deg, ${GREEN} 0%, ${DARK_GREEN} 100%)`,
-                border: "none",
-                cursor: "pointer",
-                letterSpacing: "0.03em",
-                opacity:
-                  !formData.identifier.trim() || !formData.password ? 0.6 : 1,
-              }}
-            >
-              {loading ? "Logging in..." : "Log in"}
-            </button>
+            {loginMethod === "password" ? (
+              <button
+                onClick={handleLogin}
+                disabled={
+                  loading || !formData.identifier.trim() || !formData.password
+                }
+                className="w-full text-white py-3 sm:py-3.5 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  background: `linear-gradient(135deg, ${GREEN} 0%, ${DARK_GREEN} 100%)`,
+                  border: "none",
+                  cursor: "pointer",
+                  letterSpacing: "0.03em",
+                }}
+              >
+                {loading ? "Logging in..." : "Log in"}
+              </button>
+            ) : (
+              <button
+                onClick={!otpSent ? handleRequestOTP : handleVerifyOTP}
+                disabled={loading || (!otpSent && phoneValue.length !== 10) || (otpSent && otpValue.length < 4)}
+                className="w-full text-white py-3 sm:py-3.5 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  background: `linear-gradient(135deg, ${GREEN} 0%, ${DARK_GREEN} 100%)`,
+                  border: "none",
+                  cursor: "pointer",
+                  letterSpacing: "0.03em",
+                }}
+              >
+                {loading ? "Processing..." : !otpSent ? "Send OTP" : "Verify & Login"}
+              </button>
+            )}
           </div>
         </div>
 
-        {/* ── RIGHT: Illustration — hidden on mobile, visible from lg ── */}
+        {/* RIGHT: Illustration - hidden on mobile, visible from lg */}
         <div
           className="hidden lg:flex w-full lg:w-1/2 flex-col items-center justify-center p-12 text-center relative overflow-hidden"
           style={{

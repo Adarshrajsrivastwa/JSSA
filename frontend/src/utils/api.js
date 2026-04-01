@@ -60,7 +60,16 @@ async function apiRequest(endpoint, options = {}) {
     }
 
     if (!response.ok) {
-      throw new Error(data.message || data.error || `Request failed with status ${response.status}`);
+      // Improve error message handling for objects
+      let errorMessage = "Request failed";
+      if (data) {
+        if (typeof data.message === 'object') {
+          errorMessage = JSON.stringify(data.message);
+        } else {
+          errorMessage = data.message || data.error || `Request failed with status ${response.status}`;
+        }
+      }
+      throw new Error(errorMessage);
     }
 
     return data;
@@ -109,8 +118,19 @@ export const authAPI = {
       body: JSON.stringify({ identifier, password, role }),
     });
   },
-
-  getProfile: async () => {
+  nimbusLoginRequest: async (phone) => {
+    return apiRequest("/auth/nimbus-login-request", {
+      method: "POST",
+      body: JSON.stringify({ phone }),
+    });
+  },
+  nimbusLoginVerify: async (phone, otp) => {
+    return apiRequest("/auth/nimbus-login-verify", {
+      method: "POST",
+      body: JSON.stringify({ phone, otp }),
+    });
+  },
+  forgotPassword: async (email) => {
     return apiRequest("/auth/me", { method: "GET" });
   },
 

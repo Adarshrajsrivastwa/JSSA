@@ -135,6 +135,8 @@ const SUBJECT_OPTIONS = [
 const EMPTY_FORM = {
   title: "",
   questionConfigs: [],
+  totalQuestions: 0,
+  totalMarks: 0,
   duration: "",
   passingMarks: "",
   description: "",
@@ -517,6 +519,11 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
           showResult: editingTest.showResult,
           resultDate: editingTest.resultDate || "",
           maxAttempts: editingTest.maxAttempts.toString(),
+          totalQuestions: (editingTest.questionConfigs || []).length,
+          totalMarks: (editingTest.questionConfigs || []).reduce(
+            (s, c) => s + Number(c.marks || 0),
+            0,
+          ),
         }
       : { ...EMPTY_FORM, assignedStudents: [], resultDate: "" },
   );
@@ -659,12 +666,6 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
     });
   };
 
-  const selectedCount = (formData.questionConfigs || []).length;
-  const totalMarks = (formData.questionConfigs || []).reduce(
-    (s, c) => s + Number(c.marks || 0),
-    0,
-  );
-
   // Unique difficulties from question bank
   const qbDifficulties = useMemo(
     () => [...new Set(questionBank.map((q) => q.difficulty).filter(Boolean))],
@@ -702,35 +703,74 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
     setFormData((prev) => {
       const configs = prev.questionConfigs || [];
       const exists = configs.some((c) => String(c.questionId) === qId);
+      const newConfigs = exists
+        ? configs.filter((c) => String(c.questionId) !== qId)
+        : [
+            ...configs,
+            {
+              questionId: qId,
+              questionText: q.question, // Cache question text
+              subject: q.subject, // Store subject for easier counting
+              marks: Number(q.marks || 1),
+              isCompulsory: false,
+            },
+          ];
+
       return {
         ...prev,
-        questionConfigs: exists
-          ? configs.filter((c) => String(c.questionId) !== qId)
-          : [
-              ...configs,
-              {
-                questionId: qId,
-                marks: Number(q.marks || 1),
-                isCompulsory: false,
-              },
-            ],
+        questionConfigs: newConfigs,
+        totalQuestions: newConfigs.length,
+        totalMarks: newConfigs.reduce((s, c) => s + Number(c.marks || 0), 0),
       };
     });
   };
 
   const updateQConfig = (qId, field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      questionConfigs: (prev.questionConfigs || []).map((c) =>
+    setFormData((prev) => {
+      const newConfigs = (prev.questionConfigs || []).map((c) =>
         String(c.questionId) === String(qId) ? { ...c, [field]: value } : c,
-      ),
-    }));
+      );
+      return {
+        ...prev,
+        questionConfigs: newConfigs,
+        totalQuestions: newConfigs.length,
+        totalMarks: newConfigs.reduce((s, c) => s + Number(c.marks || 0), 0),
+      };
+    });
   };
 
   const getQConfig = (qId) =>
     (formData.questionConfigs || []).find(
       (c) => String(c.questionId) === String(qId),
     );
+
+  const handleNext = () => {
+    if (activeTab === "details") {
+      if (!formData.title) {
+        alert("Please select an Event Title.");
+        return;
+      }
+      if (!formData.duration || Number(formData.duration) <= 0) {
+        alert("Please enter a valid Duration.");
+        return;
+      }
+      if (formData.questionConfigs.length === 0) {
+        alert("Please select at least one question.");
+        return;
+      }
+    } else if (activeTab === "applicants") {
+      if (formData.assignedStudents.length === 0) {
+        alert("Please select at least one student.");
+        return;
+      }
+    }
+
+    const tabs = ["details", "applicants", "settings"];
+    const currentIndex = tabs.indexOf(activeTab);
+    if (currentIndex < tabs.length - 1) {
+      setActiveTab(tabs[currentIndex + 1]);
+    }
+  };
 
   const handleSubmit = () => {
     if (
@@ -885,7 +925,7 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
                   </label>
                   <input
                     readOnly
-                    value={selectedCount}
+                    value={formData.totalQuestions}
                     className="w-full px-3 py-2.5 border border-gray-200 rounded text-sm bg-gray-100 font-semibold text-[#3AB000]"
                   />
                 </div>
@@ -909,7 +949,7 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
                   </label>
                   <input
                     readOnly
-                    value={totalMarks}
+                    value={formData.totalMarks}
                     className="w-full px-3 py-2.5 border border-gray-200 rounded text-sm bg-gray-100 font-semibold text-[#3AB000]"
                   />
                 </div>
@@ -947,8 +987,8 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
                 <div className="border border-gray-200 rounded p-3 bg-white space-y-1.5">
                   <p className="text-xs text-gray-500 font-semibold">
                     Selected:{" "}
-                    <span className="text-[#3AB000]">{selectedCount}</span> |
-                    Marks: <span className="text-[#3AB000]">{totalMarks}</span>
+                    <span className="text-[#3AB000]">{formData.totalQuestions}</span> |
+                    Marks: <span className="text-[#3AB000]">{formData.totalMarks}</span>
                   </p>
                   {(formData.questionConfigs || []).length === 0 ? (
                     <p className="text-xs text-gray-400 italic">
@@ -1299,19 +1339,36 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
           >
             Cancel
           </button>
-          <button
-            onClick={handleSubmit}
-            className="px-5 py-2 text-white rounded text-sm font-bold transition-colors"
-            style={{ backgroundColor: "#3AB000" }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = "#2d8a00")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = "#3AB000")
-            }
-          >
-            {editingTest ? "Update Test" : "Create Test"}
-          </button>
+          
+          {activeTab !== "settings" ? (
+            <button
+              onClick={handleNext}
+              className="px-8 py-2 text-white rounded text-sm font-bold transition-colors shadow-sm hover:shadow-md"
+              style={{ backgroundColor: "#3AB000" }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = "#2d8a00")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = "#3AB000")
+              }
+            >
+              Next
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              className="px-5 py-2 text-white rounded text-sm font-bold transition-colors shadow-sm hover:shadow-md"
+              style={{ backgroundColor: "#3AB000" }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = "#2d8a00")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = "#3AB000")
+              }
+            >
+              {editingTest ? "Update Test" : "Create Test"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -1326,7 +1383,7 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
               <div>
                 <h3 className="text-base font-bold">Select Questions</h3>
                 <p className="text-green-100 text-xs mt-0.5">
-                  Selected: {selectedCount} | Total Marks: {totalMarks}
+                  Selected: {formData.totalQuestions} | Total Marks: {formData.totalMarks}
                 </p>
               </div>
               <button
@@ -1361,13 +1418,25 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
                   onChange={(e) => setQFilterSubject(e.target.value)}
                   className="px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-[#3AB000] focus:border-[#3AB000] bg-white outline-none"
                 >
-                  <option value="all">All Subjects</option>
-                  {SUBJECT_OPTIONS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
+                  <option value="all">All Subjects ({formData.totalQuestions} selected)</option>
+                  {SUBJECT_OPTIONS.map((s) => {
+                    const count = (formData.questionConfigs || []).filter(c => c.subject === s).length;
+                    return (
+                      <option key={s} value={s}>
+                        {s} {count > 0 ? `(${count} selected)` : ""}
+                      </option>
+                    );
+                  })}
                 </select>
+                {/* Current Subject Badge */}
+                {qFilterSubject !== "all" && (
+                  <div className="flex items-center gap-1.5 px-2 py-1.5 bg-purple-50 border border-purple-200 rounded text-[10px] font-bold text-purple-700 animate-in fade-in zoom-in duration-200">
+                    <CheckCircle size={10} />
+                    <span>
+                      {(formData.questionConfigs || []).filter(c => c.subject === qFilterSubject).length} Selected in {qFilterSubject}
+                    </span>
+                  </div>
+                )}
                 {/* Difficulty filter */}
                 <select
                   value={qFilterDifficulty}
@@ -1375,36 +1444,30 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
                   className="px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-[#3AB000] focus:border-[#3AB000] bg-white outline-none"
                 >
                   <option value="all">All Difficulties</option>
-                  {qbDifficulties.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
+                  {qbDifficulties.map((d) => {
+                    const count = (formData.questionConfigs || []).filter(c => {
+                      const q = questionBank.find(qb => String(qb.id) === String(c.questionId));
+                      return q?.difficulty === d;
+                    }).length;
+                    return (
+                      <option key={d} value={d}>
+                        {d} {count > 0 ? `(${count} selected)` : ""}
+                      </option>
+                    );
+                  })}
                 </select>
-                {/* Difficulty badges */}
-                <div className="flex gap-1 ml-auto">
-                  {["Easy", "Medium", "Hard"].map((d) => (
-                    <button
-                      key={d}
-                      onClick={() =>
-                        setQFilterDifficulty(
-                          qFilterDifficulty === d ? "all" : d,
-                        )
-                      }
-                      className={`px-2 py-0.5 rounded text-xs font-semibold border transition-colors ${
-                        qFilterDifficulty === d
-                          ? d === "Easy"
-                            ? "bg-[#e8f5e2] border-[#3AB000] text-[#2d8a00]"
-                            : d === "Medium"
-                              ? "bg-amber-100 border-amber-400 text-amber-700"
-                              : "bg-red-100 border-red-400 text-red-600"
-                          : "bg-white border-gray-200 text-gray-500 hover:border-gray-400"
-                      }`}
-                    >
-                      {d}
-                    </button>
-                  ))}
-                </div>
+                {/* Current Difficulty Badge */}
+                {qFilterDifficulty !== "all" && (
+                  <div className="flex items-center gap-1.5 px-2 py-1.5 bg-amber-50 border border-amber-200 rounded text-[10px] font-bold text-amber-700 animate-in fade-in zoom-in duration-200">
+                    <CheckCircle size={10} />
+                    <span>
+                      {(formData.questionConfigs || []).filter(c => {
+                        const q = questionBank.find(qb => String(qb.id) === String(c.questionId));
+                        return q?.difficulty === qFilterDifficulty;
+                      }).length} Selected in {qFilterDifficulty}
+                    </span>
+                  </div>
+                )}
               </div>
               <p className="text-xs text-gray-400">
                 Showing{" "}
@@ -1450,7 +1513,13 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
                             </span>
                             {q.difficulty && (
                               <span
-                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold flex-shrink-0 ${DIFF_STYLES[q.difficulty] || "bg-gray-100 text-gray-600"}`}
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold flex-shrink-0 ${
+                                  q.difficulty === "Easy"
+                                    ? "bg-green-100 text-green-700"
+                                    : q.difficulty === "Medium"
+                                      ? "bg-amber-100 text-amber-700"
+                                      : "bg-red-100 text-red-700"
+                                }`}
                               >
                                 {q.difficulty}
                               </span>

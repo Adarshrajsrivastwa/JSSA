@@ -11,6 +11,7 @@ import {
 import { generateToken } from "../utils/jwt.js";
 import { authenticate } from "../middleware/auth.js";
 import { sendOTPEmail } from "../utils/email.js";
+import { sendOTP } from "../utils/smsService.js";
 import { isDBConnected } from "../config/database.js";
 
 const router = express.Router();
@@ -292,6 +293,115 @@ router.post(
         error: "Login failed",
         message: error.message,
       });
+    }
+  }
+);
+
+/**
+ * POST /api/auth/nimbus-login-request
+ * Request OTP via Nimbus SMS
+ */
+router.post(
+  "/nimbus-login-request",
+  [
+    body("phone")
+      .notEmpty()
+      .withMessage("Phone number is required")
+      .isLength({ min: 10, max: 10 })
+      .withMessage("Phone must be 10 digits"),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ error: "Validation failed", errors: errors.array() });
+      }
+
+      const { phone } = req.body;
+      let user = await User.findOne({ phone });
+
+      // Create user if doesn't exist (Applicant by default)
+      if (!user) {
+        user = await User.create({
+          phone,
+          role: "applicant",
+          password: await bcrypt.hash(Math.random().toString(36), 10), // Random password
+        });
+      }
+
+      const otp = user.generateOTP();
+      await user.save();
+
+      // Send OTP via Nimbus IT
+      const smsResult = await sendOTP(phone, otp);
+
+      if (!smsResult.success) {
+        return res.status(500).json({
+          success: false,
+          error: "Failed to send SMS",
+          message: smsResult.error
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "OTP sent successfully via Nimbus IT",
+      });
+    } catch (error) {
+      console.error("Nimbus Login Request Error:", error);
+      res.status(500).json({ error: "Server error", message: error.message });
+    }
+  }
+);
+
+/**
+ * POST /api/auth/nimbus-login-verify
+ * Verify OTP and login
+ */
+router.post(
+  "/nimbus-login-verify",
+  [
+    body("phone").notEmpty().withMessage("Phone is required"),
+    body("otp").notEmpty().withMessage("OTP is required"),
+  ],
+  async (req, res) => {
+    try {
+      const { phone, otp } = req.body;
+      const user = await User.findOne({ phone });
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const isOtpValid = user.verifyOTP(otp);
+      if (!isOtpValid) {
+        return res.status(401).json({ error: "Invalid or expired OTP" });
+      }
+
+      await user.save();
+
+      const token = generateToken({
+        id: user._id.toString(),
+        email: user.email || user.phone,
+        role: user.role,
+      });
+
+      res.json({
+        success: true,
+        message: "Login successful",
+        data: {
+          user: {
+            id: user._id,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+          },
+          token,
+        },
+      });
+    } catch (error) {
+      console.error("Nimbus Login Verify Error:", error);
+      res.status(500).json({ error: "Server error", message: error.message });
     }
   }
 );

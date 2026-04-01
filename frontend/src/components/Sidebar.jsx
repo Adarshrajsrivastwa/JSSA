@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/img0.png";
 import {
@@ -104,7 +104,7 @@ function SidebarLogo() {
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [openMenu, setOpenMenu] = useState("");
+  const [openMenus, setOpenMenus] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
   const { role } = useAuth();
@@ -166,12 +166,25 @@ const Sidebar = () => {
     return base;
   }, [role]);
 
+  // Effect to keep parent menu open if a child is active
+  useEffect(() => {
+    const activeParent = menuItems.find(
+      (item) =>
+        item.children && item.children.some((c) => c.path === location.pathname),
+    );
+    if (activeParent && !openMenus.includes(activeParent.name)) {
+      setOpenMenus((prev) => [...prev, activeParent.name]);
+    }
+  }, [location.pathname, menuItems]);
+
   const isParentActive = (item) =>
     item.path === activeItem ||
     (item.children || []).some((c) => c.path === activeItem);
 
   const toggleMenu = (name) => {
-    setOpenMenu((prev) => (prev === name ? "" : name));
+    setOpenMenus((prev) =>
+      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
+    );
   };
 
   const handleNavigation = (item) => {
@@ -183,7 +196,7 @@ const Sidebar = () => {
         navigate(item.children[0].path);
       }
     } else {
-      setOpenMenu("");
+      // Don't clear openMenus here, just navigate
       if (window.innerWidth < 768) setIsOpen(false);
       navigate(item.path);
     }
@@ -246,7 +259,7 @@ const Sidebar = () => {
             {menuItems.map((item) => {
               const hasChildren = item.children && item.children.length > 0;
               const parentActive = isParentActive(item);
-              const isOpenThis = openMenu === item.name;
+              const isOpenThis = openMenus.includes(item.name);
               const Icon = item.icon;
               const isLogout = item.name === "Logout";
 
@@ -335,7 +348,6 @@ const Sidebar = () => {
                             <li key={sub.name}>
                               <button
                                 onClick={() => {
-                                  setOpenMenu(item.name);
                                   if (window.innerWidth < 768) setIsOpen(false);
                                   navigate(sub.path);
                                 }}

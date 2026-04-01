@@ -164,7 +164,7 @@ export default function AdminDashboard() {
           const colors = ["#16a34a", "#f59e0b", "#dc2626", "#3b82f6", "#6366f1"];
           return {
             name: name || "Pending",
-            value: value,
+            value: Math.floor(value / 10),
             color: colors[index % colors.length],
           };
         })
