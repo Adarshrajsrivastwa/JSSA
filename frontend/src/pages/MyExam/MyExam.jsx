@@ -315,7 +315,7 @@ export default function MyExam() {
       const res = await createPaperAPI.getReview(exam.id);
       if (res.success) {
         setReviewData(res.data);
-        setStep(STEP.review);
+        // Step change logic removed to keep user on same list, but we'll use a local modal state
       } else {
         alert(res.error || "Failed to load review");
       }
@@ -333,6 +333,100 @@ export default function MyExam() {
 
   const questions = shuffledQuestions.length > 0 ? shuffledQuestions : (selectedExam?.questions || []);
   const answeredCount = Object.keys(answers).length;
+
+  // Review Modal Component
+  const ReviewModal = ({ data, onClose }) => {
+    if (!data) return null;
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="p-6 border-b flex items-center justify-between bg-gray-50">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">{t.reviewTitle(data.testTitle)}</h2>
+              <p className="text-sm text-gray-500">{t.reviewSubtitle}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <select
+                value={examLanguage}
+                onChange={(e) => setExamLanguage(e.target.value)}
+                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-[#3AB000] outline-none"
+              >
+                <option value="en">English</option>
+                <option value="hi">हिंदी</option>
+              </select>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+              >
+                <XCircle className="w-6 h-6 text-gray-500" />
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {data.review.map((q, idx) => (
+              <div key={q.id} className="bg-white rounded-xl border border-gray-200 p-5">
+                <div className="flex justify-between items-start mb-3">
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                    {t.questionXofY(idx + 1, data.review.length)}
+                  </span>
+                  {q.userAnswerIndex !== undefined ? (
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                      q.isCorrect ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                    }`}>
+                      {q.isCorrect ? t.correct : t.incorrect}
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-gray-100 text-gray-500">
+                      {t.notAttemptedUpper}
+                    </span>
+                  )}
+                </div>
+                <p className="text-gray-800 font-semibold mb-4 text-sm leading-relaxed">
+                  {examLanguage === "hi" && q.questionHi ? q.questionHi : q.question}
+                </p>
+                <div className="grid grid-cols-1 gap-2">
+                  {(examLanguage === "hi" && q.optionsHi?.length === q.options.length 
+                    ? q.optionsHi 
+                    : q.options
+                  ).map((opt, optIdx) => (
+                    <div
+                      key={optIdx}
+                      className={`p-3 rounded-lg border text-xs flex items-center justify-between transition-colors ${
+                        q.userAnswerIndex === optIdx
+                          ? q.isCorrect
+                            ? "border-green-500 bg-green-50"
+                            : "border-red-500 bg-red-50"
+                          : "border-gray-100 bg-gray-50/50 text-gray-600"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="font-bold opacity-50">{String.fromCharCode(65 + optIdx)}.</span>
+                        {opt}
+                      </span>
+                      {q.userAnswerIndex === optIdx && (
+                        q.isCorrect ? <CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> : <XCircle className="w-3.5 h-3.5 text-red-600" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="p-4 border-t bg-gray-50 flex justify-end">
+            <button
+              onClick={onClose}
+              className="px-6 py-2 bg-[#3AB000] text-white rounded-lg font-bold hover:bg-[#2d8a00] transition shadow-md text-sm"
+            >
+              {t.close}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const activeExams = useMemo(
     () => examRows.filter((exam) => exam.windowStatus === "active" && exam.attemptsUsed < exam.maxAttempts),
     [examRows],
@@ -342,7 +436,14 @@ export default function MyExam() {
     [examRows],
   );
   const historyExams = useMemo(
-    () => examRows.filter((exam) => exam.windowStatus === "ended" || (exam.windowStatus === "active" && exam.attemptsUsed >= exam.maxAttempts)),
+    () => {
+      const filtered = examRows.filter((exam) => exam.windowStatus === "ended" || (exam.windowStatus === "active" && exam.attemptsUsed >= exam.maxAttempts));
+      return [...filtered].sort((a, b) => {
+        const dateA = a.userAttempt?.createdAt || a.endDate || 0;
+        const dateB = b.userAttempt?.createdAt || b.endDate || 0;
+        return new Date(dateB) - new Date(dateA);
+      });
+    },
     [examRows],
   );
 
@@ -566,6 +667,9 @@ export default function MyExam() {
               </div>
             ) : (
               <div className="space-y-7">
+                {/* Review Modal Rendering */}
+                <ReviewModal data={reviewData} onClose={() => setReviewData(null)} />
+                
                 <div>
                   <h2 className="text-xl font-semibold text-[#2d8a00] mb-3">
                     {t.activeExams}
@@ -804,100 +908,7 @@ export default function MyExam() {
   }
 
   if (step === STEP.review && reviewData) {
-    return (
-      <DashboardLayout>
-        <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-          <div className="max-w-4xl mx-auto space-y-6">
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-8 flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-extrabold text-gray-900">
-                  {t.reviewTitle(reviewData.testTitle)}
-                </h1>
-                <p className="text-sm text-gray-500 mt-1">
-                  {t.reviewSubtitle}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <select
-                  value={examLanguage}
-                  onChange={(e) => setExamLanguage(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-[#3AB000] outline-none"
-                >
-                  <option value="en">English</option>
-                  <option value="hi">हिंदी (Hindi)</option>
-                </select>
-                <button
-                  onClick={() => setStep(STEP.list)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
-                >
-                  {t.backToList}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              {reviewData.review.map((q, idx) => (
-                <div key={q.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-bold text-gray-900">
-                      {t.questionXofY(idx + 1, reviewData.review.length)}
-                    </h3>
-                    {q.userAnswerIndex !== undefined ? (
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                        q.isCorrect ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                      }`}>
-                        {q.isCorrect ? t.correct : t.incorrect}
-                      </span>
-                    ) : (
-                      <span className="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gray-100 text-gray-500">
-                        {t.notAttemptedUpper}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-gray-800 font-medium mb-4">
-                    {examLanguage === "hi" && q.questionHi ? q.questionHi : q.question}
-                  </p>
-                  <div className="grid grid-cols-1 gap-2">
-                    {(examLanguage === "hi" && q.optionsHi?.length === q.options.length 
-                      ? q.optionsHi 
-                      : q.options
-                    ).map((opt, optIdx) => (
-                      <div
-                        key={optIdx}
-                        className={`p-3 rounded-lg border text-sm flex items-center justify-between ${
-                          q.userAnswerIndex === optIdx
-                            ? q.isCorrect
-                              ? "border-green-500 bg-green-50"
-                              : "border-red-500 bg-red-50"
-                            : "border-gray-100 bg-gray-50/50 text-gray-600"
-                        }`}
-                      >
-                        <span className="flex items-center gap-2">
-                          <span className="font-bold">{String.fromCharCode(65 + optIdx)}.</span>
-                          {opt}
-                        </span>
-                        {q.userAnswerIndex === optIdx && (
-                          q.isCorrect ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <XCircle className="w-4 h-4 text-red-600" />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            <div className="flex justify-center pb-10">
-              <button
-                onClick={() => setStep(STEP.list)}
-                className="px-8 py-3 bg-[#3AB000] text-white rounded-xl font-bold hover:bg-[#2d8a00] transition shadow-md"
-              >
-                {t.finishedReview}
-              </button>
-            </div>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
+    return null; // Logic handled by modal in list view
   }
 
   if (step === STEP.result && selectedExam) {
