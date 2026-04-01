@@ -44,7 +44,7 @@ export default function ForgotPassword() {
         if (response.error && response.error.includes("Database connection")) {
           setError("Database connection unavailable. Please contact support or try again later.");
         } else {
-          setError(response.error || "Failed to send OTP. Please try again.");
+          setError(response.error || "Wrong OTP");
         }
       }
     } catch (err) {
@@ -52,7 +52,7 @@ export default function ForgotPassword() {
       if (err.message && (err.message.includes("503") || err.message.includes("Database"))) {
         setError("Database connection unavailable. Please contact support or try again later.");
       } else {
-        setError(err.message || "Failed to send OTP. Please try again.");
+        setError(err.message || "Wrong OTP");
       }
       console.error("Send OTP error:", err);
     } finally {
@@ -77,10 +77,10 @@ export default function ForgotPassword() {
         setSuccess("OTP verified successfully!");
         setStep(3);
       } else {
-        setError(response.error || "Invalid OTP. Please try again.");
+        setError(response.error || "Wrong OTP");
       }
     } catch (err) {
-      setError(err.message || "Invalid OTP. Please try again.");
+      setError(err.message || "Wrong OTP");
       console.error("Verify OTP error:", err);
     } finally {
       setLoading(false);

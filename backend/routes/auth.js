@@ -375,7 +375,7 @@ router.post(
 
       const isOtpValid = user.verifyOTP(otp);
       if (!isOtpValid) {
-        return res.status(401).json({ error: "Invalid or expired OTP" });
+        return res.status(401).json({ error: "Wrong OTP" });
       }
 
       await user.save();
@@ -578,7 +578,7 @@ router.post(
       // Verify OTP
       if (user.otp !== otp) {
         return res.status(400).json({
-          error: "Invalid OTP",
+          error: "Wrong OTP",
           message: "The OTP you entered is incorrect",
         });
       }
@@ -686,7 +686,7 @@ router.post(
       // Verify OTP
       if (user.otp !== otp) {
         return res.status(400).json({
-          error: "Invalid OTP",
+          error: "Wrong OTP",
           message: "The OTP you entered is incorrect",
         });
       }
