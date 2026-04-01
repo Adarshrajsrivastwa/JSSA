@@ -198,13 +198,12 @@ const DIFFICULTY_COLORS = {
 };
 
 const SUBJECT_OPTIONS = [
-  "Science",
-  "Social Science",
   "General Knowledge",
   "Mathematics",
   "Health & Nutrition",
-  "Management & Administration 2",
+  "Management & Administration",
   "Basic Computer Knowledge",
+  "Communication Skills",
   "Other",
 ];
 
