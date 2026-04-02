@@ -534,6 +534,7 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
   const [qFilterSubject, setQFilterSubject] = useState("all");
   const [applicants, setApplicants] = useState([]);
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
+  const [isSelectingAll, setIsSelectingAll] = useState(false);
   const [applicantError, setApplicantError] = useState("");
   const [studentStartDate, setStudentStartDate] = useState("");
   const [studentEndDate, setStudentEndDate] = useState("");
@@ -542,6 +543,25 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
   const [isTitleDropdownOpen, setIsTitleDropdownOpen] = useState(false);
   const [titleSearch, setTitleSearch] = useState("");
   const titleDropdownRef = useRef(null);
+
+  // Pagination states for Questions
+  const [qCurrentPage, setQCurrentPage] = useState(1);
+  const Q_PAGE_SIZE = 10;
+
+  // Pagination states for Students
+  const [sCurrentPage, setSCurrentPage] = useState(1);
+  const [sTotalPages, setSTotalPages] = useState(1);
+  const [sTotalItems, setSTotalItems] = useState(0);
+  const S_PAGE_SIZE = 15;
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setQCurrentPage(1);
+  }, [questionSearch, qFilterDifficulty, qFilterSubject]);
+
+  useEffect(() => {
+    setSCurrentPage(1);
+  }, [localStudentSearch, studentStartDate, studentEndDate]);
 
   // Click outside listener for title dropdown
   useEffect(() => {
@@ -616,8 +636,10 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
       });
 
       const params = { 
-        limit: 0, // Load ALL paid applicants for the selected title
+        limit: S_PAGE_SIZE, // Load by page size
+        page: sCurrentPage, // Send current page to server
         paymentStatus: "paid",
+        minimal: "true", // Only fetch minimal fields for selection modal
         search: debouncedStudentSearch // Server-side search
       };
 
@@ -637,8 +659,12 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
         const res = await applicationsAPI.getAll(params);
         if (res?.success) {
           setApplicants(res.data?.applications || []);
+          setSTotalPages(res.data?.pagination?.pages || 1);
+          setSTotalItems(res.data?.pagination?.total || 0);
         } else {
           setApplicants([]);
+          setSTotalPages(1);
+          setSTotalItems(0);
           setApplicantError(res.error || "No applicants found matching your filters.");
         }
       } catch (err) {
@@ -651,7 +677,7 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
     };
 
     fetchApplicants();
-  }, [formData.title, postings, studentStartDate, studentEndDate, debouncedStudentSearch]);
+  }, [formData.title, postings, studentStartDate, studentEndDate, debouncedStudentSearch, sCurrentPage]);
 
   const toggleStudent = (studentId) => {
     setFormData((prev) => {
@@ -664,6 +690,46 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
           : [...selected, studentId],
       };
     });
+  };
+
+  const selectAllAcrossPages = async () => {
+    if (!formData.title) return;
+    
+    setIsSelectingAll(true);
+    try {
+      const posting = postings.find((p) => {
+        const title = String(p?.title || "").trim();
+        const postEn = String(p?.post?.en || "").trim();
+        const postHi = String(p?.post?.hi || "").trim();
+        const advtNo = String(p?.advtNo || "").trim();
+        const currentTitle = formData.title.trim();
+        return title === currentTitle || postEn === currentTitle || postHi === currentTitle || advtNo === currentTitle;
+      });
+
+      const params = { 
+        limit: 0, // Get ALL IDs
+        paymentStatus: "paid",
+        minimal: "true",
+        search: debouncedStudentSearch
+      };
+
+      if (posting?._id) params.jobPostingId = posting._id;
+      if (studentStartDate) params.startDate = studentStartDate;
+      if (studentEndDate) params.endDate = studentEndDate;
+
+      const res = await applicationsAPI.getAll(params);
+      if (res?.success) {
+        const allIds = (res.data?.applications || []).map(a => a._id);
+        setFormData(p => ({
+          ...p,
+          assignedStudents: allIds
+        }));
+      }
+    } catch (err) {
+      console.error("Select all error:", err);
+    } finally {
+      setIsSelectingAll(false);
+    }
   };
 
   // Unique difficulties from question bank
@@ -689,6 +755,19 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
       return matchSearch && matchDiff && matchSubj;
     });
   }, [questionBank, questionSearch, qFilterDifficulty, qFilterSubject]);
+
+  // Paginated Questions
+  const paginatedQB = useMemo(() => {
+    const startIndex = (qCurrentPage - 1) * Q_PAGE_SIZE;
+    return filteredQB.slice(startIndex, startIndex + Q_PAGE_SIZE);
+  }, [filteredQB, qCurrentPage]);
+
+  const qTotalPages = Math.ceil(filteredQB.length / Q_PAGE_SIZE);
+
+  // Paginated Students
+  const paginatedApplicants = applicants;
+
+  const sTotalPagesVal = sTotalPages;
 
   const handleInput = (e) => {
     const { name, value, type, checked } = e.target;
@@ -1073,7 +1152,7 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-bold text-gray-800">
-                    Selected: {formData.assignedStudents?.length || 0} / Total: {applicants.length}
+                    Selected: {formData.assignedStudents?.length || 0} / Total: {sTotalItems}
                   </h4>
                   <p className="text-xs text-gray-500 truncate max-w-md">
                     Showing paid applicants who applied for "{formData.title || "Selected Title"}"
@@ -1081,15 +1160,22 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
                 </div>
                 <div className="flex gap-2">
                   <button
+                    onClick={selectAllAcrossPages}
+                    disabled={isSelectingAll || sTotalItems === 0}
+                    className="px-2 py-1 bg-[#e8f5e2] text-[#3AB000] rounded text-[10px] font-bold hover:bg-[#d5eac8] transition-colors disabled:opacity-50"
+                  >
+                    {isSelectingAll ? "Selecting..." : `Select All (${sTotalItems})`}
+                  </button>
+                  <button
                     onClick={() =>
                       setFormData((p) => ({
                         ...p,
                         assignedStudents: applicants.map((a) => a._id),
                       }))
                     }
-                    className="px-2 py-1 bg-[#e8f5e2] text-[#3AB000] rounded text-[10px] font-bold hover:bg-[#d5eac8] transition-colors"
+                    className="px-2 py-1 bg-green-50 text-green-600 rounded text-[10px] font-bold hover:bg-green-100 transition-colors"
                   >
-                    Select All ({applicants.length})
+                    This Page ({applicants.length})
                   </button>
                   <button
                     onClick={() =>
@@ -1176,51 +1262,84 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
                     : "Please select a Test Title first."}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-2 max-h-[350px] overflow-y-auto pr-2">
-                  {applicants.map((app) => {
-                    const isSelected = formData.assignedStudents?.includes(app._id);
-                    return (
-                      <div
-                        key={app._id}
-                        onClick={() => toggleStudent(app._id)}
-                        className={`flex items-center gap-3 p-3 rounded border transition-all cursor-pointer ${
-                          isSelected
-                            ? "border-[#3AB000] bg-[#e8f5e2]"
-                            : "border-gray-200 bg-white hover:border-gray-300"
-                        }`}
-                      >
+                <>
+                  <div className="grid grid-cols-1 gap-2 max-h-[350px] overflow-y-auto pr-2">
+                    {paginatedApplicants.map((app) => {
+                      const isSelected = formData.assignedStudents?.includes(app._id);
+                      return (
                         <div
-                          className={`w-4 h-4 rounded-sm border flex items-center justify-center transition-colors ${
+                          key={app._id}
+                          onClick={() => toggleStudent(app._id)}
+                          className={`flex items-center gap-3 p-3 rounded border transition-all cursor-pointer ${
                             isSelected
-                              ? "bg-[#3AB000] border-[#3AB000]"
-                              : "bg-white border-gray-300"
+                              ? "border-[#3AB000] bg-[#e8f5e2]"
+                              : "border-gray-200 bg-white hover:border-gray-300"
                           }`}
                         >
-                          {isSelected && <Check size={12} className="text-white" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-bold text-gray-900 truncate">
-                              {app.candidateName}
-                            </p>
-                            <span className="text-[10px] font-semibold text-gray-400">
-                              {app.category}
-                            </span>
+                          <div
+                            className={`w-4 h-4 rounded-sm border flex items-center justify-center transition-colors ${
+                              isSelected
+                                ? "bg-[#3AB000] border-[#3AB000]"
+                                : "bg-white border-gray-300"
+                            }`}
+                          >
+                            {isSelected && <Check size={12} className="text-white" />}
                           </div>
-                          <p className="text-xs text-gray-600 truncate">
-                            Father: {app.fatherName}
-                          </p>
-                          <p className="text-[10px] text-gray-500 truncate mt-0.5">
-                            Mobile: {app.mobile} | District: {app.district}
-                          </p>
-                          <p className="text-[10px] text-gray-400 mt-1 italic">
-                            Applied: {new Date(app.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                          </p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm font-bold text-gray-900 truncate">
+                                {app.candidateName}
+                              </p>
+                              <span className="text-[10px] font-semibold text-gray-400">
+                                {app.category}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-600 truncate">
+                              Father: {app.fatherName}
+                            </p>
+                            <p className="text-[10px] text-gray-500 truncate mt-0.5">
+                              Mobile: {app.mobile} | District: {app.district}
+                            </p>
+                            <p className="text-[10px] text-gray-400 mt-1 italic">
+                              Applied: {new Date(app.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </p>
+                          </div>
                         </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Student Pagination UI */}
+                  {sTotalPagesVal > 1 && (
+                    <div className="flex items-center justify-between bg-white px-4 py-3 border border-gray-200 rounded shadow-sm mt-2">
+                      <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                        Page <span className="text-[#3AB000]">{sCurrentPage}</span> / {sTotalPagesVal}
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className="flex gap-2">
+                        <button
+                          disabled={sCurrentPage === 1}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSCurrentPage(prev => Math.max(1, prev - 1));
+                          }}
+                          className="px-3 py-1 border border-gray-200 rounded text-[10px] font-bold hover:bg-gray-50 disabled:opacity-50 transition-colors uppercase"
+                        >
+                          Prev
+                        </button>
+                        <button
+                          disabled={sCurrentPage === sTotalPagesVal}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSCurrentPage(prev => Math.min(sTotalPagesVal, prev + 1));
+                          }}
+                          className="px-3 py-1 border border-gray-200 rounded text-[10px] font-bold hover:bg-gray-50 disabled:opacity-50 transition-colors uppercase"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -1479,108 +1598,135 @@ function TestModal({ editingTest, questionBank, titleOptions, postings, onClose,
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
-              {filteredQB.length === 0 ? (
+              {paginatedQB.length === 0 ? (
                 <p className="text-center text-sm text-gray-400 py-8">
                   No questions found.
                 </p>
               ) : (
-                filteredQB.map((q) => {
-                  const cfg = getQConfig(q.id);
-                  const selected = Boolean(cfg);
-                  return (
-                    <div
-                      key={q.id}
-                      className={`rounded border-2 p-3 bg-white ${selected ? "border-[#3AB000]" : "border-gray-200"}`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <button
-                          onClick={() => toggleQ(q)}
-                          className={`shrink-0 rounded px-3 py-1.5 text-xs font-bold transition-colors mt-0.5 ${
-                            selected
-                              ? "bg-red-100 text-red-700 hover:bg-red-200"
-                              : "bg-[#e8f5e2] text-[#2d8a00] hover:bg-[#d0edbc]"
-                          }`}
-                        >
-                          {selected ? "Remove" : "Add"}
-                        </button>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <p className="text-sm font-semibold text-gray-800">
-                              {q.question}
-                            </p>
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 flex-shrink-0">
-                              {q.subject}
-                            </span>
-                            {q.difficulty && (
-                              <span
-                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold flex-shrink-0 ${
-                                  q.difficulty === "Easy"
-                                    ? "bg-green-100 text-green-700"
-                                    : q.difficulty === "Medium"
-                                      ? "bg-amber-100 text-amber-700"
-                                      : "bg-red-100 text-red-700"
-                                }`}
-                              >
-                                {q.difficulty}
+                <>
+                  {paginatedQB.map((q) => {
+                    const cfg = getQConfig(q.id);
+                    const selected = Boolean(cfg);
+                    return (
+                      <div
+                        key={q.id}
+                        className={`rounded border-2 p-3 bg-white ${selected ? "border-[#3AB000]" : "border-gray-200"}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <button
+                            onClick={() => toggleQ(q)}
+                            className={`shrink-0 rounded px-3 py-1.5 text-xs font-bold transition-colors mt-0.5 ${
+                              selected
+                                ? "bg-red-100 text-red-700 hover:bg-red-200"
+                                : "bg-[#e8f5e2] text-[#2d8a00] hover:bg-[#d0edbc]"
+                            }`}
+                          >
+                            {selected ? "Remove" : "Add"}
+                          </button>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <p className="text-sm font-semibold text-gray-800">
+                                {q.question}
+                              </p>
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 flex-shrink-0">
+                                {q.subject}
                               </span>
+                              {q.difficulty && (
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[10px] font-bold flex-shrink-0 ${
+                                    q.difficulty === "Easy"
+                                      ? "bg-green-100 text-green-700"
+                                      : q.difficulty === "Medium"
+                                        ? "bg-amber-100 text-amber-700"
+                                        : "bg-red-100 text-red-700"
+                                  }`}
+                                >
+                                  {q.difficulty}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              #{q.id} · Default: {q.marks} marks
+                            </p>
+                            {Array.isArray(q.options) && q.options.length > 0 && (
+                              <div className="mt-1.5 flex flex-wrap gap-1">
+                                {q.options.map((opt, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-600"
+                                  >
+                                    {opt}
+                                  </span>
+                                ))}
+                              </div>
                             )}
                           </div>
-                          <p className="text-xs text-gray-500">
-                            #{q.id} · Default: {q.marks} marks
-                          </p>
-                          {Array.isArray(q.options) && q.options.length > 0 && (
-                            <div className="mt-1.5 flex flex-wrap gap-1">
-                              {q.options.map((opt, idx) => (
-                                <span
-                                  key={idx}
-                                  className="rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-600"
-                                >
-                                  {opt}
+                          {selected && (
+                            <div className="w-40 shrink-0 space-y-2">
+                              <label className="block">
+                                <span className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-1 block">
+                                  Marks
                                 </span>
-                              ))}
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={cfg?.marks ?? 1}
+                                  onChange={(e) =>
+                                    updateQConfig(
+                                      q.id,
+                                      "marks",
+                                      Math.max(1, Number(e.target.value || 1)),
+                                    )
+                                  }
+                                  className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3AB000]"
+                                />
+                              </label>
+                              <button
+                                onClick={() =>
+                                  updateQConfig(
+                                    q.id,
+                                    "isCompulsory",
+                                    !cfg?.isCompulsory,
+                                  )
+                                }
+                                className={`rounded px-3 py-1.5 text-xs font-bold w-full transition-colors ${cfg?.isCompulsory ? "bg-[#e8f5e2] text-[#2d8a00]" : "bg-gray-100 text-gray-700"}`}
+                              >
+                                {cfg?.isCompulsory
+                                  ? "Compulsory: Yes"
+                                  : "Compulsory: No"}
+                              </button>
                             </div>
                           )}
                         </div>
-                        {selected && (
-                          <div className="w-40 shrink-0 space-y-2">
-                            <label className="block">
-                              <span className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-1 block">
-                                Marks
-                              </span>
-                              <input
-                                type="number"
-                                min="1"
-                                value={cfg?.marks ?? 1}
-                                onChange={(e) =>
-                                  updateQConfig(
-                                    q.id,
-                                    "marks",
-                                    Math.max(1, Number(e.target.value || 1)),
-                                  )
-                                }
-                                className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3AB000]"
-                              />
-                            </label>
-                            <button
-                              onClick={() =>
-                                updateQConfig(
-                                  q.id,
-                                  "isCompulsory",
-                                  !cfg?.isCompulsory,
-                                )
-                              }
-                              className={`rounded px-3 py-1.5 text-xs font-bold w-full transition-colors ${cfg?.isCompulsory ? "bg-[#e8f5e2] text-[#2d8a00]" : "bg-gray-100 text-gray-700"}`}
-                            >
-                              {cfg?.isCompulsory
-                                ? "Compulsory: Yes"
-                                : "Compulsory: No"}
-                            </button>
-                          </div>
-                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Question Pagination UI */}
+                  {qTotalPages > 1 && (
+                    <div className="flex items-center justify-between bg-white px-4 py-3 border border-gray-200 rounded-sm shadow-sm mt-4">
+                      <div className="text-xs text-gray-500 font-medium">
+                        Page <span className="text-gray-900 font-bold">{qCurrentPage}</span> of <span className="text-gray-900 font-bold">{qTotalPages}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          disabled={qCurrentPage === 1}
+                          onClick={() => setQCurrentPage(prev => Math.max(1, prev - 1))}
+                          className="px-3 py-1.5 border border-gray-300 rounded text-xs font-bold hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          disabled={qCurrentPage === qTotalPages}
+                          onClick={() => setQCurrentPage(prev => Math.min(qTotalPages, prev + 1))}
+                          className="px-3 py-1.5 border border-gray-300 rounded text-xs font-bold hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                        >
+                          Next
+                        </button>
                       </div>
                     </div>
-                  );
-                })
+                  )}
+                </>
               )}
             </div>
             <div className="flex justify-end gap-2 border-t border-gray-200 px-5 py-3 bg-white shrink-0">

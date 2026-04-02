@@ -398,7 +398,7 @@ export default function JSSAbhiyanLogin() {
   const [error, setError] = useState("");
 
   // Nimbus OTP States
-  const [loginMethod, setLoginMethod] = useState("otp"); // "password" or "otp"
+  const [loginMethod, setLoginMethod] = useState("password"); // "password" or "otp"
   const [otpSent, setOtpSent] = useState(false);
   const [otpValue, setOtpValue] = useState("");
   const [phoneValue, setPhoneValue] = useState("");
@@ -674,6 +674,7 @@ export default function JSSAbhiyanLogin() {
                   </div>
                 </div>
 
+                {/* 
                 <button
                   onClick={() => {
                     setLoginMethod("otp");
@@ -683,6 +684,7 @@ export default function JSSAbhiyanLogin() {
                 >
                   Login with Mobile Number
                 </button>
+                */}
               </div>
             )}
 
