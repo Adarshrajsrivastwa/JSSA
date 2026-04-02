@@ -6,7 +6,6 @@ import Student from "../models/Student.js";
 import Attempt from "../models/Attempt.js";
 import QuestionBank from "../models/QuestionBank.js";
 import { authenticate } from "../middleware/auth.js";
-import { sendTestAssignmentEmail } from "../utils/email.js";
 
 const router = express.Router();
 
@@ -300,30 +299,6 @@ router.post("/", createValidation, async (req, res) => {
 
     await test.populate("createdBy", "email role");
 
-    // Send emails to assigned students asynchronously
-    if (test.assignedStudents && test.assignedStudents.length > 0) {
-      (async () => {
-        try {
-          const students = await Application.find({ _id: { $in: test.assignedStudents } });
-          for (const student of students) {
-            if (student.email) {
-              await sendTestAssignmentEmail(student.email, student.candidateName, {
-                title: test.title,
-                subject: test.subject,
-                duration: test.duration,
-                totalQuestions: test.totalQuestions,
-                passingMarks: test.passingMarks,
-                startDate: test.startDate,
-                endDate: test.endDate,
-              });
-            }
-          }
-        } catch (emailErr) {
-          console.error("Async creation assignment email error:", emailErr);
-        }
-      })();
-    }
-
     res.status(201).json({
       success: true,
       message: "Test created successfully",
@@ -356,39 +331,9 @@ router.put("/:id", async (req, res) => {
 
     const payload = normalizePayload(req.body);
     
-    // Check for newly assigned students to send emails
-    const oldAssignedIds = (test.assignedStudents || []).map(id => id.toString());
-    const newAssignedIds = (payload.assignedStudents || []).map(id => id.toString());
-    
-    const newlyAssigned = newAssignedIds.filter(id => !oldAssignedIds.includes(id));
-
     Object.assign(test, payload);
     await test.save();
     await test.populate("createdBy", "email role");
-
-    // Send emails to newly assigned students asynchronously
-    if (newlyAssigned.length > 0) {
-      (async () => {
-        try {
-          const students = await Application.find({ _id: { $in: newlyAssigned } });
-          for (const student of students) {
-            if (student.email) {
-              await sendTestAssignmentEmail(student.email, student.candidateName, {
-                title: test.title,
-                subject: test.subject,
-                duration: test.duration,
-                totalQuestions: test.totalQuestions,
-                passingMarks: test.passingMarks,
-                startDate: test.startDate,
-                endDate: test.endDate,
-              });
-            }
-          }
-        } catch (emailErr) {
-          console.error("Async assignment email error:", emailErr);
-        }
-      })();
-    }
 
     res.json({
       success: true,
