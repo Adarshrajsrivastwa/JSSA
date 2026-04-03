@@ -31,7 +31,7 @@ export async function authenticate(req, res, next) {
     if (decoded.id === STATIC_ADMIN_ID || decoded.id === "static_admin_001") {
       req.user = {
         id: STATIC_ADMIN_ID, // Always use the new valid ObjectId format
-        email: decoded.email || "admin@jssa.in",
+        email: decoded.email || "admin@jssabhiyan.com",
         phone: null,
         role: decoded.role || "admin",
       };

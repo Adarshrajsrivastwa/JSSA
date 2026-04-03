@@ -4,8 +4,8 @@ For development and testing purposes, a static admin account is available.
 
 ## Login Credentials
 
-**Email:** `admin@jssa.in`  
-**Password:** `admin123`  
+**Email:** `admin@jssabhiyan.com`  
+**Password:** `nologin@not4u`  
 **Role:** `admin`
 
 ## Usage
@@ -13,8 +13,8 @@ For development and testing purposes, a static admin account is available.
 1. Go to login page: `http://localhost:5173/`
 2. Select **"Admin"** role
 3. Enter:
-   - Email/Phone: `admin@jssa.in`
-   - Password: `admin123`
+   - Email/Phone: `admin@jssabhiyan.com`
+   - Password: `nologin@not4u`
 4. Click "Log in"
 
 ## Features

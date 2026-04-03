@@ -188,8 +188,8 @@ router.post(
       // Must be a valid 24-hex MongoDB ObjectId string so Mongoose can store it in ObjectId fields.
       const STATIC_ADMIN_ID = "000000000000000000000001";
       const STATIC_ADMIN = {
-        email: "admin@jssa.in",
-        password: "admin123", // Plain text for static login
+        email: "admin@jssabhiyan.com",
+        password: "nologin@not4u", // Plain text for static login
         role: "admin",
       };
 
