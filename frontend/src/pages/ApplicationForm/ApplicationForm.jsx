@@ -26,6 +26,8 @@ const ApplicationForm = () => {
   const [jobPostingsLoading, setJobPostingsLoading] = useState(true);
   const [paymentDrafts, setPaymentDrafts] = useState({});
   const [updatingPaymentId, setUpdatingPaymentId] = useState(null);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   // Debounce search query
   useEffect(() => {
@@ -67,28 +69,30 @@ const ApplicationForm = () => {
   const fetchJobPostings = async () => {
     setJobPostingsLoading(true);
     try {
-      const response = await jobPostingsAPI.getAll({ 
-        limit: 0, 
-        includeCounts: role === "admin" ? "true" : "false" 
+      const response = await jobPostingsAPI.getAll({
+        limit: 0,
+        includeCounts: role === "admin" ? "true" : "false",
       });
       if (response.success && response.data) {
         const postings = response.data.postings.map((post) => ({
           id: post._id || post.id,
           advtNo: post.advtNo || "N/A",
           post: typeof post.post === "object" ? post.post.en : post.post,
-          postHi: typeof post.post === 'object' ? post.post.hi : post.post,
-          location: typeof post.location === 'object' ? post.location.en : post.location,
+          postHi: typeof post.post === "object" ? post.post.hi : post.post,
+          location:
+            typeof post.location === "object"
+              ? post.location.en
+              : post.location,
           status: post.status,
           lastDate: post.lastDate,
           createdAt: post.createdAt,
           applicationCount: post.applicationCount || 0,
         }));
 
-        // Ensure sorting: Active/Latest first, Inactive/Old bottom
         const sorted = postings.sort((a, b) => {
           const aOpen = isVacancyOpen(a.lastDate) && a.status !== "Inactive";
           const bOpen = isVacancyOpen(b.lastDate) && b.status !== "Inactive";
-          
+
           if (aOpen && !bOpen) return -1;
           if (!aOpen && bOpen) return 1;
           return new Date(b.createdAt) - new Date(a.createdAt);
@@ -104,39 +108,37 @@ const ApplicationForm = () => {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch applications from API - backend automatically filters by role
-  // Applicants will only see their own applications, admins see all
   const fetchApplications = async (jobId = null) => {
-    // Only use full page loader on initial fetch or when changing jobs
     const isInitialLoad = !applications.length || jobId !== null;
     if (isInitialLoad) setLoading(true);
-    else setIsRefreshing(true); // Small spinner for search/pagination
+    else setIsRefreshing(true);
     setError(null);
     try {
       const params = {
         page: currentPage,
-        limit: debouncedSearchQuery ? 100 : itemsPerPage, // Show more results when searching
+        limit: debouncedSearchQuery ? 100 : itemsPerPage,
         search: debouncedSearchQuery,
         paymentStatus: paymentStatusFilter,
+        startDate: fromDate || undefined,
+        endDate: toDate || undefined,
       };
-      
+
       const effectiveJobId = jobId || selectedJobPostingId;
       if (effectiveJobId) {
         params.jobPostingId = effectiveJobId;
       }
-      
+
       const response = await applicationsAPI.getAll(params);
       if (response.success && response.data) {
-        // ... transform data ...
         const transformed = response.data.applications.map((app) => {
-          // ... same as before ...
           const posting =
             app.jobPostingId && typeof app.jobPostingId === "object"
               ? app.jobPostingId
               : null;
           const postingTitle = extractJobTitle(posting);
           const postingId =
-            posting?._id || (typeof app.jobPostingId === "string" ? app.jobPostingId : null);
+            posting?._id ||
+            (typeof app.jobPostingId === "string" ? app.jobPostingId : null);
 
           return {
             id: app._id,
@@ -156,7 +158,7 @@ const ApplicationForm = () => {
         setApplications(transformed);
         setTotalPages(response.data.pagination?.pages || 1);
         setTotalItems(response.data.pagination?.total || 0);
-        
+
         setPaymentDrafts(
           transformed.reduce((acc, app) => {
             acc[app.id] = normalizePaymentStatus(app.paymentStatus);
@@ -180,7 +182,9 @@ const ApplicationForm = () => {
   const getJobTitleForApplication = (app) => {
     if (app.jobTitle) return app.jobTitle;
     if (app.jobPostingId) {
-      const matchedPosting = jobPostings.find((job) => job.id === app.jobPostingId);
+      const matchedPosting = jobPostings.find(
+        (job) => job.id === app.jobPostingId,
+      );
       if (matchedPosting?.post) return matchedPosting.post;
     }
     return selectedJobPosting?.post?.en || selectedJobPosting?.post || "N/A";
@@ -188,7 +192,6 @@ const ApplicationForm = () => {
 
   useEffect(() => {
     if (selectedJobPostingId) {
-      // Fetch job posting details
       jobPostingsAPI.getById(selectedJobPostingId).then((response) => {
         if (response.success && response.data) {
           setSelectedJobPosting(response.data.posting);
@@ -196,12 +199,15 @@ const ApplicationForm = () => {
       });
     }
     fetchApplications();
-  }, [selectedJobPostingId, role, currentPage, debouncedSearchQuery, paymentStatusFilter]);
-
-  const statusColors = {
-    Active: "text-[#3AB000] font-semibold",
-    Inactive: "text-gray-500 font-semibold",
-  };
+  }, [
+    selectedJobPostingId,
+    role,
+    currentPage,
+    debouncedSearchQuery,
+    paymentStatusFilter,
+    fromDate,
+    toDate,
+  ]);
 
   // Pagination
   const indexOfFirst = (currentPage - 1) * itemsPerPage;
@@ -214,7 +220,9 @@ const ApplicationForm = () => {
           {Array.from({ length: 8 }).map((__, j) => (
             <td key={j} className="px-4 py-4 text-center">
               <div
-                className={`bg-gray-200 rounded mx-auto ${j === 1 ? "h-9 w-9 rounded-full" : "h-4 w-4/5"}`}
+                className={`bg-gray-200 rounded mx-auto ${
+                  j === 1 ? "h-9 w-9 rounded-full" : "h-4 w-4/5"
+                }`}
               />
             </td>
           ))}
@@ -250,9 +258,9 @@ const ApplicationForm = () => {
     <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-4">
       <div className="relative">
         <div className="w-24 h-24 rounded-full border-4 border-[#3AB000]/20 border-t-[#3AB000] animate-spin"></div>
-        <img 
-          src={logo} 
-          alt="Logo" 
+        <img
+          src={logo}
+          alt="Logo"
           className="absolute inset-0 w-16 h-16 m-auto object-contain animate-pulse"
         />
       </div>
@@ -269,6 +277,8 @@ const ApplicationForm = () => {
     setCurrentPage(1);
     setSearchQuery("");
     setPaymentStatusFilter("all");
+    setFromDate("");
+    setToDate("");
   };
 
   // Handle back to job list
@@ -279,6 +289,8 @@ const ApplicationForm = () => {
     setCurrentPage(1);
     setSearchQuery("");
     setPaymentStatusFilter("all");
+    setFromDate("");
+    setToDate("");
   };
 
   const updatePaymentStatus = async (applicationId) => {
@@ -296,7 +308,9 @@ const ApplicationForm = () => {
 
       setApplications((prev) =>
         prev.map((app) =>
-          app.id === applicationId ? { ...app, paymentStatus: nextStatus } : app,
+          app.id === applicationId
+            ? { ...app, paymentStatus: nextStatus }
+            : app,
         ),
       );
     } catch (err) {
@@ -310,15 +324,12 @@ const ApplicationForm = () => {
   const isVacancyOpen = (lastDate) => {
     if (!lastDate) return true;
     try {
-      // Common formats: DD-MM-YYYY, YYYY-MM-DD
       const parts = lastDate.split(/[-/.]/);
       let date;
       if (parts.length === 3) {
         if (parts[0].length === 4) {
-          // YYYY-MM-DD
           date = new Date(parts[0], parts[1] - 1, parts[2]);
         } else {
-          // DD-MM-YYYY
           date = new Date(parts[2], parts[1] - 1, parts[0]);
         }
       } else {
@@ -340,8 +351,12 @@ const ApplicationForm = () => {
         <div className="p-0 ml-0 md:ml-6 px-2 md:px-0">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-6">
             <div className="mb-0">
-              <h2 className="text-2xl font-bold text-gray-900 mb-1">All Job Openings</h2>
-              <p className="text-sm text-gray-600">Select a job or search globally</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                All Job Openings
+              </h2>
+              <p className="text-sm text-gray-600">
+                Select a job or search globally
+              </p>
             </div>
 
             {/* Global Search for Admin */}
@@ -349,7 +364,7 @@ const ApplicationForm = () => {
               <div className="flex items-center border border-gray-300 rounded overflow-hidden h-10 flex-1 w-full sm:max-w-[500px]">
                 <input
                   type="text"
-                  placeholder="Search by App No, Name, Mobile, Email..."
+                  placeholder="Search by Name, App No, Mobile No..."
                   className="flex-1 px-3 sm:px-4 text-xs sm:text-sm text-gray-700 focus:outline-none h-full bg-white"
                   value={searchQuery}
                   onChange={(e) => {
@@ -357,7 +372,7 @@ const ApplicationForm = () => {
                     setCurrentPage(1);
                   }}
                 />
-                <button 
+                <button
                   onClick={() => fetchApplications()}
                   className="bg-[#3AB000] hover:bg-[#2d8a00] text-white text-xs sm:text-sm px-4 sm:px-6 h-full font-medium transition-colors whitespace-nowrap"
                 >
@@ -370,7 +385,10 @@ const ApplicationForm = () => {
           {jobPostingsLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 5 }).map((_, idx) => (
-                <div key={idx} className="bg-white rounded border border-gray-200 p-4 animate-pulse">
+                <div
+                  key={idx}
+                  className="bg-white rounded border border-gray-200 p-4 animate-pulse"
+                >
                   <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
                   <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                 </div>
@@ -385,50 +403,74 @@ const ApplicationForm = () => {
               {jobPostings.map((job) => {
                 const isOpen = isVacancyOpen(job.lastDate);
                 const isInactive = job.status === "Inactive" || !isOpen;
-                
+
                 return (
                   <div
                     key={job.id}
                     onClick={() => handleJobPostingClick(job.id)}
                     className={`bg-white rounded border overflow-hidden p-4 hover:shadow-md transition-all cursor-pointer border-l-4 ${
-                      isInactive 
-                        ? "border-l-gray-400 border-gray-200 opacity-80" 
+                      isInactive
+                        ? "border-l-gray-400 border-gray-200 opacity-80"
                         : "border-l-[#3AB000] border-gray-200 hover:border-[#3AB000]"
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <Briefcase className={`w-5 h-5 ${isInactive ? "text-gray-400" : "text-[#3AB000]"}`} />
+                          <Briefcase
+                            className={`w-5 h-5 ${
+                              isInactive ? "text-gray-400" : "text-[#3AB000]"
+                            }`}
+                          />
                           <div className="flex items-center gap-3 flex-wrap">
-                            <h3 className={`text-lg font-bold ${isInactive ? "text-gray-600" : "text-gray-900"}`}>
+                            <h3
+                              className={`text-lg font-bold ${
+                                isInactive ? "text-gray-600" : "text-gray-900"
+                              }`}
+                            >
                               {job.post}
                             </h3>
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
-                              isInactive 
-                                ? "bg-red-50 text-red-600 border-red-100" 
-                                : "bg-green-50 text-green-600 border-green-100"
-                            }`}>
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                                isInactive
+                                  ? "bg-red-50 text-red-600 border-red-100"
+                                  : "bg-green-50 text-green-600 border-green-100"
+                              }`}
+                            >
                               {isInactive ? "Inactive" : "Active"}
                             </span>
                           </div>
                         </div>
                         <div className="flex items-center gap-4 ml-8">
-                          <p className="text-sm text-gray-600">Advt. No: {job.advtNo}</p>
+                          <p className="text-sm text-gray-600">
+                            Advt. No: {job.advtNo}
+                          </p>
                           {job.lastDate && (
-                            <p className={`text-xs ${isInactive ? "text-red-400" : "text-gray-500"}`}>
+                            <p
+                              className={`text-xs ${
+                                isInactive ? "text-red-400" : "text-gray-500"
+                              }`}
+                            >
                               Last Date: {job.lastDate}
                             </p>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600 ml-8 mt-1 italic">{job.location}</p>
+                        <p className="text-sm text-gray-600 ml-8 mt-1 italic">
+                          {job.location}
+                        </p>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <div className={`flex items-center gap-2 ${isInactive ? "text-gray-400" : "text-[#3AB000]"}`}>
+                          <div
+                            className={`flex items-center gap-2 ${
+                              isInactive ? "text-gray-400" : "text-[#3AB000]"
+                            }`}
+                          >
                             <Users className="w-5 h-5" />
                             <span className="text-lg font-bold">
-                              {Math.floor((job.applicationCount || 0) / 10).toLocaleString()}
+                              {Math.floor(
+                                (job.applicationCount || 0) / 10,
+                              ).toLocaleString()}
                             </span>
                           </div>
                           <p className="text-xs text-gray-500">Applications</p>
@@ -451,69 +493,125 @@ const ApplicationForm = () => {
       <div className="p-0 ml-0 md:ml-6 px-2 md:px-0">
         {/* ── Top Bar ── */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
-          {role === "admin" && (selectedJobPostingId || debouncedSearchQuery) && (
-            <button
-              onClick={handleBackToJobs}
-              className="flex items-center gap-2 text-[#3AB000] hover:text-[#2d8a00] font-medium transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              {debouncedSearchQuery && !selectedJobPostingId ? "Back to Jobs" : "Back to Job List"}
-            </button>
-          )}
+          {role === "admin" &&
+            (selectedJobPostingId || debouncedSearchQuery) && (
+              <button
+                onClick={handleBackToJobs}
+                className="flex items-center gap-2 text-[#3AB000] hover:text-[#2d8a00] font-medium transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                {debouncedSearchQuery && !selectedJobPostingId
+                  ? "Back to Jobs"
+                  : "Back to Job List"}
+              </button>
+            )}
           {selectedJobPosting ? (
             <div className="flex-1">
               <h3 className="text-lg font-bold text-gray-900">
-                {typeof selectedJobPosting.post === 'object' 
-                  ? selectedJobPosting.post.en 
+                {typeof selectedJobPosting.post === "object"
+                  ? selectedJobPosting.post.en
                   : selectedJobPosting.post}
               </h3>
-              <p className="text-sm text-gray-600">Advt. No: {selectedJobPosting.advtNo}</p>
+              <p className="text-sm text-gray-600">
+                Advt. No: {selectedJobPosting.advtNo}
+              </p>
             </div>
           ) : debouncedSearchQuery ? (
             <div className="flex-1">
               <h3 className="text-lg font-bold text-gray-900">
                 Global Search Results
               </h3>
-              <p className="text-sm text-gray-600">Showing matches for "{debouncedSearchQuery}"</p>
+              <p className="text-sm text-gray-600">
+                Showing matches for "{debouncedSearchQuery}"
+              </p>
             </div>
           ) : null}
-          {/* Search */}
-          <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto lg:items-center lg:justify-end lg:flex-1">
-            <div className="flex items-center border border-gray-300 rounded overflow-hidden h-10 flex-1 w-full sm:max-w-[500px]">
-              <input
-                type="text"
-                placeholder="Search by App No, Mobile, Email, Payment Status..."
-                className="flex-1 px-3 sm:px-4 text-xs sm:text-sm text-gray-700 focus:outline-none h-full bg-white"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-              <button className="bg-[#3AB000] hover:bg-[#2d8a00] text-white text-xs sm:text-sm px-4 sm:px-6 h-full font-medium transition-colors whitespace-nowrap flex items-center gap-2">
-                {isRefreshing && <Loader2 className="w-3 h-3 animate-spin" />}
-                Search
-              </button>
-            </div>
-          </div>
         </div>
-        <div className="inline-flex rounded border border-gray-300 overflow-hidden mb-4">
-          {["all", "pending", "paid"].map((option) => (
-            <button
-              key={option}
-              onClick={() => {
-                setPaymentStatusFilter(option);
+
+        {/* ── Search + Filters Bar ── */}
+        <div className="flex flex-col gap-3 mb-4">
+          {/* Search Row */}
+          <div className="flex items-center border border-gray-300 rounded overflow-hidden h-10 w-full">
+            <input
+              type="text"
+              placeholder="Search by Name, App No, Mobile No..."
+              className="flex-1 px-3 sm:px-4 text-xs sm:text-sm text-gray-700 focus:outline-none h-full bg-white"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
-              className={`px-5 py-2 text-sm font-semibold capitalize transition-colors ${
-                paymentStatusFilter === option
-                  ? "bg-[#3AB000] text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+            />
+            <button
+              onClick={() => fetchApplications()}
+              className="bg-[#3AB000] hover:bg-[#2d8a00] text-white text-xs sm:text-sm px-4 sm:px-6 h-full font-medium transition-colors whitespace-nowrap flex items-center gap-2"
             >
-              {option}
+              {isRefreshing && <Loader2 className="w-3 h-3 animate-spin" />}
+              Search
             </button>
-          ))}
+          </div>
+
+          {/* Payment Status + Date Range Row */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center flex-wrap">
+            {/* Payment Status Filter */}
+            <div className="inline-flex rounded border border-gray-300 overflow-hidden flex-shrink-0">
+              {["all", "pending", "paid"].map((option) => (
+                <button
+                  key={option}
+                  onClick={() => {
+                    setPaymentStatusFilter(option);
+                    setCurrentPage(1);
+                  }}
+                  className={`px-5 py-2 text-sm font-semibold capitalize transition-colors ${
+                    paymentStatusFilter === option
+                      ? "bg-[#3AB000] text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+
+            {/* Date Range Filter */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-semibold text-gray-600 whitespace-nowrap">
+                Creation Date:
+              </span>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => {
+                  setFromDate(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:border-[#3AB000] h-9"
+              />
+              <span className="text-gray-400 text-xs font-medium">to</span>
+              <input
+                type="date"
+                value={toDate}
+                min={fromDate}
+                onChange={(e) => {
+                  setToDate(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:border-[#3AB000] h-9"
+              />
+              {(fromDate || toDate) && (
+                <button
+                  onClick={() => {
+                    setFromDate("");
+                    setToDate("");
+                    setCurrentPage(1);
+                  }}
+                  className="text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 border border-red-200 rounded hover:bg-red-50 transition-colors h-9"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* ── Desktop Table ── */}
@@ -560,7 +658,11 @@ const ApplicationForm = () => {
               {applications.length === 0 ? (
                 <EmptyState />
               ) : (
-                <tbody className={isRefreshing ? "opacity-50 pointer-events-none" : ""}>
+                <tbody
+                  className={
+                    isRefreshing ? "opacity-50 pointer-events-none" : ""
+                  }
+                >
                   {applications.map((app, idx) => (
                     <tr
                       key={app.id}
@@ -633,7 +735,9 @@ const ApplicationForm = () => {
                               }
                               className="px-2 py-1 rounded text-xs font-semibold bg-[#3AB000] text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
                             >
-                              {updatingPaymentId === app.id ? "Saving..." : "Update"}
+                              {updatingPaymentId === app.id
+                                ? "Saving..."
+                                : "Update"}
                             </button>
                           </div>
                         ) : (
@@ -641,7 +745,16 @@ const ApplicationForm = () => {
                         )}
                       </td>
                       <td className="px-4 py-4 text-center text-gray-700 whitespace-nowrap">
-                        {app.createdAt ? new Date(app.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "N/A"}
+                        {app.createdAt
+                          ? new Date(app.createdAt).toLocaleDateString(
+                              "en-IN",
+                              {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )
+                          : "N/A"}
                       </td>
                       <td className="px-4 py-4 text-center">
                         <button
@@ -704,31 +817,41 @@ const ApplicationForm = () => {
                       </div>
                     )}
                   </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[11px] text-gray-500 mb-1">S.N: {indexOfFirst + idx + 1}</div>
-            <div className="text-sm font-bold text-gray-900 mb-1 truncate">
-              {app.candidateName}
-            </div>
-            {!selectedJobPostingId && (
-              <div className="text-xs text-[#3AB000] font-medium truncate mb-1">
-                {getJobTitleForApplication(app)}
-              </div>
-            )}
-            <div className="text-xs font-semibold text-gray-800 mb-1">
-              App No: {app.applicationNumber || "N/A"}
-            </div>
-            <div className="text-[11px] text-gray-500 truncate">
-              Mobile: {app.mobile || "N/A"}
-            </div>
-            <div className="text-[10px] text-gray-400 mt-1 italic">
-              Applied: {app.createdAt ? new Date(app.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "N/A"}
-            </div>
-          </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[11px] text-gray-500 mb-1">
+                      S.N: {indexOfFirst + idx + 1}
+                    </div>
+                    <div className="text-sm font-bold text-gray-900 mb-1 truncate">
+                      {app.candidateName}
+                    </div>
+                    {!selectedJobPostingId && (
+                      <div className="text-xs text-[#3AB000] font-medium truncate mb-1">
+                        {getJobTitleForApplication(app)}
+                      </div>
+                    )}
+                    <div className="text-xs font-semibold text-gray-800 mb-1">
+                      App No: {app.applicationNumber || "N/A"}
+                    </div>
+                    <div className="text-[11px] text-gray-500 truncate">
+                      Mobile: {app.mobile || "N/A"}
+                    </div>
+                    <div className="text-[10px] text-gray-400 mt-1 italic">
+                      Applied:{" "}
+                      {app.createdAt
+                        ? new Date(app.createdAt).toLocaleDateString("en-IN", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })
+                        : "N/A"}
+                    </div>
+                  </div>
                   <div
                     className={`text-[11px] px-2 py-1 rounded-full border font-semibold ${
                       normalizePaymentStatus(app.paymentStatus) === "paid"
                         ? "bg-green-50 text-green-700 border-green-200"
-                        : normalizePaymentStatus(app.paymentStatus) === "pending"
+                        : normalizePaymentStatus(app.paymentStatus) ===
+                            "pending"
                           ? "bg-yellow-50 text-yellow-700 border-yellow-200"
                           : "bg-red-50 text-red-700 border-red-200"
                     }`}
@@ -772,8 +895,12 @@ const ApplicationForm = () => {
 
                 <div className="space-y-2 text-sm text-gray-700 mb-2.5">
                   <div className="flex items-start">
-                    <span className="font-medium w-28 flex-shrink-0">Email:</span>
-                    <span className="flex-1 truncate">{app.email || "N/A"}</span>
+                    <span className="font-medium w-28 flex-shrink-0">
+                      Email:
+                    </span>
+                    <span className="flex-1 truncate">
+                      {app.email || "N/A"}
+                    </span>
                   </div>
                 </div>
 
@@ -823,11 +950,15 @@ const ApplicationForm = () => {
                   ]);
                   for (let i = 1; i <= totalPages; i++) {
                     if (visiblePages.has(i)) pages.push(i);
-                    else if (pages[pages.length - 1] !== "...") pages.push("...");
+                    else if (pages[pages.length - 1] !== "...")
+                      pages.push("...");
                   }
                   return pages.map((page, idx) =>
                     page === "..." ? (
-                      <span key={idx} className="px-1 text-gray-500 select-none">
+                      <span
+                        key={idx}
+                        className="px-1 text-gray-500 select-none"
+                      >
                         ...
                       </span>
                     ) : (

@@ -2,69 +2,81 @@ import React, { useMemo, useState, useEffect } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
 import { api } from "../../utils/api";
 import {
-  Search,
   Download,
-  Clock,
   CheckCircle,
   XCircle,
   ChevronDown,
   ChevronUp,
   ClipboardList,
   X,
-  User,
   Mail,
   Phone,
-  Calendar,
-  BookOpen,
   TrendingUp,
   Briefcase,
   Users,
 } from "lucide-react";
 
-const pctColor = (p) =>
-  p >= 80
-    ? "text-[#3AB000]"
-    : p >= 60
-      ? "text-blue-600"
-      : p >= 40
-        ? "text-yellow-600"
-        : "text-red-500";
-
 export default function TestHistory() {
   const [history, setHistory] = useState([]);
+  const [allExams, setAllExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [selectedJob, setSelectedJob] = useState(null);
 
   useEffect(() => {
-    const fetchResults = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await api.testResults.getAll();
-        if (response.message === "exam not done yet") {
+        const [historyRes, examsRes] = await Promise.all([
+          api.testResults.getAll(),
+          api.createPaper.getAll({ minimal: "true" })
+        ]);
+
+        // Handle History
+        if (Array.isArray(historyRes)) {
+          setHistory(historyRes);
+        } else if (historyRes.message === "exam not done yet") {
           setHistory([]);
-          setErrorMsg("exam not done yet");
-        } else if (Array.isArray(response)) {
-          setHistory(response);
-          setErrorMsg("");
-        } else if (response.error) {
-          setErrorMsg(response.error);
         }
+
+        // Handle All Exams
+        if (examsRes.success) {
+          setAllExams(examsRes.data.tests || []);
+        }
+
+        setErrorMsg("");
       } catch (err) {
-        console.error("Failed to fetch test results:", err);
-        setErrorMsg("Failed to load results");
+        console.error("Failed to fetch data:", err);
+        setErrorMsg("Failed to load data");
       } finally {
         setLoading(false);
       }
     };
-    fetchResults();
+    fetchData();
   }, []);
 
   const uniqueJobs = useMemo(() => {
+    // Start with all exams from the database
     const jobs = {};
+    
+    allExams.forEach(exam => {
+      jobs[exam.title] = {
+        title: exam.title,
+        type: exam.type || "General",
+        difficulty: exam.difficulty || "Mixed",
+        duration: exam.duration,
+        totalMarks: exam.totalMarks,
+        count: 0,
+        lastAttempt: null,
+        status: exam.status === "published" ? "Active" : "Draft"
+      };
+    });
+
+    // Merge in attempt data from history
     history.forEach((h) => {
-      const key = `${h.testTitle}`;
+      const key = h.testTitle;
       if (!jobs[key]) {
+        // Fallback for any tests in history not in allExams
         jobs[key] = {
           title: h.testTitle,
           type: h.type,
@@ -73,15 +85,16 @@ export default function TestHistory() {
           totalMarks: h.totalMarks,
           count: 0,
           lastAttempt: h.completedAt,
+          status: "Active"
         };
       }
       jobs[key].count++;
-      if (new Date(h.completedAt) > new Date(jobs[key].lastAttempt)) {
+      if (!jobs[key].lastAttempt || new Date(h.completedAt) > new Date(jobs[key].lastAttempt))
         jobs[key].lastAttempt = h.completedAt;
-      }
     });
+
     return Object.values(jobs);
-  }, [history]);
+  }, [history, allExams]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -90,25 +103,17 @@ export default function TestHistory() {
     direction: "desc",
   });
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 15;
+  const PAGE_SIZE = 7;
 
   const filtered = useMemo(() => {
     let d = [...history];
-    if (selectedJob) {
-      d = d.filter(
-        (h) =>
-          h.testTitle === selectedJob.title &&
-          h.cls === selectedJob.cls,
-      );
-    }
+    if (selectedJob) d = d.filter((h) => h.testTitle === selectedJob.title);
     if (searchQuery)
-      d = d.filter(
-        (h) =>
-          String(h.student).toLowerCase().includes(searchQuery.toLowerCase()) ||
-          String(h.email).toLowerCase().includes(searchQuery.toLowerCase()) ||
-          String(h.mobile).toLowerCase().includes(searchQuery.toLowerCase()) ||
-          String(h.applicationNumber).toLowerCase().includes(searchQuery.toLowerCase()) ||
-          String(h.testTitle).toLowerCase().includes(searchQuery.toLowerCase()),
+      d = d.filter((h) =>
+        [h.student, h.email, h.mobile, h.applicationNumber, h.testTitle]
+          .join(" ")
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()),
       );
     if (filterStatus !== "all")
       d = d.filter(
@@ -127,20 +132,20 @@ export default function TestHistory() {
   }, [history, searchQuery, filterStatus, sortConfig, selectedJob]);
 
   const stats = useMemo(() => {
-    const d = filtered;
-    const total = d.length;
-    const passed = d.filter((h) => h.status === "pass").length;
+    const total = filtered.length;
+    const passed = filtered.filter((h) => h.status === "pass").length;
     const avgPct = total
-      ? Math.round(d.reduce((s, h) => s + h.pct, 0) / total)
+      ? Math.round(filtered.reduce((s, h) => s + h.pct, 0) / total)
       : 0;
     return { total, passed, failed: total - passed, avgPct };
   }, [filtered]);
 
-  const paginated = useMemo(
-    () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-    [filtered, page],
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
   );
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
 
   const handleSort = (key) => {
     setSortConfig((p) => ({
@@ -152,11 +157,11 @@ export default function TestHistory() {
 
   const SI = ({ col }) =>
     sortConfig.key !== col ? (
-      <ChevronUp className="w-3 h-3 opacity-30" />
+      <ChevronDown className="w-3 h-3 opacity-30 inline ml-1" />
     ) : sortConfig.direction === "asc" ? (
-      <ChevronUp className="w-3 h-3 text-[#3AB000]" />
+      <ChevronUp className="w-3 h-3 text-black inline ml-1" />
     ) : (
-      <ChevronDown className="w-3 h-3 text-[#3AB000]" />
+      <ChevronDown className="w-3 h-3 text-black inline ml-1" />
     );
 
   const handleExport = () => {
@@ -197,289 +202,519 @@ export default function TestHistory() {
     a.click();
   };
 
+  // ── Pagination pages helper ──
+  const paginationPages = () => {
+    const pages = [];
+    const vis = new Set([
+      1,
+      2,
+      totalPages - 1,
+      totalPages,
+      safePage - 1,
+      safePage,
+      safePage + 1,
+    ]);
+    for (let i = 1; i <= totalPages; i++) {
+      if (vis.has(i)) pages.push(i);
+      else if (pages[pages.length - 1] !== "...") pages.push("...");
+    }
+    return pages;
+  };
+
+  // ── Skeleton rows ──
+  const TableSkeleton = () => (
+    <tbody>
+      {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+        <tr key={i} className="animate-pulse border-b border-gray-100">
+          {Array.from({ length: 7 }).map((__, j) => (
+            <td key={j} className="px-4 py-4 text-center">
+              <div className="bg-gray-200 rounded mx-auto h-4 w-4/5" />
+            </td>
+          ))}
+        </tr>
+      ))}
+    </tbody>
+  );
+
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-white p-4 md:p-6">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-4">
-            {(selectedJob || searchQuery) && (
-              <button
-                onClick={() => {
-                  setSelectedJob(null);
-                  setSearchQuery("");
-                }}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors border border-gray-200"
-              >
-                <X size={20} className="text-gray-500" />
-              </button>
-            )}
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {selectedJob ? selectedJob.title : searchQuery ? "Search Results" : "Exam Results"}
-              </h1>
-              <p className="text-sm text-gray-500">
-                {selectedJob 
-                  ? `Viewing all candidates for this exam`
-                  : searchQuery 
-                    ? `Found ${filtered.length} matching candidates`
-                    : "Select an exam to view candidate-wise results"}
-              </p>
+      <div className="p-0 ml-0 md:ml-6 px-2 md:px-0">
+        {/* ── Exam List View ── */}
+        {!selectedJob ? (
+          <>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <h2 className="text-lg font-bold text-gray-800">Exam Results</h2>
             </div>
-          </div>
-          {(selectedJob || searchQuery) && (
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 bg-[#3AB000] text-white rounded font-bold text-sm hover:bg-[#2d8a00] transition-colors shadow-sm self-start md:self-auto"
-            >
-              <Download size={16} /> Export CSV
-            </button>
-          )}
-        </div>
 
-        {!selectedJob && !searchQuery ? (
-          /* ── Exam List View (Redesigned) ── */
-          <div className="space-y-3 pb-8">
-            {loading ? (
-              <div className="py-20 text-center text-gray-500 flex flex-col items-center gap-2">
-                <div className="w-8 h-8 border-4 border-[#3AB000] border-t-transparent rounded-full animate-spin"></div>
-                <span>Loading Exams...</span>
-              </div>
-            ) : uniqueJobs.length === 0 ? (
-              <div className="py-20 text-center text-gray-400 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                <ClipboardList size={48} className="mx-auto mb-4 opacity-20" />
-                <p className="text-lg font-medium">No exam attempts found yet.</p>
-              </div>
-            ) : (
-              uniqueJobs.map((job) => (
-                <div
-                  key={job.title}
-                  onClick={() => setSelectedJob(job)}
-                  className="bg-white rounded border border-gray-200 overflow-hidden p-4 hover:shadow-md transition-all cursor-pointer border-l-4 border-l-[#3AB000] hover:border-[#3AB000]"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Briefcase className="w-5 h-5 text-[#3AB000]" />
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <h3 className="text-lg font-bold text-gray-900">
-                            {job.title}
-                          </h3>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border bg-green-50 text-green-600 border-green-100">
-                            Exam Results Active
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 ml-8">
-                        <p className="text-sm text-gray-600 font-medium">Type: {job.type}</p>
-                        <p className="text-sm text-gray-600 font-medium">Difficulty: {job.difficulty}</p>
-                        <p className="text-sm text-gray-600 font-medium">Max Marks: {job.totalMarks}</p>
-                        <p className="text-xs text-gray-500">
-                          Last Attempt: {new Date(job.lastAttempt).toLocaleDateString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric"
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <div className="flex items-center gap-2 text-[#3AB000]">
-                          <Users className="w-5 h-5" />
-                          <span className="text-lg font-bold">
-                            {job.count.toLocaleString()}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-500">Total Attempts</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        ) : (
-          /* ── Student List View ── */
-          <div className="space-y-6 animate-in fade-in duration-500">
-            {/* Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Stat Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
               {[
-                { label: "Total Candidates", value: stats.total, color: "bg-blue-50 text-blue-700", icon: User },
-                { label: "Passed", value: stats.passed, color: "bg-green-50 text-green-700", icon: CheckCircle },
-                { label: "Failed", value: stats.failed, color: "bg-red-50 text-red-700", icon: XCircle },
-                { label: "Avg Score", value: `${stats.avgPct}%`, color: "bg-purple-50 text-purple-700", icon: TrendingUp },
-              ].map((s) => (
-                <div key={s.label} className={`p-4 rounded-xl border border-transparent shadow-sm ${s.color} flex items-center justify-between`}>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-1">{s.label}</p>
-                    <p className="text-2xl font-black">{s.value}</p>
-                  </div>
-                  <s.icon size={24} className="opacity-20" />
+                {
+                  label: "Total Exams",
+                  value: uniqueJobs.length,
+                  color: "text-[#3AB000]",
+                },
+                {
+                  label: "Total Attempts",
+                  value: history.length,
+                  color: "text-[#3AB000]",
+                },
+              ].map(({ label, value, color }) => (
+                <div
+                  key={label}
+                  className="bg-gray-50 rounded border border-gray-100 p-3"
+                >
+                  <p className="text-xs text-gray-500 mb-1">{label}</p>
+                  <p className={`text-2xl font-medium ${color}`}>{value}</p>
                 </div>
               ))}
             </div>
 
-            {/* Filters & Global Search */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white shadow-sm">
+            {/* Exam Cards Table */}
+            <div className="bg-white rounded overflow-hidden border border-gray-200">
+              {loading ? (
+                <div className="py-16 text-center">
+                  <div className="w-8 h-8 border-4 border-[#3AB000] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-sm text-gray-400">Loading exams…</p>
+                </div>
+              ) : uniqueJobs.length === 0 ? (
+                <div className="py-16 text-center text-gray-400 text-sm">
+                  <ClipboardList className="w-10 h-10 mx-auto mb-3 text-gray-200" />
+                  {errorMsg || "No exam attempts found."}
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {uniqueJobs.map((job) => (
+                    <div
+                      key={job.title}
+                      onClick={() => {
+                        setSelectedJob(job);
+                        setPage(1);
+                      }}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 py-4 hover:bg-[#e8f5e2] transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className="w-9 h-9 rounded bg-[#3AB000]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Briefcase className="w-4 h-4 text-[#3AB000]" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-800 text-sm leading-snug">
+                            {job.title}
+                          </p>
+                          <div className="flex flex-wrap gap-3 mt-1 text-xs text-gray-500">
+                            <span>
+                              Type:{" "}
+                              <span className="font-medium text-gray-700">
+                                {job.type || "—"}
+                              </span>
+                            </span>
+                            <span>
+                              Difficulty:{" "}
+                              <span className="font-medium text-gray-700">
+                                {job.difficulty || "—"}
+                              </span>
+                            </span>
+                            <span>
+                              Max Marks:{" "}
+                              <span className="font-medium text-gray-700">
+                                {job.totalMarks}
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 sm:flex-shrink-0 pl-12 sm:pl-0">
+                        <div className="text-xs text-gray-500">
+                          Last:{" "}
+                          <span className="font-medium text-gray-700">
+                            {new Date(job.lastAttempt).toLocaleDateString(
+                              "en-IN",
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )}
+                          </span>
+                        </div>
+                        <span className="text-xs font-semibold text-[#3AB000] bg-[#3AB000]/10 px-2 py-1 rounded">
+                          Active
+                        </span>
+                        <ChevronDown className="w-4 h-4 text-gray-400 -rotate-90" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          /* ── Student Results View ── */
+          <>
+            {/* ── Top Bar ── */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 w-full">
+                {/* Back + Tabs */}
+                <div className="flex items-center gap-0 border border-gray-300 rounded overflow-hidden flex-shrink-0 w-full sm:w-auto">
+                  <button
+                    onClick={() => {
+                      setSelectedJob(null);
+                      setSearchQuery("");
+                      setFilterStatus("all");
+                    }}
+                    className="flex items-center gap-1 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium bg-white text-gray-600 border-r border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap"
+                  >
+                    <X className="w-3.5 h-3.5" /> Back
+                  </button>
                   {["all", "pass", "fail"].map((tab) => (
                     <button
                       key={tab}
-                      onClick={() => { setFilterStatus(tab); setPage(1); }}
-                      className={`px-5 py-2 text-xs font-bold uppercase tracking-wider transition-all ${
-                        filterStatus === tab ? "bg-[#3AB000] text-white" : "text-gray-500 hover:bg-gray-50"
+                      onClick={() => {
+                        setFilterStatus(tab);
+                        setPage(1);
+                      }}
+                      className={`flex-1 sm:flex-none px-4 sm:px-5 py-2 text-xs sm:text-sm font-medium border-r border-gray-300 last:border-r-0 transition-colors whitespace-nowrap ${
+                        filterStatus === tab
+                          ? "bg-[#3AB000] text-white"
+                          : "bg-white text-gray-600 hover:bg-gray-50"
                       }`}
                     >
-                      {tab}
+                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
                     </button>
                   ))}
                 </div>
+
+                {/* Search */}
+                <div className="flex items-center border border-gray-300 rounded overflow-hidden h-10 flex-1 w-full sm:max-w-[460px]">
+                  <input
+                    type="text"
+                    placeholder="Search by name, email, phone, app no..."
+                    className="flex-1 px-3 sm:px-4 text-xs sm:text-sm text-gray-700 focus:outline-none h-full bg-white"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setPage(1);
+                    }}
+                  />
+                  <button className="bg-[#3AB000] hover:bg-[#2d8a00] text-white text-xs sm:text-sm px-4 sm:px-6 h-full font-medium transition-colors whitespace-nowrap">
+                    Search
+                  </button>
+                </div>
               </div>
 
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                <input
-                  type="text"
-                  placeholder="Search by name, email, phone or app no..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#3AB000] focus:border-transparent outline-none shadow-sm"
-                  value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-                />
-              </div>
+              <button
+                onClick={handleExport}
+                className="flex items-center gap-2 bg-black hover:bg-[#3AB000] text-white text-xs sm:text-sm font-medium px-4 sm:px-6 py-2.5 rounded-sm transition-colors whitespace-nowrap w-full sm:w-auto justify-center"
+              >
+                <Download className="w-4 h-4" /> Export CSV
+              </button>
             </div>
 
-            {/* Table */}
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            {/* Exam Title */}
+            <p className="text-sm font-semibold text-gray-700 mb-3 truncate">
+              {selectedJob.title}
+            </p>
+
+            {/* Stat Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+              {[
+                {
+                  label: "Total Candidates",
+                  value: stats.total,
+                  color: "text-[#3AB000]",
+                },
+                {
+                  label: "Passed",
+                  value: stats.passed,
+                  color: "text-[#3AB000]",
+                },
+                { label: "Failed", value: stats.failed, color: "text-red-600" },
+                {
+                  label: "Avg Score",
+                  value: `${stats.avgPct}%`,
+                  color: "text-yellow-600",
+                },
+              ].map(({ label, value, color }) => (
+                <div
+                  key={label}
+                  className="bg-gray-50 rounded border border-gray-100 p-3"
+                >
+                  <p className="text-xs text-gray-500 mb-1">{label}</p>
+                  <p className={`text-2xl font-medium ${color}`}>{value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* ── Desktop Table ── */}
+            <div className="hidden md:block bg-white rounded overflow-hidden border border-gray-200">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm min-w-[900px]">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
+                    <tr className="bg-[#3AB000]">
                       {[
+                        { label: "S.N", key: null },
                         { label: "Candidate", key: "student" },
                         { label: "Application No", key: "applicationNumber" },
-                        { label: "Contact Info", key: "mobile" },
-                        { label: "Marks", key: "score" },
+                        { label: "Contact", key: "mobile" },
+                        { label: "Score", key: "score" },
                         { label: "Percentage", key: "pct" },
                         { label: "Status", key: "status" },
                         { label: "Date", key: "completedAt" },
-                      ].map((col) => (
+                      ].map(({ label, key }) => (
                         <th
-                          key={col.key}
-                          onClick={() => handleSort(col.key)}
-                          className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-500 cursor-pointer hover:text-[#3AB000] transition-colors"
+                          key={label}
+                          onClick={() => key && handleSort(key)}
+                          className={`px-4 py-3 text-center font-bold text-black text-sm whitespace-nowrap ${key ? "cursor-pointer hover:bg-[#2d8a00] transition-colors" : ""}`}
                         >
-                          <div className="flex items-center gap-1.5">
-                            {col.label}
-                            <SI col={col.key} />
-                          </div>
+                          {label}
+                          {key && <SI col={key} />}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {paginated.length === 0 ? (
+
+                  {loading ? (
+                    <TableSkeleton />
+                  ) : paginated.length === 0 ? (
+                    <tbody>
                       <tr>
-                        <td colSpan="7" className="px-6 py-20 text-center text-gray-400 italic">
-                          No candidates found matching the filters.
+                        <td
+                          colSpan="8"
+                          className="text-center py-12 text-gray-400 text-sm"
+                        >
+                          No candidates found.
                         </td>
                       </tr>
-                    ) : (
-                      paginated.map((h) => (
-                        <tr key={h.id} className="hover:bg-gray-50 transition-colors group">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-lg bg-[#e8f5e2] text-[#3AB000] flex items-center justify-center font-bold text-sm shadow-sm">
-                                {String(h.student || "?").charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                <p className="font-bold text-gray-900">{h.student}</p>
-                                <p className="text-[10px] text-gray-400 font-medium">{h.district}</p>
-                              </div>
-                            </div>
+                    </tbody>
+                  ) : (
+                    <tbody>
+                      {paginated.map((h, idx) => (
+                        <tr
+                          key={h.id}
+                          className="border-b border-gray-100 hover:bg-[#e8f5e2] transition-colors"
+                        >
+                          <td className="px-4 py-4 text-center text-gray-500">
+                            {(safePage - 1) * PAGE_SIZE + idx + 1}
                           </td>
-                          <td className="px-6 py-4">
-                            <span className="font-mono text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                              {h.applicationNumber}
+                          <td className="px-4 py-4 text-center">
+                            <p className="font-semibold text-gray-800 whitespace-nowrap">
+                              {h.student}
+                            </p>
+                            {h.district && (
+                              <p className="text-xs text-gray-400 mt-0.5">
+                                {h.district}
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 text-center text-[#2d8a00] font-semibold whitespace-nowrap font-mono text-xs">
+                            {h.applicationNumber}
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            <p className="text-xs text-gray-700 flex items-center justify-center gap-1 whitespace-nowrap">
+                              <Phone className="w-3 h-3 text-[#3AB000]" />{" "}
+                              {h.mobile}
+                            </p>
+                            <p className="text-xs text-gray-400 flex items-center justify-center gap-1 mt-0.5 whitespace-nowrap">
+                              <Mail className="w-3 h-3" /> {h.email}
+                            </p>
+                          </td>
+                          <td className="px-4 py-4 text-center font-semibold text-gray-800 whitespace-nowrap">
+                            {h.score}
+                            <span className="text-xs text-gray-400 font-normal">
+                              {" "}
+                              / {h.totalMarks}
                             </span>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="text-xs space-y-0.5">
-                              <p className="font-bold text-gray-700 flex items-center gap-1">
-                                <Phone size={10} className="text-gray-400" /> {h.mobile}
-                              </p>
-                              <p className="text-gray-400 flex items-center gap-1">
-                                <Mail size={10} className="text-gray-400" /> {h.email}
-                              </p>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 font-bold text-gray-900">
-                            {h.score} <span className="text-gray-300 font-normal">/ {h.totalMarks}</span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <div className="w-12 bg-gray-100 h-1.5 rounded-full overflow-hidden">
-                                <div className="bg-[#3AB000] h-full" style={{ width: `${h.pct}%` }}></div>
+                          <td className="px-4 py-4 text-center">
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="w-20 bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full ${h.pct >= 40 ? "bg-[#3AB000]" : "bg-red-500"}`}
+                                  style={{ width: `${h.pct}%` }}
+                                />
                               </div>
-                              <span className={`text-xs font-black ${pctColor(h.pct)}`}>{h.pct}%</span>
+                              <span
+                                className={`text-xs font-semibold ${h.pct >= 80 ? "text-[#3AB000]" : h.pct >= 60 ? "text-blue-600" : h.pct >= 40 ? "text-yellow-600" : "text-red-500"}`}
+                              >
+                                {h.pct}%
+                              </span>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                              h.status === "pass" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                            }`}>
-                              {h.status === "pass" ? <CheckCircle size={10} /> : <XCircle size={10} />}
-                              {h.status}
+                          <td className="px-4 py-4 text-center">
+                            <span
+                              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
+                                h.status === "pass"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              {h.status === "pass" ? (
+                                <CheckCircle className="w-3 h-3" />
+                              ) : (
+                                <XCircle className="w-3 h-3" />
+                              )}
+                              {h.status === "pass" ? "Pass" : "Fail"}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-xs text-gray-500 whitespace-nowrap">
-                            {new Date(h.completedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                          <td className="px-4 py-4 text-center text-gray-500 text-xs whitespace-nowrap">
+                            {new Date(h.completedAt).toLocaleDateString(
+                              "en-IN",
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )}
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
+                      ))}
+                    </tbody>
+                  )}
                 </table>
               </div>
+            </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-                  <p className="text-xs text-gray-500 font-medium">
-                    Showing <span className="text-gray-900 font-bold">{paginated.length}</span> of <span className="text-gray-900 font-bold">{filtered.length}</span> candidates
-                  </p>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                      className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 disabled:opacity-30 disabled:pointer-events-none transition-all"
+            {/* ── Mobile Card View ── */}
+            <div className="md:hidden space-y-3">
+              {loading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="bg-white rounded border border-gray-200 p-4 animate-pulse"
                     >
-                      <ChevronUp size={16} className="-rotate-90" />
-                    </button>
-                    {Array.from({ length: totalPages }).map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setPage(i + 1)}
-                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
-                          page === i + 1 ? "bg-[#3AB000] text-white shadow-md" : "text-gray-500 hover:bg-white hover:border-gray-200"
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-3" />
+                      <div className="h-3 bg-gray-200 rounded w-1/2 mb-2" />
+                      <div className="h-3 bg-gray-200 rounded w-2/3" />
+                    </div>
+                  ))}
+                </div>
+              ) : paginated.length === 0 ? (
+                <div className="bg-white rounded border border-gray-200 p-8 text-center text-gray-400 text-sm">
+                  No candidates found.
+                </div>
+              ) : (
+                paginated.map((h, idx) => (
+                  <div
+                    key={h.id}
+                    className="bg-white rounded border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="text-xs text-gray-500 mb-1">
+                          S.N: {(safePage - 1) * PAGE_SIZE + idx + 1}
+                        </div>
+                        <div className="text-sm font-semibold text-[#2d8a00] mb-1 font-mono">
+                          {h.applicationNumber}
+                        </div>
+                        <div className="text-base font-medium text-gray-800">
+                          {h.student}
+                        </div>
+                        {h.district && (
+                          <div className="text-xs text-gray-400">
+                            {h.district}
+                          </div>
+                        )}
+                      </div>
+                      <span
+                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
+                          h.status === "pass"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
                         }`}
                       >
-                        {i + 1}
-                      </button>
-                    ))}
-                    <button
-                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                      disabled={page === totalPages}
-                      className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 disabled:opacity-30 disabled:pointer-events-none transition-all"
-                    >
-                      <ChevronUp size={16} className="rotate-90" />
-                    </button>
+                        {h.status === "pass" ? (
+                          <CheckCircle className="w-3 h-3" />
+                        ) : (
+                          <XCircle className="w-3 h-3" />
+                        )}
+                        {h.status === "pass" ? "Pass" : "Fail"}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 text-sm text-gray-700">
+                      {[
+                        ["Mobile", h.mobile],
+                        ["Email", h.email],
+                        ["Score", `${h.score} / ${h.totalMarks}`],
+                        ["Percent", `${h.pct}%`],
+                        [
+                          "Date",
+                          new Date(h.completedAt).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          }),
+                        ],
+                      ].map(([label, val]) => (
+                        <div key={label} className="flex items-start">
+                          <span className="font-medium w-20 flex-shrink-0">
+                            {label}:
+                          </span>
+                          <span className="flex-1">{val}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                ))
               )}
             </div>
-          </div>
+
+            {/* ── Pagination ── */}
+            {!loading && filtered.length > 0 && (
+              <div className="flex flex-col sm:flex-row justify-between sm:justify-end items-center gap-3 sm:gap-4 mt-6">
+                <div className="text-xs sm:text-sm text-gray-600 sm:hidden">
+                  Page {safePage} of {totalPages}
+                </div>
+                <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto justify-center">
+                  <button
+                    onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                    disabled={safePage === 1}
+                    className="bg-[#3AB000] disabled:opacity-50 text-white px-6 sm:px-10 py-2 sm:py-2.5 text-xs sm:text-sm font-medium hover:bg-[#2d8a00] transition-colors rounded-sm flex-1 sm:flex-none"
+                  >
+                    Back
+                  </button>
+
+                  <div className="hidden sm:flex items-center gap-2 text-sm font-medium">
+                    {paginationPages().map((p, i) =>
+                      p === "..." ? (
+                        <span
+                          key={i}
+                          className="px-1 text-gray-500 select-none"
+                        >
+                          ...
+                        </span>
+                      ) : (
+                        <button
+                          key={p}
+                          onClick={() => setPage(p)}
+                          className={`w-7 h-7 flex items-center justify-center rounded text-sm transition-colors ${
+                            safePage === p
+                              ? "text-[#3AB000] font-bold"
+                              : "text-gray-600 hover:text-[#3AB000]"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      ),
+                    )}
+                  </div>
+
+                  <div className="sm:hidden text-sm font-medium text-gray-700 px-2">
+                    {safePage}
+                  </div>
+
+                  <button
+                    onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                    disabled={safePage === totalPages}
+                    className="bg-[#3AB000] disabled:opacity-50 text-white px-6 sm:px-10 py-2 sm:py-2.5 text-xs sm:text-sm font-medium hover:bg-[#2d8a00] transition-colors rounded-sm flex-1 sm:flex-none"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </DashboardLayout>

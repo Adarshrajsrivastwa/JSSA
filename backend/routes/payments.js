@@ -5,7 +5,7 @@ import { getRazorpayInstance, getRazorpayKeyId, getRazorpayCredentials } from ".
 import JobPosting from "../models/JobPosting.js";
 import Application from "../models/Application.js";
 import User from "../models/User.js";
-import { sendPaymentSuccessEmail } from "../utils/email.js";
+import { sendApplicationSuccessSMS } from "../utils/smsService.js";
 import crypto from "crypto";
 
 const router = express.Router();
@@ -266,104 +266,37 @@ router.post(
       application.orderId = razorpay_order_id;
       await application.save();
 
-      // Send payment success email
-      console.log("📧 ========== EMAIL SEND PROCESS START ==========");
+      console.log("✅ Payment status updated to 'paid' in database.");
+
+      // Send payment success SMS
+      console.log("📱 ========== APPLICATION SUCCESS SMS PROCESS START ==========");
       try {
-        console.log("📧 Preparing to send payment success email...");
-        console.log("📧 Application ID:", application._id);
-        console.log("📧 Application email:", application.email);
-        console.log("📧 Application createdBy:", application.createdBy);
-        console.log("📧 Application paymentStatus:", application.paymentStatus);
+        console.log("📱 Payment verified successfully. Triggering SMS...");
+        console.log("📱 Application ID:", application._id);
+        console.log("📱 Application No:", application.applicationNumber);
+        console.log("📱 Mobile Number:", application.mobile);
         
-        // Check if application has email
-        if (!application.email) {
-          console.warn("⚠️ Application email not found. Skipping email send.");
+        if (!application.mobile) {
+          console.warn("⚠️ Application mobile number not found. Skipping SMS.");
         } else {
-          // Get user data for login credentials
-          let user = null;
-          if (application.createdBy) {
-            try {
-              user = await User.findById(application.createdBy);
-              console.log("📧 User found:", user ? "Yes" : "No");
-            } catch (userErr) {
-              console.error("Error fetching user:", userErr);
-            }
-          }
-          
-          // Get job posting data
-          let jobPosting = null;
-          if (application.jobPostingId) {
-            try {
-              jobPosting = await JobPosting.findById(application.jobPostingId);
-              console.log("📧 Job posting found:", jobPosting ? "Yes" : "No");
-            } catch (jobErr) {
-              console.error("Error fetching job posting:", jobErr);
-            }
-          }
-          
-          // Prepare login credentials - use user email/phone if available, otherwise use application email
-          const defaultPassword = "JSSA@123";
-          const loginCredentials = {
-            identifier: user?.email || user?.phone || application.email,
-            password: defaultPassword,
-          };
-          console.log("📧 Login credentials prepared:", loginCredentials.identifier);
-
-          // Prepare application data for email (include all fields)
-          const applicationDataForEmail = {
-            ...application.toObject(),
-            applicationNumber: application.applicationNumber,
-            candidateName: application.candidateName,
-            fatherName: application.fatherName,
-            motherName: application.motherName,
-            dob: application.dob,
-            gender: application.gender,
-            nationality: application.nationality,
-            category: application.category,
-            aadhar: application.aadhar,
-            pan: application.pan,
-            mobile: application.mobile,
-            email: application.email,
-            address: application.address,
-            state: application.state,
-            district: application.district,
-            block: application.block,
-            panchayat: application.panchayat,
-            pincode: application.pincode,
-            higherEducation: application.higherEducation,
-            board: application.board,
-            marks: application.marks,
-            markPercentage: application.markPercentage,
-            photo: application.photo,
-            signature: application.signature,
-          };
-
-          console.log("📧 Sending payment success email to:", application.email);
-          
-          // Send email - use await to ensure it's called
           try {
-            const emailResult = await sendPaymentSuccessEmail(
-              applicationDataForEmail,
-              loginCredentials,
-              jobPosting
+            const smsResult = await sendApplicationSuccessSMS(
+              application.mobile,
+              application.applicationNumber
             );
             
-            if (emailResult && emailResult.success) {
-              console.log("✅ Payment success email sent successfully to:", application.email);
-              console.log("✅ Message ID:", emailResult.messageId);
+            if (smsResult && smsResult.success) {
+              console.log("✅ Application success SMS sent successfully to:", application.mobile);
             } else {
-              console.error("❌ Payment success email failed:", emailResult?.message || emailResult?.error || "Unknown error");
+              console.error("❌ Application success SMS failed:", smsResult?.error || "Unknown error");
+              console.error("❌ SMS API Response:", JSON.stringify(smsResult));
             }
-          } catch (emailErr) {
-            console.error("❌ Exception while sending payment success email:", emailErr);
-            console.error("❌ Error message:", emailErr.message);
-            console.error("❌ Error stack:", emailErr.stack);
+          } catch (smsErr) {
+            console.error("❌ Exception while sending application success SMS:", smsErr);
           }
         }
-      } catch (emailError) {
-        console.error("❌ Error preparing payment success email:", emailError);
-        console.error("❌ Error stack:", emailError.stack);
-        // Don't fail the request if email preparation fails
+      } catch (smsError) {
+        console.error("❌ Error preparing application success SMS:", smsError);
       }
 
       res.json({
@@ -383,81 +316,6 @@ router.post(
       res.status(500).json({
         error: "Failed to verify payment",
         message: error.message || "Payment verification error",
-      });
-    }
-  }
-);
-
-/**
- * POST /api/payments/test-email
- * Test email sending (for debugging)
- * Admin only
- */
-router.post(
-  "/test-email",
-  authenticate,
-  async (req, res) => {
-    try {
-      // Only admin can test email
-      if (req.user.role !== "admin") {
-        return res.status(403).json({
-          error: "Access denied",
-          message: "Only admin can test email",
-        });
-      }
-
-      const { email } = req.body;
-      if (!email) {
-        return res.status(400).json({
-          error: "Email is required",
-        });
-      }
-
-      console.log("📧 TEST EMAIL REQUEST");
-      console.log("📧 Test email to:", email);
-      console.log("📧 SMTP_USER:", process.env.SMTP_USER ? "Set" : "Not set");
-      console.log("📧 SMTP_PASS:", process.env.SMTP_PASS ? "Set" : "Not set");
-
-      // Import email function
-      const { sendPaymentSuccessEmail } = await import("../utils/email.js");
-
-      // Create test data
-      const testApplicationData = {
-        applicationNumber: "TEST123",
-        candidateName: "Test User",
-        email: email,
-        mobile: "1234567890",
-      };
-
-      const testLoginCredentials = {
-        identifier: email,
-        password: "JSSA@123",
-      };
-
-      const result = await sendPaymentSuccessEmail(
-        testApplicationData,
-        testLoginCredentials,
-        null
-      );
-
-      if (result.success) {
-        res.json({
-          success: true,
-          message: "Test email sent successfully",
-          data: result,
-        });
-      } else {
-        res.status(500).json({
-          success: false,
-          error: "Failed to send test email",
-          message: result.message || result.error,
-        });
-      }
-    } catch (error) {
-      console.error("Test email error:", error);
-      res.status(500).json({
-        error: "Failed to send test email",
-        message: error.message,
       });
     }
   }

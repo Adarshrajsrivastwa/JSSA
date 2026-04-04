@@ -131,10 +131,6 @@ export const authAPI = {
     });
   },
   forgotPassword: async (email) => {
-    return apiRequest("/auth/me", { method: "GET" });
-  },
-
-  forgotPassword: async (email) => {
     return apiRequest("/auth/forgot-password", {
       method: "POST",
       body: JSON.stringify({ email }),
@@ -570,6 +566,7 @@ export const createPaperAPI = {
     if (params.search) queryParams.append("search", params.search);
     if (params.page) queryParams.append("page", params.page);
     if (params.limit !== undefined) queryParams.append("limit", params.limit);
+    if (params.minimal !== undefined) queryParams.append("minimal", params.minimal);
 
     const queryString = queryParams.toString();
     const url = `/create-paper${queryString ? `?${queryString}` : ""}`;
@@ -578,6 +575,33 @@ export const createPaperAPI = {
 
   getById: async (id) => {
     return apiRequest(`/create-paper/${id}`, { method: "GET" });
+  },
+
+  getDetails: async (id) => {
+    return apiRequest(`/create-paper/details/${id}`, { method: "GET" });
+  },
+
+  getAttempts: async (id, params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return apiRequest(`/create-paper/${id}/attempts?${query}`, { method: "GET" });
+  },
+
+  resetAttempts: async (testId, applicationId) => {
+    return apiRequest(`/create-paper/${testId}/attempts/${applicationId}`, { method: "DELETE" });
+  },
+
+  bulkResetAttempts: async (testId, studentIds) => {
+    return apiRequest(`/create-paper/${testId}/attempts/bulk-reset`, { 
+      method: "DELETE", 
+      body: JSON.stringify({ studentIds }) 
+    });
+  },
+
+  planReExam: async (testId, studentIds) => {
+    return apiRequest(`/create-paper/${testId}/re-exam`, { 
+      method: "POST", 
+      body: JSON.stringify({ studentIds }) 
+    });
   },
 
   create: async (data) => {

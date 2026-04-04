@@ -144,21 +144,22 @@ const Sidebar = () => {
             { name: "Question Bank", icon: FileText, path: "/question-bank" },
             { name: "Exam Event", icon: FileText, path: "/create-paper" },
             { name: "Exam Results", icon: Bell, path: "/test-result" },
+            { name: "Re-Exam", icon: FileText, path: "/re-exam" },
           ],
         },
-        {
-          name: "Settings",
-          icon: Settings,
-          children: [
-            { name: "Account", path: "/settings/account", icon: UserCog },
-            {
-              name: "Manage Role",
-              path: "/settings/manage-role",
-              icon: Shield,
-            },
-            { name: "Logs", path: "/settings/logs", icon: ScrollText },
-          ],
-        },
+        // {
+        //   name: "Settings",
+        //   icon: Settings,
+        //   children: [
+        //     { name: "Account", path: "/settings/account", icon: UserCog },
+        //     {
+        //       name: "Manage Role",
+        //       path: "/settings/manage-role",
+        //       icon: Shield,
+        //     },
+        //     { name: "Logs", path: "/settings/logs", icon: ScrollText },
+        //   ],
+        // },
       );
     }
 
@@ -170,7 +171,8 @@ const Sidebar = () => {
   useEffect(() => {
     const activeParent = menuItems.find(
       (item) =>
-        item.children && item.children.some((c) => c.path === location.pathname),
+        item.children &&
+        item.children.some((c) => c.path === location.pathname),
     );
     if (activeParent && !openMenus.includes(activeParent.name)) {
       setOpenMenus((prev) => [...prev, activeParent.name]);

@@ -17,6 +17,7 @@ import questionBankRoutes from "./routes/questionBank.js";
 import createPaperRoutes from "./routes/createPaper.js";
 import testResultRoutes from "./routes/testResult.js";
 import { connectDB } from "./config/database.js";
+import { initScheduledSms } from "./scheduler.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -168,30 +169,15 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-connectDB()
-  .then((connected) => {
-    app.listen(PORT, () => {
-      console.log(`🚀 JSSA Backend server running on http://localhost:${PORT}`);
-      console.log(`📡 Health check: http://localhost:${PORT}/health`);
-      console.log(`🌐 CORS Mode: ${isDevelopment ? 'Development (allowing all localhost)' : 'Production'}`);
-      if (isDevelopment) {
-        console.log(`   Allowing all localhost origins for development`);
-      } else {
-        console.log(`   Allowed origins: ${allowedOrigins.length > 0 ? allowedOrigins.join(', ') : 'None configured'}`);
-      }
-      if (!connected) {
-        console.log(`⚠️  Note: MongoDB not connected - update MONGODB_URI in .env`);
-      }
-    });
-  })
-  .catch((err) => {
-    console.error("Failed to start server:", err);
-    // Still start server even if DB connection fails (for testing)
-    app.listen(PORT, () => {
-      console.log(`🚀 JSSA Backend server running on http://localhost:${PORT} (without DB)`);
-      console.log(`📡 Health check: http://localhost:${PORT}/health`);
-      console.log(`🌐 CORS Mode: ${isDevelopment ? 'Development (allowing all localhost)' : 'Production'}`);
-      console.warn(`⚠️  MongoDB connection failed - database operations will not work`);
-    });
+// Connect to Database
+connectDB().then(() => {
+  // Initialize scheduled tasks after DB connection
+  initScheduledSms();
+  
+  app.listen(PORT, () => {
+    console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
   });
+}).catch(err => {
+  console.error("Failed to connect to database:", err);
+  process.exit(1);
+});

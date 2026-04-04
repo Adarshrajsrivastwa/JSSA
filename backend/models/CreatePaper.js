@@ -39,6 +39,8 @@ const createPaperSchema = new mongoose.Schema(
     shuffleQuestions: { type: Boolean, default: false },
     showResult: { type: Boolean, default: true },
     resultDate: { type: String, default: "" }, // New field for scheduled result
+    mouStartDate: { type: String, default: "" },
+    mouEndDate: { type: String, default: "" },
     maxAttempts: { type: Number, default: 1, min: 0 },
     totalQuestions: { type: Number, default: 0, min: 0 },
     totalMarks: { type: Number, default: 0, min: 0 },

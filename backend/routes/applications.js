@@ -7,7 +7,6 @@ import JobPosting from "../models/JobPosting.js";
 import { authenticate } from "../middleware/auth.js";
 import { generateToken } from "../utils/jwt.js";
 import { normalizePhone } from "../utils/validation.js";
-import { sendPaymentSuccessEmail } from "../utils/email.js"; // Email sent on form submission (before payment)
 
 const router = express.Router();
 
@@ -171,98 +170,7 @@ router.post(
         role: user.role,
       });
 
-      // Prepare login credentials for email
       const defaultPassword = "JSSA@123";
-      const loginCredentials = {
-        identifier: user.email || user.phone,
-        password: defaultPassword,
-      };
-
-      // Send email with application details (async, don't wait for it)
-      if (email) {
-        console.log("📧 Sending application email on form submission...");
-        console.log("📧 Application email:", email);
-        
-        // Get job posting data for email
-        let jobPosting = null;
-        if (jobPostingId) {
-          try {
-            jobPosting = await JobPosting.findById(jobPostingId);
-            console.log("📧 Job posting found for email:", jobPosting ? "Yes" : "No");
-          } catch (jobErr) {
-            console.error("Error fetching job posting for email:", jobErr);
-          }
-        }
-        
-        // Prepare login credentials
-        const loginCredentials = {
-          identifier: user.email || user.phone,
-          password: defaultPassword,
-        };
-
-        // Prepare application data for email (include all fields)
-        const applicationDataForEmail = {
-          ...application.toObject(),
-            applicationNumber: generatedApplicationNumber,
-          candidateName: candidateName,
-          fatherName: fatherName,
-          motherName: motherName || null,
-          dob: dob || null,
-          gender: gender || null,
-          nationality: nationality || null,
-          category: category || null,
-          aadhar: aadhar || null,
-          pan: pan || null,
-          mobile: normalizedPhone,
-            email: email,
-          address: address || null,
-          state: state || null,
-          district: district,
-          block: block || null,
-          panchayat: panchayat || null,
-          pincode: pincode || null,
-          higherEducation: higherEducation,
-          board: board || null,
-          marks: marks || null,
-          markPercentage: markPercentage || null,
-          photo: photo || null,
-          signature: signature || null,
-        };
-
-        // Send email using payment success email function (same format, no PDF)
-        console.log("📧 ========== EMAIL SEND PROCESS START (FORM SUBMISSION) ==========");
-        console.log("📧 Preparing to send application email...");
-        console.log("📧 Application email:", email);
-        console.log("📧 Application Number:", generatedApplicationNumber);
-        console.log("📧 User ID:", user._id);
-        console.log("📧 Job Posting ID:", jobPostingId);
-        console.log("📧 SMTP_USER configured:", !!process.env.SMTP_USER);
-        console.log("📧 SMTP_PASS configured:", !!process.env.SMTP_PASS);
-        
-        try {
-          const emailResult = await sendPaymentSuccessEmail(
-            applicationDataForEmail,
-            loginCredentials,
-            jobPosting,
-            null // No PDF file path
-          );
-          
-          if (emailResult && emailResult.success) {
-            console.log("✅ Application email sent successfully to:", email);
-            console.log("✅ Message ID:", emailResult.messageId);
-            console.log("✅ PDF attached:", emailResult.pdfAttached || false);
-          } else {
-            console.error("❌ Application email failed:", emailResult?.message || emailResult?.error || "Unknown error");
-          }
-        } catch (emailErr) {
-          console.error("❌ Exception while sending application email:", emailErr);
-          console.error("❌ Error message:", emailErr.message);
-          console.error("❌ Error stack:", emailErr.stack);
-          // Don't fail the request if email fails
-        }
-      } else {
-        console.log("⚠️ No email provided, skipping email send");
-      }
 
       res.status(201).json({
         success: true,

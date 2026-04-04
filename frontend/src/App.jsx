@@ -16,6 +16,7 @@ import QuestionBank from "./pages/QuestionBank/QuestionBank.jsx";
 import CreatePaper from "./pages/CreatePaper/CreatePaper.jsx";
 import TestResult from "./pages/TestResult/TestResult.jsx";
 import Exam from "./pages/MyExam/MyExam.jsx";
+import ReExam from "./pages/ReExam/ReExam.jsx";
 
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -134,6 +135,15 @@ function App() {
                 </RequireRole>
               }
             />
+            <Route
+              path="/re-exam"
+              element={
+                <RequireRole allow={["admin"]}>
+                  <ReExam />
+                </RequireRole>
+              }
+            />
+
             <Route
               path="/create-paper"
               element={

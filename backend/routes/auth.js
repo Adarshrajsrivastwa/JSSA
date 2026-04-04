@@ -10,7 +10,6 @@ import {
 } from "../utils/validation.js";
 import { generateToken } from "../utils/jwt.js";
 import { authenticate } from "../middleware/auth.js";
-import { sendOTPEmail } from "../utils/email.js";
 import { sendOTP } from "../utils/smsService.js";
 import { isDBConnected } from "../config/database.js";
 
@@ -546,12 +545,6 @@ router.post(
       user.otp = otp;
       user.otpExpiry = otpExpiry;
       await user.save();
-
-      // Send OTP email (async, don't wait)
-      sendOTPEmail(normalizedEmail, otp).catch((err) => {
-        console.error("Failed to send OTP email:", err);
-        // Don't fail the request if email fails
-      });
 
       res.json({
         success: true,
