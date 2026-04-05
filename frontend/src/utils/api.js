@@ -586,6 +586,11 @@ export const createPaperAPI = {
     return apiRequest(`/create-paper/${id}/attempts?${query}`, { method: "GET" });
   },
 
+  getAllStudentIds: async (id, params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return apiRequest(`/create-paper/${id}/all-student-ids?${query}`, { method: "GET" });
+  },
+
   resetAttempts: async (testId, applicationId) => {
     return apiRequest(`/create-paper/${testId}/attempts/${applicationId}`, { method: "DELETE" });
   },

@@ -510,6 +510,23 @@ const StatusBadge = ({ status }) => {
   );
 };
 
+// ── Loading Overlay ──
+function LoadingOverlay({ message = "Fetching data..." }) {
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+      <div className="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 min-w-[200px]">
+        <div className="relative w-12 h-12">
+          <div className="absolute inset-0 border-4 border-gray-100 rounded-full" />
+          <div className="absolute inset-0 border-4 border-[#3AB000] border-t-transparent rounded-full animate-spin" />
+        </div>
+        <p className="text-sm font-bold text-gray-800 animate-pulse">
+          {message}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function ReExam() {
   const navigate = useNavigate();
   const [tests, setTests] = useState([]);
@@ -626,11 +643,49 @@ export default function ReExam() {
     );
   };
 
-  const toggleSelectAll = () => {
-    if (selectedStudentIds.length === filteredStudents.length) {
-      setSelectedStudentIds([]);
+  const toggleSelectAll = async () => {
+    // Check if everything on current page is selected
+    const pageStudentIds = filteredStudents.map((s) => s._id);
+    const allOnPageSelected = pageStudentIds.length > 0 && pageStudentIds.every((id) =>
+      selectedStudentIds.includes(id),
+    );
+
+    if (allOnPageSelected) {
+      // If everything on page is selected, just clear the current page selection
+      setSelectedStudentIds((prev) =>
+        prev.filter((id) => !pageStudentIds.includes(id)),
+      );
     } else {
-      setSelectedStudentIds(filteredStudents.map((s) => s._id));
+      // PROMPT USER: Select only current page or ALL students (across all pages)?
+      const selectAllMode = window.confirm(
+        `Do you want to select ALL ${pagination.total} filtered students across ALL pages?\n\nClick 'OK' for ALL students.\nClick 'Cancel' for only current page.`
+      );
+
+      if (selectAllMode) {
+        setIsActionLoading(true);
+        try {
+          const res = await createPaperAPI.getAllStudentIds(selectedTest.id, {
+            search: searchQuery,
+            status: filterStatus,
+          });
+          if (res?.success) {
+            const allIds = res.data.studentIds.map(id => String(id));
+            setSelectedStudentIds(allIds);
+          } else {
+            alert("Failed to fetch all student IDs.");
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Error fetching student IDs.");
+        } finally {
+          setIsActionLoading(false);
+        }
+      } else {
+        // Just select current page
+        setSelectedStudentIds((prev) => [
+          ...new Set([...prev, ...pageStudentIds]),
+        ]);
+      }
     }
   };
 
@@ -664,59 +719,31 @@ export default function ReExam() {
   };
 
   // ── Derived Data ──
-  const processedStudents = useMemo(() => {
-    if (!testDetails) return [];
-    
-    // Use assignedStudents as the base to include those who haven't attempted
-    const students = Array.isArray(testDetails.assignedStudents) 
-      ? testDetails.assignedStudents 
-      : [];
+  const filteredStudents = useMemo(() => {
+    if (!testDetails || !attempts) return [];
 
-    return students.map((student) => {
-      // Find attempt for this student
-      const attempt = attempts.find(a => 
-        String(a.applicationId?._id || a.applicationId) === String(student._id)
-      );
+    // Since attempts are paginated on the backend, we use attempts as the primary source 
+    // for the table rows to ensure pagination works correctly.
+    return attempts.map((attempt) => {
+      const student = attempt.applicationId || {};
+      const score = attempt.score || 0;
+      const totalMarks = testDetails.totalMarks || 100;
+      const pct = Math.round((score / totalMarks) * 100);
+      
+      // Use status from backend if available, otherwise calculate Pass/Fail
+      const status = attempt.status || (pct >= (testDetails.passingMarks || 40) ? "Pass" : "Fail");
+      const hasAttempt = attempt.hasAttempt !== undefined ? attempt.hasAttempt : true;
 
-      if (attempt) {
-        const pct = Math.round((attempt.score / (testDetails.totalMarks || 1)) * 100);
-        const status = pct >= (testDetails.passingMarks || 40) ? "Pass" : "Fail";
-        return {
-          ...student,
-          status,
-          score: attempt.score,
-          pct,
-          hasAttempt: true,
-          _id: student._id,
-        };
-      } else {
-        // No attempt found
-        const isExpired = testDetails.endDate && new Date(testDetails.endDate) < new Date();
-        return {
-          ...student,
-          status: isExpired ? "Missed" : "Pending",
-          score: 0,
-          pct: 0,
-          hasAttempt: false,
-          _id: student._id,
-        };
-      }
+      return {
+        ...student,
+        _id: student._id,
+        status,
+        score,
+        pct,
+        hasAttempt,
+      };
     });
   }, [testDetails, attempts]);
-
-  const filteredStudents = useMemo(() => {
-    return processedStudents.filter(s => {
-      const q = searchQuery.toLowerCase().trim();
-      const matchSearch = !q || 
-        [s.candidateName, s.mobile, s.email, s.applicationNumber].some(f => 
-          String(f || "").toLowerCase().includes(q)
-        );
-      
-      const matchStatus = filterStatus === "all" || s.status.toLowerCase() === filterStatus.toLowerCase();
-      
-      return matchSearch && matchStatus;
-    });
-  }, [processedStudents, searchQuery, filterStatus]);
 
   // ── Test list filtering by tab ──
   const filteredTests = tests.filter((t) => {
@@ -760,6 +787,11 @@ export default function ReExam() {
 
   return (
     <DashboardLayout>
+      {(isLoading || isActionLoading) && (
+        <LoadingOverlay
+          message={isActionLoading ? "Processing..." : "Loading Data..."}
+        />
+      )}
       <div className="min-h-screen bg-white ml-0 p-0 md:ml-6 px-2 md:px-0 pb-10">
         {!selectedTest ? (
           // ────────────────────────────────────────────────

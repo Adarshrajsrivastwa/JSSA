@@ -347,7 +347,8 @@ router.get("/details/:id", async (req, res) => {
 
 /**
  * GET /api/create-paper/:id/attempts
- * Get attempts for a specific test with pagination
+ * Get attempts for a specific test with pagination.
+ * Now returns ALL assigned students with their status (Pass, Fail, Missed, Pending).
  */
 router.get("/:id/attempts", async (req, res) => {
   try {
@@ -356,100 +357,121 @@ router.get("/:id/attempts", async (req, res) => {
     const limitNum = parseInt(limit, 10);
     const skip = (pageNum - 1) * limitNum;
 
-    // 1. Initial query by testId
-    const query = { testId: req.params.id };
-
-    // 2. Search filter (requires Application join/lookup)
-    let applicationFilter = {};
-    if (search) {
-      const searchRegex = { $regex: search, $options: "i" };
-      applicationFilter = {
-        $or: [
-          { candidateName: searchRegex },
-          { mobile: searchRegex },
-          { email: searchRegex },
-          { applicationNumber: searchRegex },
-          { district: searchRegex }
-        ]
-      };
-    }
-
-    // 3. Status filter (requires CreatePaper for passingMarks)
-    const test = await CreatePaper.findById(req.params.id).select("passingMarks totalMarks").lean();
+    // 1. Get test details to know who is assigned and what the rules are
+    const test = await CreatePaper.findById(req.params.id)
+      .select("assignedStudents passingMarks totalMarks endDate")
+      .lean();
     if (!test) return res.status(404).json({ error: "Test not found" });
+
+    const assignedStudentIds = (test.assignedStudents || []).map(
+      (id) => new mongoose.Types.ObjectId(id)
+    );
     const passingMarks = test.passingMarks || 40;
+    const totalMarks = test.totalMarks || 100;
+    const isExpired = test.endDate && new Date(test.endDate) < new Date();
 
-    // Use aggregation to handle search and status filtering efficiently
-    const aggregate = Attempt.aggregate([
-      { $match: { testId: new mongoose.Types.ObjectId(req.params.id) } },
+    // 2. Aggregate from Application to include all assigned students
+    const aggregate = Application.aggregate([
+      { $match: { _id: { $in: assignedStudentIds } } },
       
-      // Lookup application details
-      {
-        $lookup: {
-          from: "applications",
-          localField: "applicationId",
-          foreignField: "_id",
-          as: "application"
-        }
-      },
-      { $unwind: { path: "$application", preserveNullAndEmptyArrays: true } },
-
       // Apply search filters
       ...(search ? [{
         $match: {
           $or: [
-            { "application.candidateName": { $regex: search, $options: "i" } },
-            { "application.mobile": { $regex: search, $options: "i" } },
-            { "application.email": { $regex: search, $options: "i" } },
-            { "application.applicationNumber": { $regex: search, $options: "i" } },
-            { "application.district": { $regex: search, $options: "i" } }
+            { candidateName: { $regex: search, $options: "i" } },
+            { mobile: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+            { applicationNumber: { $regex: search, $options: "i" } },
+            { district: { $regex: search, $options: "i" } }
           ]
         }
       }] : []),
 
-      // Apply status filters
-      ...(status !== "all" ? [{
+      // Lookup attempt for this student AND this test
+      {
+        $lookup: {
+          from: "attempts",
+          let: { appId: "$_id" },
+          pipeline: [
+            { 
+              $match: { 
+                $expr: { 
+                  $and: [
+                    { $eq: ["$testId", new mongoose.Types.ObjectId(req.params.id)] },
+                    { $eq: ["$applicationId", "$$appId"] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: "studentAttempt"
+        }
+      },
+      { $unwind: { path: "$studentAttempt", preserveNullAndEmptyArrays: true } },
+
+      // Add status field
+      {
         $addFields: {
-          pct: { 
+          computedStatus: {
             $cond: [
-              { $gt: [test.totalMarks || 100, 0] },
-              { $multiply: [{ $divide: ["$score", test.totalMarks || 100] }, 100] },
-              0
+              { $ifNull: ["$studentAttempt", false] },
+              {
+                $cond: [
+                  { $gte: ["$studentAttempt.score", passingMarks] },
+                  "Pass",
+                  "Fail"
+                ]
+              },
+              {
+                $cond: [
+                  isExpired,
+                  "Missed",
+                  "Pending"
+                ]
+              }
             ]
           }
         }
-      }, {
-        $match: {
-          ...(status === "pass" ? { score: { $gte: passingMarks } } : {}),
-          ...(status === "fail" ? { score: { $lt: passingMarks } } : {})
-          // Missed/Pending are handled differently (usually no attempt record exists)
-        }
+      },
+
+      // Apply status filter
+      ...(status !== "all" ? [{
+        $match: { computedStatus: { $regex: new RegExp(`^${status}$`, "i") } }
       }] : []),
 
-      // Final structure mapping to match previous populate output
+      // Final structure mapping to match frontend expectations
       {
         $project: {
-          _id: 1,
-          testId: 1,
-          userId: 1,
-          applicationId: "$application", // Rename unwound application back
-          score: 1,
-          totalQuestions: 1,
-          answeredCount: 1,
-          autoSubmitted: 1,
-          startTime: 1,
-          endTime: 1,
-          createdAt: 1,
-          updatedAt: 1
+          _id: { $ifNull: ["$studentAttempt._id", "$_id"] }, // Unique ID (attempt or application)
+          testId: { $literal: req.params.id },
+          applicationId: {
+            _id: "$_id",
+            candidateName: "$candidateName",
+            fatherName: "$fatherName",
+            mobile: "$mobile",
+            email: "$email",
+            district: "$district",
+            applicationNumber: "$applicationNumber"
+          },
+          score: { $ifNull: ["$studentAttempt.score", 0] },
+          status: "$computedStatus",
+          hasAttempt: { $cond: [{ $ifNull: ["$studentAttempt", false] }, true, false] },
+          totalQuestions: { $ifNull: ["$studentAttempt.totalQuestions", 0] },
+          answeredCount: { $ifNull: ["$studentAttempt.answeredCount", 0] },
+          autoSubmitted: { $ifNull: ["$studentAttempt.autoSubmitted", false] },
+          startTime: "$studentAttempt.startTime",
+          endTime: "$studentAttempt.endTime",
+          createdAt: "$studentAttempt.createdAt",
+          updatedAt: "$studentAttempt.updatedAt"
         }
       }
     ]);
 
-    const [results] = await Attempt.aggregate([
+    const results = await Application.aggregate([
       { $facet: {
         data: [
           ...aggregate.pipeline(),
-          { $sort: { createdAt: -1 } },
+          { $sort: { "applicationId.candidateName": 1 } },
           { $skip: skip },
           { $limit: limitNum }
         ],
@@ -460,8 +482,8 @@ router.get("/:id/attempts", async (req, res) => {
       }}
     ]);
 
-    const attempts = results.data;
-    const total = results.totalCount[0]?.count || 0;
+    const attempts = results[0].data;
+    const total = results[0].totalCount[0]?.count || 0;
 
     res.json({
       success: true,
@@ -482,6 +504,77 @@ router.get("/:id/attempts", async (req, res) => {
       error: "Failed to fetch test attempts",
       message: error.message,
     });
+  }
+});
+
+/**
+ * GET /api/create-paper/:id/all-student-ids
+ * Get all student IDs assigned to this test, filtered by status/search
+ * Useful for "Select All" functionality across pagination
+ */
+router.get("/:id/all-student-ids", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { search = "", status = "all" } = req.query;
+
+    const test = await CreatePaper.findById(id).select("assignedStudents passingMarks totalMarks endDate").lean();
+    if (!test) return res.status(404).json({ error: "Test not found" });
+
+    // 1. Get all assigned students for this test
+    let studentIds = test.assignedStudents || [];
+
+    // 2. If filtering is needed, we need more complex logic
+    if (search || status !== "all") {
+      // Find all attempts for this test
+      const attempts = await Attempt.find({ testId: id }).select("applicationId score").lean();
+      const attemptMap = new Map(attempts.map(a => [String(a.applicationId), a]));
+
+      // Fetch student details if searching
+      let students = [];
+      if (search) {
+        const searchRegex = new RegExp(search, "i");
+        students = await Application.find({
+          _id: { $in: studentIds },
+          $or: [
+            { candidateName: searchRegex },
+            { mobile: searchRegex },
+            { email: searchRegex },
+            { applicationNumber: searchRegex },
+            { district: searchRegex }
+          ]
+        }).select("_id").lean();
+        studentIds = students.map(s => s._id);
+      }
+
+      // Filter by status if needed
+      if (status !== "all") {
+        const passingMarks = test.passingMarks || 40;
+        const totalMarks = test.totalMarks || 100;
+        const isExpired = test.endDate && new Date(test.endDate) < new Date();
+
+        studentIds = studentIds.filter(sId => {
+          const attempt = attemptMap.get(String(sId));
+          let sStatus = "Pending";
+          
+          if (attempt) {
+            const pct = Math.round((attempt.score / totalMarks) * 100);
+            sStatus = pct >= passingMarks ? "Pass" : "Fail";
+          } else if (isExpired) {
+            sStatus = "Missed";
+          }
+
+          return sStatus.toLowerCase() === status.toLowerCase();
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      data: { studentIds }
+    });
+  } catch (error) {
+    console.error("Get all student IDs error:", error);
+    res.status(500).json({ error: "Server Error", message: error.message });
   }
 });
 
