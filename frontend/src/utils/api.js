@@ -674,6 +674,9 @@ export const testResultsAPI = {
   getAll: async () => {
     return apiRequest("/test-result", { method: "GET" });
   },
+  getById: async (id) => {
+    return apiRequest(`/test-result/${id}`, { method: "GET" });
+  },
 };
 
 // Combined API object

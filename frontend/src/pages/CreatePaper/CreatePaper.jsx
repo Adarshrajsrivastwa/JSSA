@@ -4026,6 +4026,21 @@ function CreateEditView({
   );
 }
 
+// ─── Loading Overlay ──────────────────────────────────────────────────────────
+function LoadingOverlay({ message = "Fetching data..." }) {
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+      <div className="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 min-w-[200px]">
+        <div className="relative w-12 h-12">
+          <div className="absolute inset-0 border-4 border-gray-100 rounded-full" />
+          <div className="absolute inset-0 border-4 border-[#3AB000] border-t-transparent rounded-full animate-spin" />
+        </div>
+        <p className="text-sm font-bold text-gray-800 animate-pulse">{message}</p>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Dashboard ────────────────────────────────────────────────────────────
 export default function TestManagement() {
   const location = useLocation();
@@ -4034,6 +4049,7 @@ export default function TestManagement() {
   const [titleOptions, setTitleOptions] = useState([]);
   const [postings, setPostings] = useState([]);
   const [isLoadingTests, setIsLoadingTests] = useState(false);
+  const [isFetchingDetails, setIsFetchingDetails] = useState(false);
   const [testsError, setTestsError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -4243,6 +4259,7 @@ export default function TestManagement() {
 
   return (
     <DashboardLayout>
+      {isFetchingDetails && <LoadingOverlay message="Loading Event Details..." />}
       <div className="min-h-screen bg-white ml-0 p-0 md:ml-6 px-2 md:px-0 pb-10">
         {showDetailsModal && detailsTest ? (
           <DetailsView
@@ -4425,15 +4442,21 @@ export default function TestManagement() {
                             <div className="flex items-center justify-center gap-3">
                               <button
                                 onClick={async () => {
-                                  const res = await createPaperAPI.getDetails(
-                                    test.id,
-                                  );
-                                  if (res?.success) {
-                                    setDetailsTest(
-                                      normalizeTest(res.data.test),
+                                  setIsFetchingDetails(true);
+                                  try {
+                                    const res = await createPaperAPI.getDetails(
+                                      test.id,
                                     );
-                                    setShowDetailsModal(true);
-                                  } else alert("Failed to load test details.");
+                                    if (res?.success) {
+                                      setDetailsTest(
+                                        normalizeTest(res.data.test),
+                                      );
+                                      setShowDetailsModal(true);
+                                    } else
+                                      alert("Failed to load test details.");
+                                  } finally {
+                                    setIsFetchingDetails(false);
+                                  }
                                 }}
                                 className="text-[#3AB000] hover:text-[#2d8a00] transition-colors"
                                 title="View"
@@ -4442,16 +4465,21 @@ export default function TestManagement() {
                               </button>
                               <button
                                 onClick={async () => {
-                                  const res = await createPaperAPI.getDetails(
-                                    test.id,
-                                  );
-                                  if (res?.success) {
-                                    setEditingTest(
-                                      normalizeTest(res.data.test),
+                                  setIsFetchingDetails(true);
+                                  try {
+                                    const res = await createPaperAPI.getDetails(
+                                      test.id,
                                     );
-                                    setShowModal(true);
-                                  } else
-                                    alert("Failed to load test for editing.");
+                                    if (res?.success) {
+                                      setEditingTest(
+                                        normalizeTest(res.data.test),
+                                      );
+                                      setShowModal(true);
+                                    } else
+                                      alert("Failed to load test for editing.");
+                                  } finally {
+                                    setIsFetchingDetails(false);
+                                  }
                                 }}
                                 className="text-[#3AB000] hover:text-blue-600 transition-colors"
                                 title="Edit"
@@ -4551,10 +4579,18 @@ export default function TestManagement() {
                     <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
                       <button
                         onClick={async () => {
-                          const res = await createPaperAPI.getDetails(test.id);
-                          if (res?.success) {
-                            setDetailsTest(normalizeTest(res.data.test));
-                            setShowDetailsModal(true);
+                          setIsFetchingDetails(true);
+                          try {
+                            const res = await createPaperAPI.getDetails(
+                              test.id,
+                            );
+                            if (res?.success) {
+                              setDetailsTest(normalizeTest(res.data.test));
+                              setShowDetailsModal(true);
+                            } else
+                              alert("Failed to load test details.");
+                          } finally {
+                            setIsFetchingDetails(false);
                           }
                         }}
                         className="text-[#3AB000] hover:text-[#2d8a00] p-2 transition-colors"
@@ -4563,10 +4599,18 @@ export default function TestManagement() {
                       </button>
                       <button
                         onClick={async () => {
-                          const res = await createPaperAPI.getDetails(test.id);
-                          if (res?.success) {
-                            setEditingTest(normalizeTest(res.data.test));
-                            setShowModal(true);
+                          setIsFetchingDetails(true);
+                          try {
+                            const res = await createPaperAPI.getDetails(
+                              test.id,
+                            );
+                            if (res?.success) {
+                              setEditingTest(normalizeTest(res.data.test));
+                              setShowModal(true);
+                            } else
+                              alert("Failed to load test for editing.");
+                          } finally {
+                            setIsFetchingDetails(false);
                           }
                         }}
                         className="text-[#3AB000] hover:text-blue-600 p-2 transition-colors"

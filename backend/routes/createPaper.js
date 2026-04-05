@@ -136,10 +136,10 @@ router.get("/", async (req, res) => {
       findQuery = findQuery.select("title class type difficulty duration passingMarks description startDate endDate isPublic shuffleQuestions showResult status createdDate createdBy totalQuestions totalMarks assignedStudents");
       findQuery = findQuery.populate("createdBy", "email role");
     } else {
-      // Full details with populations
+      // Full details with populations - AVOID populating assignedStudents in list view
+      // Just populate creator and questions
       findQuery = findQuery.populate("createdBy", "email role")
-        .populate("assignedStudents")
-        .populate("questionConfigs.questionId");
+        .populate("questionConfigs.questionId", "question questionHi marks options optionsHi _id");
     }
 
     const [testsRaw, total] = await Promise.all([
@@ -301,11 +301,12 @@ router.get("/details/:id", async (req, res) => {
       .populate("createdBy", "email role")
       .populate({
         path: "assignedStudents",
-        select: "-__v", // Get all fields except version key
+        // Only fetch fields needed for DetailsView to prevent timeouts
+        select: "candidateName fatherName mobile email district photo applicationNumber _id",
       })
       .populate({
         path: "questionConfigs.questionId",
-        select: "-__v",
+        select: "question questionHi options optionsHi marks _id",
       });
 
     if (!test) {
