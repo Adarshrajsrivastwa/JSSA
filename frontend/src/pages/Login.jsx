@@ -579,17 +579,17 @@ export default function JSSAbhiyanLogin() {
                       Enter your Mobile Number
                     </label>
                     <div className="relative group">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2 border-r pr-2 border-gray-200 h-6">
+                      <div className="absolute left-0 top-0 bottom-0 flex items-center gap-2 pl-4 pr-3 border-r-2 border-gray-100 h-full">
                         <Phone size={16} className="text-gray-400" />
-                        <span className="text-xs font-bold text-green-600">IN +91</span>
+                        <span className="text-xs font-bold text-[#3AB000]">+91</span>
                       </div>
                       <input
                         type="tel"
                         maxLength={10}
                         value={phoneValue}
                         onChange={(e) => setPhoneValue(e.target.value.replace(/\D/g, ""))}
-                        placeholder="8271093372"
-                        className="w-full pl-28 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none text-sm font-medium focus:border-[#3AB000] group-hover:border-gray-300"
+                        placeholder="Enter mobile number"
+                        className="w-full pl-24 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none text-sm font-bold focus:border-[#3AB000] group-hover:border-gray-300"
                       />
                     </div>
                   </div>
