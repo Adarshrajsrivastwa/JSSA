@@ -7,6 +7,7 @@ import JobPosting from "../models/JobPosting.js";
 import { authenticate } from "../middleware/auth.js";
 import { generateToken } from "../utils/jwt.js";
 import { normalizePhone } from "../utils/validation.js";
+import { sendApplicationSuccessSMS } from "../utils/smsService.js";
 
 const router = express.Router();
 
@@ -491,8 +492,18 @@ router.put(
         delete req.body.status;
       }
 
+      const oldPaymentStatus = application.paymentStatus;
       Object.assign(application, req.body);
       await application.save();
+
+      // Trigger SMS if payment status changed to 'paid' (manual admin update)
+      if (oldPaymentStatus !== "paid" && application.paymentStatus === "paid" && req.user.role === "admin") {
+        console.log("📱 Admin manually updated status to 'paid'. Triggering SMS...");
+        if (application.mobile) {
+          sendApplicationSuccessSMS(application.mobile, application.applicationNumber)
+            .catch(err => console.error("❌ Failed to send manual success SMS:", err));
+        }
+      }
 
       res.json({
         success: true,
@@ -544,8 +555,18 @@ router.patch(
         });
       }
 
+      const oldStatus = application.paymentStatus;
       application.paymentStatus = req.body.paymentStatus;
       await application.save();
+
+      // Trigger SMS if payment status changed to 'paid' (manual admin update)
+      if (oldStatus !== "paid" && application.paymentStatus === "paid") {
+        console.log("📱 Admin updated status to 'paid' via PATCH. Triggering SMS...");
+        if (application.mobile) {
+          sendApplicationSuccessSMS(application.mobile, application.applicationNumber)
+            .catch(err => console.error("❌ Failed to send manual success SMS (PATCH):", err));
+        }
+      }
 
       res.json({
         success: true,
